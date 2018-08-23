@@ -1,0 +1,25 @@
+pipeline {
+	agent {
+		node {
+			label 'master'
+		}
+	}
+	stages {
+		stage('Testing') {
+			parallel {
+				stage('Single Node') {
+					steps {
+						sh 'echo "==>Beginning single node tests"'
+						build job: 'single-node', parameters: [string(name: 'PULL_REQUEST_REF', value: sha1), string(name: 'PULL_REQUEST_ID', value: ghprbPullId), string(name: 'TARGET_BRANCH', value: ghprbTargetBranch)], propagate: true
+					}
+				}
+				stage('Multi Node') {
+					steps {
+						sh 'echo "==> Beginning multi node tests"'
+						build job: 'multi-node', parameters: [string(name: 'PULL_REQUEST_REF', value: sha1), string(name: 'PULL_REQUEST_ID', value: ghprbPullId), string(name: 'TARGET_BRANCH', value: ghprbTargetBranch)], propagate: true
+					}
+				}
+			}
+		}
+	}
+}

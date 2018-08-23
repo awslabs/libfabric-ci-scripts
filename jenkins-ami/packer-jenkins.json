@@ -32,6 +32,6 @@
   }],
   "provisioners": [{
     "type": "shell",
-    "script" : "customize-ami.sh"
+    "script" : "prepare-ami.sh"
   }]
 }
