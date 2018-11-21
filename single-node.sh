@@ -14,7 +14,8 @@ git checkout $PULL_REQUEST_REF -b PRBranch
 				--enable-debug 	\
 				--enable-mrail 	\
 				--enable-tcp 	\
-				--enable-rxm
+				--enable-rxm	\
+				--disable-rxd
 make -j 4
 sudo make install
 

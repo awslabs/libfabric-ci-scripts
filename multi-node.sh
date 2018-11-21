@@ -29,7 +29,7 @@ cd libfabric
 git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
 git checkout $PULL_REQUEST_REF -b PRBranch
 ./autogen.sh
-./configure --prefix=$WORKSPACE/libfabric/install/ --enable-debug --enable-mrail --enable-tcp --enable-rxm
+./configure --prefix=$WORKSPACE/libfabric/install/ --enable-debug --enable-mrail --enable-tcp --enable-rxm --disable-rxd
 make -j 4
 sudo make install
 
@@ -60,7 +60,7 @@ ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build succ
   git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
   git checkout $PULL_REQUEST_REF -b PRBranch
   ./autogen.sh
-  ./configure --prefix=$WORKSPACE/libfabric/install/ --enable-debug --enable-mrail --enable-tcp --enable-rxm
+  ./configure --prefix=$WORKSPACE/libfabric/install/ --enable-debug --enable-mrail --enable-tcp --enable-rxm --disable-rxd
   make -j 4
   make install
   echo "==> Building fabtests on second node"
