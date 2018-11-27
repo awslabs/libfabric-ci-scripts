@@ -33,12 +33,8 @@ git checkout $PULL_REQUEST_REF -b PRBranch
 make -j 4
 sudo make install
 
-# Uses the fabtests branch corresponding to the PR's target branch
 echo "==> Building fabtests"
-cd $WORKSPACE
-git clone https://github.com/ofiwg/fabtests
-cd fabtests
-git checkout $TARGET_BRANCH
+cd $WORKSPACE/libfabric/fabtests
 ./autogen.sh
 ./configure --with-libfabric=$WORKSPACE/libfabric/install/ --prefix=$WORKSPACE/fabtests/install/ --enable-debug
 make -j 4
@@ -64,10 +60,7 @@ ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build succ
   make -j 4
   make install
   echo "==> Building fabtests on second node"
-  cd $WORKSPACE
-  git clone https://github.com/ofiwg/fabtests
-  cd fabtests
-  git checkout $TARGET_BRANCH
+  cd $WORKSPACE/libfabric/fabtests
   ./autogen.sh
   ./configure --with-libfabric=$WORKSPACE/libfabric/install/ --prefix=$WORKSPACE/fabtests/install/ --enable-debug
   make -j 4
