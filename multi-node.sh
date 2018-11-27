@@ -68,7 +68,13 @@ ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build succ
   # Runs all tests in the fabtests suite between two nodes while only expanding
   # failed cases
   echo "==> Running fabtests between two nodes"
-  LD_LIBRARY_PATH=$WORKSPACE/fabtests/install/lib/:$LD_LIBRARY_PATH BIN_PATH=$WORKSPACE/fabtests/install/bin/ FI_LOG_LEVEL=debug $WORKSPACE/fabtests/install/bin/runfabtests.sh -v $PROVIDER $CLIENT_IP $SERVER_IP
+  declare EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
+  if [ -f $EXCLUDE ]; then
+  	EXCLUDE="-R -f $EXCLUDE"
+  else
+  	EXCLUDE=""
+  fi
+  LD_LIBRARY_PATH=$WORKSPACE/fabtests/install/lib/:$LD_LIBRARY_PATH BIN_PATH=$WORKSPACE/fabtests/install/bin/ FI_LOG_LEVEL=debug $WORKSPACE/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER $CLIENT_IP $SERVER_IP
 EOF
 # Terminates second node. First node will be terminated in a post build task to
 # prevent build failure
