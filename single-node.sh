@@ -29,7 +29,15 @@ make -j 4
 sudo make install
 
 # Runs all the tests in the fabtests suite while only expanding failed cases
+declare EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
+if [ -f $EXCLUDE ]; then
+	EXCLUDE="-R -f $EXCLUDE"
+else
+	EXCLUDE=""
+fi
+
 echo "==> Running fabtests"
 LD_LIBRARY_PATH=$WORKSPACE/fabtests/install/lib/:$LD_LIBRARY_PATH	\
 BIN_PATH=$WORKSPACE/fabtests/install/bin/ FI_LOG_LEVEL=debug		\
-$WORKSPACE/fabtests/install/bin/runfabtests.sh -v $PROVIDER 127.0.0.1 127.0.0.1
+$WORKSPACE/fabtests/install/bin/runfabtests.sh -v $EXCLUDE		\
+$PROVIDER 127.0.0.1 127.0.0.1
