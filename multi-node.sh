@@ -68,7 +68,7 @@ ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build succ
   # Runs all tests in the fabtests suite between two nodes while only expanding
   # failed cases
   echo "==> Running fabtests between two nodes"
-  declare EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
+  EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
   if [ -f $EXCLUDE ]; then
   	EXCLUDE="-R -f $EXCLUDE"
   else

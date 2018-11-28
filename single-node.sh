@@ -29,7 +29,7 @@ make -j 4
 sudo make install
 
 # Runs all the tests in the fabtests suite while only expanding failed cases
-declare EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
+EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
 if [ -f $EXCLUDE ]; then
 	EXCLUDE="-R -f $EXCLUDE"
 else
