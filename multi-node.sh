@@ -24,7 +24,7 @@ done
 # Pulls the libfabric repository and checks out the pull request commit
 echo "==> Building libfabric on first node"
 cd $WORKSPACE
-git clone https://github.com/ofiwg/libfabric
+git clone https://github.com/dipti-kothari/libfabric
 cd libfabric
 git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
 git checkout $PULL_REQUEST_REF -b PRBranch
@@ -51,7 +51,7 @@ ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build succ
   cd ~
   mkdir -p $WORKSPACE
   cd $WORKSPACE
-  git clone https://github.com/ofiwg/libfabric
+  git clone https://github.com/dipti-kothari/libfabric
   cd libfabric
   git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
   git checkout $PULL_REQUEST_REF -b PRBranch
