@@ -15,6 +15,7 @@ echo "==> Launching instance"
 VOLUME=$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/root)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id $AMI_ID --instance-type $INSTANCE_TYPE --enable-api-termination --key-name $KEY_NAME --security-groups $SECURITY_GROUPS --placement AvailabilityZone=$AVAILABILITY_ZONE --query "Instances[*].InstanceId"   --output=text)
 # Occasionally needs to wait before describe instances may be called
+echo $SERVER_ID
 
 for i in `seq 1 40`;
 do
@@ -49,6 +50,7 @@ echo $INSTANCE_TYPE
 echo $SECURITY_GROUPS
 echo $KEY_NAME
 echo $CLIENT_IP
+
 
 # Adds the IP's to the respective known hosts
 ssh-keyscan -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
