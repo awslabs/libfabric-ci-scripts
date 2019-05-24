@@ -12,10 +12,19 @@ CLIENT_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
 
 # Launches an identical instance and sets ID and IP environment variables for the instance
 echo "==> Launching instance"
+echo $AMI_ID
+echo $AVAILABILITY_ZONE
+echo $INSTANCE_TYPE
+echo $SECURITY_GROUPS
+echo $KEY_NAME
+echo $CLIENT_IP
+
 VOLUME=$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/root)
+echo $VOLUME
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id $AMI_ID --instance-type $INSTANCE_TYPE --enable-api-termination --key-name $KEY_NAME --security-groups $SECURITY_GROUPS --placement AvailabilityZone=$AVAILABILITY_ZONE --query "Instances[*].InstanceId"   --output=text)
 # Occasionally needs to wait before describe instances may be called
 echo $SERVER_ID
+echo "dipti testing0"
 
 for i in `seq 1 40`;
 do
