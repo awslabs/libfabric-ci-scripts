@@ -42,9 +42,20 @@ sudo make install
 
 # Holds testing every 5 seconds for 40 attempts until the instance is running
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
+echo "dipti testing"
+echo $AMI_ID
+echo $AVAILABILITY_ZONE
+echo $INSTANCE_TYPE
+echo $SECURITY_GROUPS
+echo $KEY_NAME
+echo $CLIENT_IP
 
 # Adds the IP's to the respective known hosts
-ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
+ssh-keyscan -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
+echo "dipti testing2"
+sudo cat ~/.ssh/known_hosts
+echo $USER
+echo $SERVER_IP
 ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
   echo "==> Building libfabric on second node"
