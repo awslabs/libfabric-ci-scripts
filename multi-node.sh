@@ -12,7 +12,7 @@ CLIENT_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
 INTERFACE=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
 SUBNET_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$INTERFACE/subnet-id)
 VPC_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$INTERFACE/vpc-id)
-SECURITY_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-security-groups --filter Name=vpc-id,Values=$VPC_ID Name=group-name,Values=$SECURITY_GROUPS --query "SecurityGroups[*].GroupId")
+SECURITY_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-security-groups --filter Name=vpc-id,Values=$VPC_ID Name=group-name,Values=$SECURITY_GROUPS --query "SecurityGroups[*].GroupId" --output=text)
 # Launches an identical instance and sets ID and IP environment variables for the instance
 echo "==> Launching instance"
 echo $AMI_ID
