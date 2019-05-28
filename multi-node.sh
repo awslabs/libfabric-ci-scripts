@@ -52,7 +52,7 @@ aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
 echo "dipti testing2"
 sudo cat ~/.ssh/known_hosts
-ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -vvv -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
   echo "==> Building libfabric on second node"
   cd ~
