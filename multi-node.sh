@@ -49,7 +49,7 @@ sudo make install
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 
 # Adds the IP's to the respective known hosts
-ssh-keyscan -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
+ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
 echo "dipti testing2"
 sudo cat ~/.ssh/known_hosts
 ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
@@ -85,5 +85,5 @@ ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build succ
 EOF
 # Terminates second node. First node will be terminated in a post build task to
 # prevent build failure
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
+#AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 exit $EXIT_CODE
