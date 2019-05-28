@@ -15,7 +15,16 @@ VPC_ID=$(curl http://169.254.169.254/latest/metadata/network/interfaces/macs/$IN
 SECURITY_ID=$(aws ec2 describe-security-groups --filter Name=vpc-id,Values=$VPC_ID Name=group-name,Values=$SECURITY_GROUPS --query "SecurityGroups[*].GroupId")
 # Launches an identical instance and sets ID and IP environment variables for the instance
 echo "==> Launching instance"
-
+echo $AMI_ID
+echo $AVAILABILITY_ZONE
+echo $INSTANCE_TYPE
+echo $SECURITY_GROUPS
+echo $KEY_NAME
+echo $CLIENT_IP
+echo $INTERFACE
+echo $SUBNET_ID
+echo $VPC_ID
+echo $SECURITY_ID
 VOLUME=$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/root)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id $AMI_ID --instance-type $INSTANCE_TYPE --enable-api-termination --key-name $KEY_NAME --security-group-id $SECURITY_ID --subnet-id $SUBNET_ID --placement AvailabilityZone=$AVAILABILITY_ZONE --query "Instances[*].InstanceId"   --output=text)
 # Occasionally needs to wait before describe instances may be called
