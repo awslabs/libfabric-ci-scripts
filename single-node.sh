@@ -30,6 +30,7 @@ aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 cd $WORKSPACE
 echo "WORKSPACE IS"
 echo $WORKSPACE
+ls -a
 cat ~/.ssh/known_hosts
 
 ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
