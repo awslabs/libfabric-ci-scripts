@@ -3,7 +3,7 @@
 set +x
 slave_name=slave_$label
 slave_value=${!slave_name}
-ami=(slave_value)
+ami=($slave_value)
 echo "1"
 echo ${ami[0]}
 echo "gggggg"
