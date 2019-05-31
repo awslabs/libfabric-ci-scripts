@@ -23,12 +23,14 @@ done
 
 echo $SERVER_ID
 echo $SERVER_IP
-echo $slave_keypair_private_key > key.pem
-cat key.pem
 echo "Driectory"
 ls -a
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
-cd ../../../../../../../../../../../home/ec2-user
+cd $WORKSPACE
+mkdir .ssh
+cd .ssh
+cat > know_hosts
+cd $WORKSPACE
 ls -a
 ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
 echo "dipti testing2"
