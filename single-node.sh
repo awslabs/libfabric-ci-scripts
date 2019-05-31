@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set +x
+slave_$label=(slave_$label)
 ami_id=slave_$label[0]
 ami_user=slave_$label[1]
 echo "1"
