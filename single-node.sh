@@ -11,8 +11,11 @@ do
   SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
 done
 
+echo ~/${slave_keypair_name}
 aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
-ssh -vvv -T -i ~/$slave_keypair_name ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+
+
+ssh -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   	#ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
