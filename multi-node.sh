@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set +x
-
 # Uses curl meta-data to retrieve identical information for instance creation
 AMI_ID=$(curl http://169.254.169.254/latest/meta-data/ami-id)
 AVAILABILITY_ZONE=$(curl http://169.254.169.254/latest/meta-data/placement/availability-zone)
