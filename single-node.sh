@@ -1,19 +1,19 @@
 #!/bin/sh
 
 set +x
-slave_$label=(slave_$label)
-ami_id=slave_$label[0]
-ami_user=slave_$label[1]
+slave_name=slave_$label
+slave_value=${!slave_name}
+ami=(slave_value)
 echo "1"
-echo ${!ami_id}
+echo ${ami[0]}
 echo "gggggg"
-echo $(!ami_user}
+echo ${ami[1]}
 echo "aaaa"
 INTERFACE=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
 echo $INTERFACE
 VPC_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$INTERFACE/vpc-id)
 echo $VPC_ID
-SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${!ami_id} --instance-type $instance_type --enable-api-termination --key-name $slave_keypair_name --security-group-id $security_id --subnet-id $subnet_id --placement AvailabilityZone=$availability_zone --query "Instances[*].InstanceId"   --output=text)
+SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type $instance_type --enable-api-termination --key-name $slave_keypair_name --security-group-id $security_id --subnet-id $subnet_id --placement AvailabilityZone=$availability_zone --query "Instances[*].InstanceId"   --output=text)
 echo "done creating instance"
 
 for i in `seq 1 40`;
@@ -25,7 +25,7 @@ echo $SERVER_ID
 echo $SERVER_IP
 echo $slave_keypair_private_key > key.pem
 sudo cat key.pem
-ssh -i key.pem ${!ami_user}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -i key.pem ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
 
