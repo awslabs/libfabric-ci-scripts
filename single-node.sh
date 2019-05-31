@@ -4,17 +4,15 @@ set +x
 slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
-SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type $instance_type --enable-api-termination --key-name $slave_keypair_name --security-group-id $security_id --subnet-id $subnet_id --placement AvailabilityZone=$availability_zone --query "Instances[*].InstanceId"   --output=text)
+SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
 
 for i in `seq 1 40`;
 do
-  SERVER_IP=$(aws ec2 describe-instances --instance-ids $SERVER_ID --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
+  SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
 done
-echo $SERVER_ID
-echo $SERVER_IP
 
-aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
-ssh -vvv -i ~/$slave_keypair_name ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
+ssh -vvv -T -i ~/$slave_keypair_name ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   	#ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
