@@ -29,7 +29,7 @@ aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 cd $WORKSPACE
 mkdir .ssh
 cd .ssh
-cat > know_hosts
+cat > known_hosts
 cd $WORKSPACE
 ls -a
 ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
