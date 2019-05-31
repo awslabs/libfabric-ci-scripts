@@ -31,8 +31,11 @@ cd $WORKSPACE
 echo "WORKSPACE IS"
 echo $WORKSPACE
 ls -a
-cat ~/.ssh/known_hosts
-
+cd ~/.ssh
+ls -a
+cat > known_hosts
+ls -a
+cd $WORKSPACE
 ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
 echo "dipti testing2"
 sudo cat ~/.ssh/known_hosts
