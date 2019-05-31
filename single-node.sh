@@ -22,7 +22,7 @@ cd .ssh
 cat > known_hosts
 cd $WORKSPACE
 ls -a
-#ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
+ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
 echo "dipti testing2"
 cat .ssh/known_hosts
 ssh -vvv -T -o StrictHostKeyChecking=no ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
