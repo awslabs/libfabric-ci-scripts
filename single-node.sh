@@ -5,7 +5,9 @@ ami_id=slave_$label[0]
 ami_user=slave_$label[1]
 echo "1"
 echo ${!ami_id}
+echo "gggggg"
 echo $(!ami_user}
+echo "aaaa"
 INTERFACE=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
 echo $INTERFACE
 VPC_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$INTERFACE/vpc-id)
