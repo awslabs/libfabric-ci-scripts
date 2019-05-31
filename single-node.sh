@@ -25,11 +25,12 @@ echo $SERVER_ID
 echo $SERVER_IP
 echo $slave_keypair_private_key > key.pem
 cat key.pem
-
+echo "Driectory"
+ls -a
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 cd ../../../home/ec2-user
 ls -a
-ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
+ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
 echo "dipti testing2"
 sudo cat ~/.ssh/known_hosts
 ssh -vvv -T -o StrictHostKeyChecking=no ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
