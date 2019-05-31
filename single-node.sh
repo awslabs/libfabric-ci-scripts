@@ -28,7 +28,7 @@ cat key.pem
 echo "Driectory"
 ls -a
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
-cd ../../../home/ec2-user
+cd ../../../../../../../../../../../home/ec2-user
 ls -a
 ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
 echo "dipti testing2"
