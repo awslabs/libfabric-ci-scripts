@@ -58,5 +58,5 @@ ssh -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} <<-EOF && { echo "
 	$WORKSPACE/fabtests/install/bin/runfabtests.sh -v $EXCLUDE		\
 	$PROVIDER 127.0.0.1 127.0.0.1
 EOF
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
+#AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 exit $EXIT_CODE
