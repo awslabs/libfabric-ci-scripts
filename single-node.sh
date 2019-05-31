@@ -27,6 +27,7 @@ echo $slave_keypair_private_key > key.pem
 cat key.pem
 
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
+cd $WORKSPACE
 
 ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
 echo "dipti testing2"
