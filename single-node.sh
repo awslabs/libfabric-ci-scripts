@@ -4,17 +4,9 @@ set +x
 slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
-echo "1"
-echo ${ami[0]}
-echo "gggggg"
-echo ${ami[1]}
-echo "aaaa"
 INTERFACE=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/)
-echo $INTERFACE
 VPC_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$INTERFACE/vpc-id)
-echo $VPC_ID
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type $instance_type --enable-api-termination --key-name $slave_keypair_name --security-group-id $security_id --subnet-id $subnet_id --placement AvailabilityZone=$availability_zone --query "Instances[*].InstanceId"   --output=text)
-echo "done creating instance"
 
 for i in `seq 1 40`;
 do
@@ -22,8 +14,7 @@ do
 done
 echo $SERVER_ID
 echo $SERVER_IP
-echo "Driectory"
-ls -a
+
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 cd $WORKSPACE
 mkdir .ssh
@@ -31,7 +22,7 @@ cd .ssh
 cat > known_hosts
 cd $WORKSPACE
 ls -a
-ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
+#ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
 echo "dipti testing2"
 cat .ssh/known_hosts
 ssh -vvv -T -o StrictHostKeyChecking=no ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
@@ -77,5 +68,5 @@ ssh -vvv -T -o StrictHostKeyChecking=no ${ami[1]}@${SERVER_IP} <<-EOF && { echo 
 	$WORKSPACE/fabtests/install/bin/runfabtests.sh -v $EXCLUDE		\
 	$PROVIDER 127.0.0.1 127.0.0.1
 EOF
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
+#AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 exit $EXIT_CODE
