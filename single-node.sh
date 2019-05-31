@@ -34,7 +34,7 @@ cd $WORKSPACE
 ls -a
 ssh-keyscan -H -t rsa $SERVER_IP  >> .ssh/known_hosts
 echo "dipti testing2"
-sudo cat ~/.ssh/known_hosts
+sudo cat .ssh/known_hosts
 ssh -vvv -T -o StrictHostKeyChecking=no ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   	#ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
 	# Pulls the libfabric repository and checks out the pull request commit
