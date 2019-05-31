@@ -25,6 +25,10 @@ echo $SERVER_ID
 echo $SERVER_IP
 echo $slave_keypair_private_key > key.pem
 cat key.pem
+
+aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
+
+
 ssh -vvv -T -i key.pem ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
