@@ -10,8 +10,9 @@ VPC_ID=$(curl http://169.254.169.254/latest/meta-data/network/interfaces/macs/$I
 echo $VPC_ID
 security_id=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-security-groups --filter Name=vpc-id,Values=$VPC_ID Name=group-name,Values=$security_group --query "SecurityGroups[*].GroupId" --output=text)
 echo $security_id
+echo "done security group"
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${!ami_id} --instance-type $instance_type --enable-api-termination --key-name $slave_keypair_name --security-group-id $security_id --subnet-id $subnet_id --placement AvailabilityZone=$availability_zone --query "Instances[*].InstanceId"   --output=text)
-
+echo "done creating instance"
 
 for i in `seq 1 40`;
 do
@@ -21,6 +22,7 @@ done
 echo $SERVER_ID
 echo $SERVER_IP
 echo $slave_keypair_private_key > key.pem
+sudo cat key.pem
 ssh -i key.pem ${!ami_user}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
