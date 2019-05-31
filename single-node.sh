@@ -10,7 +10,7 @@ SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specificati
 
 for i in `seq 1 40`;
 do
-  SERVER_IP=$(aws ec2 describe-instances --instance-ids $SERVER_ID --query "Reservations[*].Instances[*].PublicIpAddress" --output=text) && break || sleep 5;
+  SERVER_IP=$(aws ec2 describe-instances --instance-ids $SERVER_ID --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
 done
 echo $SERVER_ID
 echo $SERVER_IP
