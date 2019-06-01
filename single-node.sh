@@ -16,8 +16,10 @@ echo ${PROVIDER}
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
+	echo ${USER}
+	echo ${HOME}
 	export REMOTE_DIR=/home/${USER}
-	cd ${REMOTE_DIR}
+	echo ${REMOTE_DIR}
 	git clone https://github.com/dipti-kothari/libfabric
 	cd libfabric
 	git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
