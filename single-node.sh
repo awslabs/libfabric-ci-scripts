@@ -5,7 +5,8 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
-
+REMOTE_DIR=/home/${ami[1]}
+echo $REMOTE_DIR
 for i in `seq 1 40`;
 do
   SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
@@ -17,7 +18,6 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${a
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
 	cd /home/${ami[1]}
-	REMOTE_DIR='/home/${ami[1]}'
 	echo ${REMOTE_DIR}
 	git clone https://github.com/dipti-kothari/libfabric
 	cd libfabric
