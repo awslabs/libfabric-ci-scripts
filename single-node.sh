@@ -6,9 +6,9 @@ slave_value=${!slave_name}
 ami=($slave_value)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
 REMOTE_DIR=/home/${ami[1]}
-LD_LIBRARY_PATH=/home/${ami[1]}/libfabric/install/lib/:${LD_LIBRARY_PATH}
-BIN_PATH=/home/${ami[1]}/libfabric/fabtests/install/bin/:${BIN_PATH}
-PATH=/home/${ami[1]}/libfabric/fabtests/install/bin/:${PATH}
+#LD_LIBRARY_PATH=/home/${ami[1]}/libfabric/install/lib/:${LD_LIBRARY_PATH}
+#BIN_PATH=/home/${ami[1]}/libfabric/fabtests/install/bin/:${BIN_PATH}
+#PATH=/home/${ami[1]}/libfabric/fabtests/install/bin/:${PATH}
 
 # Occasionally needs to wait before describe instances may be called
 for i in `seq 1 40`;
@@ -58,10 +58,7 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${a
 
 	echo "==> Running fabtests"
 	cd ${REMOTE_DIR}/libfabric/fabtests/install/bin/
-	echo ${LD_LIBRARY_PATH}
-	echo ${BIN_PATH}
-	echo ${PATH}
-	./runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+	LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ FI_LOG_LEVEL=debug ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 #AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 exit $EXIT_CODE
