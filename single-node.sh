@@ -56,5 +56,5 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${a
 	BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ FI_LOG_LEVEL=debug 
 	${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
+#AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 exit $EXIT_CODE
