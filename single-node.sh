@@ -16,16 +16,16 @@ echo ${PROVIDER}
 ssh -o SendEnv=PROVIDER -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
-	export HOME=/home/${ami[1]}
-	cd ${HOME}
-	echo ${HOME}
+	export REMOTE_DIR=/home/${USER}
+	cd ${REMOTE_DIR}
+	echo ${REMOTE_DIR}
 	echo ${PROVIDER}
 	git clone https://github.com/dipti-kothari/libfabric
 	cd libfabric
 	git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
 	git checkout $PULL_REQUEST_REF -b PRBranch
 	./autogen.sh
-	./configure --prefix=${HOME}/libfabric/install/ \
+	./configure --prefix=${REMOTE_DIR}/libfabric/install/ \
 					--enable-debug 	\
 					--enable-mrail 	\
 					--enable-tcp 	\
@@ -35,16 +35,16 @@ ssh -o SendEnv=PROVIDER -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-s
 	make install
 
 	echo "==> Building fabtests"
-	cd ${HOME}/libfabric/fabtests
+	cd ${REMOTE_DIR}/libfabric/fabtests
 	./autogen.sh
-	./configure --with-libfabric=${HOME}/libfabric/install/ \
-			--prefix=${HOME}/libfabric/fabtests/install/ \
+	./configure --with-libfabric=${REMOTE_DIR}/libfabric/install/ \
+			--prefix=${REMOTE_DIR}/libfabric/fabtests/install/ \
 			--enable-debug
 	make -j 4
 	make install
 
 	# Runs all the tests in the fabtests suite while only expanding failed cases
-	EXCLUDE=${HOME}/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+	EXCLUDE=${REMOTE_DIR}/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 	if [ -f ${EXCLUDE} ]; then
 		EXCLUDE="-R -f ${EXCLUDE}"
 	else
@@ -52,9 +52,9 @@ ssh -o SendEnv=PROVIDER -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-s
 	fi
 
 	echo "==> Running fabtests"
-	export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:${LD_LIBRARY_PATH}	         \
-	export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ FI_LOG_LEVEL=debug.      \
-	${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE}		         \
+	export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:${LD_LIBRARY_PATH}	         \
+	export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ FI_LOG_LEVEL=debug.      \
+	${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE}		         \
 	${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 #AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
