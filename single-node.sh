@@ -12,51 +12,48 @@ do
 done
 
 aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
-
-#sudo ssh-keyscan -H -t rsa $SERVER_IP >> ~/.ssh/known_hosts
-#sudo cat ~/.ssh/known_hosts
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
-  	#ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
+echo ${PROVIDER}
+ssh -o SendEnv=PROVIDER StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
 
-	cd $WORKSPACE
+	cd ${HOME}
 	git clone https://github.com/dipti-kothari/libfabric
 	cd libfabric
 	git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
 	git checkout $PULL_REQUEST_REF -b PRBranch
 	./autogen.sh
-	./configure --prefix=$WORKSPACE/libfabric/install/ \
+	./configure --prefix=${HOME}/libfabric/install/ \
 					--enable-debug 	\
 					--enable-mrail 	\
 					--enable-tcp 	\
 					--enable-rxm	\
 					--disable-rxd
 	make -j 4
-	sudo make install
+	make install
 
 	echo "==> Building fabtests"
-	cd $WORKSPACE/libfabric/fabtests
+	cd ${HOME}/libfabric/fabtests
 	./autogen.sh
-	./configure --with-libfabric=$WORKSPACE/libfabric/install/ \
-			--prefix=$WORKSPACE/fabtests/install/ \
+	./configure --with-libfabric=${HOME}/libfabric/install/ \
+			--prefix=${HOME}/libfabric/fabtests/install/ \
 			--enable-debug
 	make -j 4
-	sudo make install
+	make install
 
 	# Runs all the tests in the fabtests suite while only expanding failed cases
-	EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
-	if [ -f $EXCLUDE ]; then
-		EXCLUDE="-R -f $EXCLUDE"
+	EXCLUDE=${HOME}/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+	if [ -f ${EXCLUDE} ]; then
+		EXCLUDE="-R -f ${EXCLUDE}"
 	else
 		EXCLUDE=""
 	fi
 
 	echo "==> Running fabtests"
-	LD_LIBRARY_PATH=$WORKSPACE/fabtests/install/lib/:$LD_LIBRARY_PATH	\
-	BIN_PATH=$WORKSPACE/fabtests/install/bin/ FI_LOG_LEVEL=debug		\
-	$WORKSPACE/fabtests/install/bin/runfabtests.sh -v $EXCLUDE		\
-	$PROVIDER 127.0.0.1 127.0.0.1
+	export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:${LD_LIBRARY_PATH}	         \
+	export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ FI_LOG_LEVEL=debug.      \
+	${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE}		         \
+	${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 #AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 exit $EXIT_CODE
