@@ -23,9 +23,10 @@ echo ${SERVER_IP}
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 aws ec2 wait instance-status-ok --instance-ids $CLIENT_ID
 
-ssh -vvv -T -o StrictHostKeyChecking=no ${ami[1]}@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -vvv -T -o StrictHostKeyChecking=no ${ami[1]}@$CLIENT_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 # Pulls the libfabric repository and checks out the pull request commit
   echo "==> Building libfabric on first node"
+  export HOME=/home/${ami[1]}
   cd ${HOME}
   git clone https://github.com/dipti-kothari/libfabric
   cd libfabric
