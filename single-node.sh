@@ -18,7 +18,8 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${a
 	echo "==> Building libfabric"
 	echo ${USER}
 	echo ${HOME}
-	export REMOTE_DIR=/home/${USER}
+	echo ${ami[1]}
+	REMOTE_DIR=/home/${ami[1]}
 	echo ${REMOTE_DIR}
 	git clone https://github.com/dipti-kothari/libfabric
 	cd libfabric
