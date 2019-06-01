@@ -18,8 +18,6 @@ ssh -o SendEnv=PROVIDER -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-s
 	echo "==> Building libfabric"
 	export REMOTE_DIR=/home/${USER}
 	cd ${REMOTE_DIR}
-	echo ${REMOTE_DIR}
-	echo ${PROVIDER}
 	git clone https://github.com/dipti-kothari/libfabric
 	cd libfabric
 	git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
