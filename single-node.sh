@@ -55,6 +55,9 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${a
 	fi
 
 	echo "==> Running fabtests"
+	echo ${PATH}
+	echo ${BIN_PATH}
+	echo ${LD_LIBRARY_PATH}
 	cd ${REMOTE_DIR}/libfabric/fabtests/install/bin/
 	./runfabtests.sh -v ${EXCLUDE}		  
 	${PROVIDER} 127.0.0.1 127.0.0.1
