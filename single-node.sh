@@ -55,7 +55,6 @@ ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181
 	export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 	export FI_LOG_LEVEL=debug >> ~/.bash_profile
 
-	cd ${REMOTE_DIR}/libfabric/fabtests/install/bin/
 	${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
