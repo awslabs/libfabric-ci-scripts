@@ -5,6 +5,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
+REMOTE_DIR=/home/${ami[1]}
 
 # Occasionally needs to wait before describe instances may be called
 for i in `seq 1 40`;
@@ -16,10 +17,9 @@ done
 aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
 
 #SSH into slave EC2 instance
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
-	export REMOTE_DIR=/home/${ami[1]} >> ~/.bash_profile
 	cd ${REMOTE_DIR}
 	git clone https://github.com/dipti-kothari/libfabric
 	cd libfabric
