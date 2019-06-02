@@ -52,8 +52,12 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${a
 	fi
 	echo "==> Running fabtests"
 	cd ${REMOTE_DIR}/libfabric/fabtests/install/bin/
-	LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH 
-	BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ FI_LOG_LEVEL=debug 
+	/etc/profile, etc/bashrc, ~/.profile, ~/.bash_profile, ~/bashrc
+	export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> 
+	export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >>
+	export FI_LOG_LEVEL=debug >>
+	
+	cd ${REMOTE_DIR}/libfabric/fabtests/install/bin/
 	${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 #AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
