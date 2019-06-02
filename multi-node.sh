@@ -8,8 +8,8 @@ ami=($slave_value)
 CLIENT_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
 
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
-# Occasionally needs to wait before describe instances may be called
 
+# Occasionally needs to wait before describe instances may be called
 for i in `seq 1 40`;
 do
   CLIENT_IP=$(aws ec2 describe-instances --instance-ids ${CLIENT_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
@@ -24,25 +24,31 @@ aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 aws ec2 wait instance-status-ok --instance-ids $CLIENT_ID
 
 ssh -vvv -T -o StrictHostKeyChecking=no ${ami[1]}@$CLIENT_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
-# Pulls the libfabric repository and checks out the pull request commit
-  echo "==> Building libfabric on first node"
-  export HOME=/home/${ami[1]}
-  cd ${HOME}
-  git clone https://github.com/dipti-kothari/libfabric
-  cd libfabric
-  git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-  git checkout $PULL_REQUEST_REF -b PRBranch
-  ./autogen.sh
-  ./configure --prefix=$WORKSPACE/libfabric/install/ --enable-debug --enable-mrail --enable-tcp --enable-rxm --disable-rxd
-  make -j 4
-  make install
-
-  echo "==> Building fabtests"
-  cd ${HOME}/libfabric/fabtests
-  ./autogen.sh
-  ./configure --with-libfabric=${HOME}/libfabric/install/ --prefix=${HOME}/libfabric/fabtests/install/ --enable-debug
-  make -j 4
-  make install
+  ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
+  echo "==> Building libfabric"
+	export REMOTE_DIR=/home/${ami[1]} >> ~/.bash_profile
+	cd ${REMOTE_DIR}
+	git clone https://github.com/dipti-kothari/libfabric
+	cd libfabric
+	git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
+	git checkout $PULL_REQUEST_REF -b PRBranch
+	./autogen.sh
+	./configure --prefix=${REMOTE_DIR}/libfabric/install/ \
+					--enable-debug 	\
+					--enable-mrail 	\
+					--enable-tcp 	\
+					--enable-rxm	\
+					--disable-rxd
+	make -j 4
+	make install
+	echo "==> Building fabtests"
+	cd ${REMOTE_DIR}/libfabric/fabtests
+	./autogen.sh
+	./configure --with-libfabric=${REMOTE_DIR}/libfabric/install/ \
+			--prefix=${REMOTE_DIR}/libfabric/fabtests/install/ \
+			--enable-debug
+	make -j 4
+	make install
 EOF
 
 ssh -vvv -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
