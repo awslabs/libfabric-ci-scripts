@@ -13,7 +13,7 @@ echo ${SERVER_ID}
 # Occasionally needs to wait before describe instances may be called
 for i in `seq 1 40`;
 do
-  CLIENT_IP=$(aws ec2 describe-instances --instance-ids ${CLIENT_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
+  CLIENT_IP=$(aws ec2 describe-instances --instance-ids ${CLIENT_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
   SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
 done
 
