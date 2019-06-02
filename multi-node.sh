@@ -50,6 +50,7 @@ ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181
 	make install
 EOF
 
+echo "==> Entering second node"
 ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${ami[1]}@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   	ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
   	# Pulls the libfabric repository and checks out the pull request commit
