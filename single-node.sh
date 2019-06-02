@@ -51,28 +51,7 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair.pem ${a
 		EXCLUDE=""
 	fi
 	echo "==> Running fabtests"
-	cd ${REMOTE_DIR}/libfabric/fabtests/install/bin/
-	/etc/profile, etc/bashrc, ~/.profile, ~/.bash_profile, ~/bashrc
-	export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/../../etc/profile
-	export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/../../etc/profile
-	export FI_LOG_LEVEL=debug >> ~/../../etc/profile
 	
-	export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/../../etc/bashrc
-	export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/../../etc/bashrc
-	export FI_LOG_LEVEL=debug >> ~/../../etc/bashrc
-
-	
-	echo "etc/profile"
-	source ~/../../etc/profile
-	echo $LD_LIBRARY_PATH
-	echo $BIN_PATH
-	echo $FI_LOG_LEVEL
-	
-	echo "etc/bashrc"
-	source ~/../../etc/bashrc
-	echo $LD_LIBRARY_PATH
-	echo $BIN_PATH
-	echo $FI_LOG_LEVEL
 	
 
 	
