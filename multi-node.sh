@@ -8,17 +8,13 @@ REMOTE_DIR=/home/${ami[1]}
 
 CLIENT_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
-echo ${CLIENT_ID}
-echo ${SERVER_ID}
+
 # Occasionally needs to wait before describe instances may be called
 for i in `seq 1 40`;
 do
   CLIENT_IP=$(aws ec2 describe-instances --instance-ids ${CLIENT_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
   SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
 done
-
-echo ${CLIENT_IP}
-echo ${SERVER_IP}
 
 # Holds testing every 5 seconds for 40 attempts until the instance is running
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
@@ -92,8 +88,8 @@ ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181
 	export FI_LOG_LEVEL=debug >> ~/.bash_profile
 	${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER $CLIENT_IP $SERVER_IP
 EOF
-# Terminates second node. First node will be terminated in a post build task to
-# prevent build failure
+
+# Terminates CLIENT and SERVER node. 
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $CLIENT_ID
 exit $EXIT_CODE
