@@ -95,5 +95,6 @@ EOF
 # Terminates second node. First node will be terminated in a post build task to
 # prevent build failure
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $CLIENT_ID
 exit $EXIT_CODE
 
