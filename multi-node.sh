@@ -20,7 +20,7 @@ done
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 aws ec2 wait instance-status-ok --instance-ids $CLIENT_ID
 
-ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair ${ami[1]}@$CLIENT_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$CLIENT_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   	ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
   	echo "==> Building libfabric"
 	cd ${REMOTE_DIR}
@@ -48,7 +48,7 @@ ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181
 EOF
 
 echo "==> Entering second node"
-ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/jenkinWork181-slave-keypair ${ami[1]}@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/{slave_keypair_name} ${ami[1]}@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   	ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
   	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
