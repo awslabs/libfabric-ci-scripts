@@ -17,7 +17,7 @@ done
 aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
 
 #SSH into slave EC2 instance
-ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/{slave_keypair_name} ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
   	# Pulls the libfabric repository and checks out the pull request commit
 	echo "==> Building libfabric"
 	cd ${REMOTE_DIR}
