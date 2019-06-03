@@ -18,43 +18,7 @@ aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
 
 #SSH into slave EC2 instance
 ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
-  	# Pulls the libfabric repository and checks out the pull request commit
-	echo "==> Building libfabric"
-	cd ${REMOTE_DIR}
-	git clone https://github.com/dipti-kothari/libfabric
-	cd libfabric
-	git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-	git checkout $PULL_REQUEST_REF -b PRBranch
-	./autogen.sh
-	./configure --prefix=${REMOTE_DIR}/libfabric/install/ \
-					--enable-debug 	\
-					--enable-mrail 	\
-					--enable-tcp 	\
-					--enable-rxm	\
-					--disable-rxd
-	make -j 4
-	make install
-	echo "==> Building fabtests"
-	cd ${REMOTE_DIR}/libfabric/fabtests
-	./autogen.sh
-	./configure --with-libfabric=${REMOTE_DIR}/libfabric/install/ \
-			--prefix=${REMOTE_DIR}/libfabric/fabtests/install/ \
-			--enable-debug
-	make -j 4
-	make install
-	# Runs all the tests in the fabtests suite while only expanding failed cases
-	EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
-	echo $EXCLUDE
-	if [ -f ${EXCLUDE} ]; then
-		EXCLUDE="-R -f ${EXCLUDE}"
-	else
-		EXCLUDE=""
-	fi
-	echo "==> Running fabtests"
-	export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-	export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-	export FI_LOG_LEVEL=debug >> ~/.bash_profile
-
+  	./build_libfabric.sh
 	${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
