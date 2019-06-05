@@ -5,92 +5,57 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
+NODES= 2
 
-CLIENT_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
-SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId"   --output=text)
+# Starts as many Instances as specified in $NODES 
+INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
 
-# Occasionally needs to wait before describe instances may be called
-for i in `seq 1 40`;
+# Holds testing every 15 seconds for 40 attempts until the instance status check
+# is ok
+function test_instance_status()
+{
+    aws ec2 wait instance-status-ok --instance-ids $1
+}
+
+# SSH into nodes and install libfabric
+function ssh_slave_node()
+{
+    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
+}
+
+for ID in "${INSTANCE_ID}"
 do
-  CLIENT_IP=$(aws ec2 describe-instances --instance-ids ${CLIENT_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
-  SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
+    test_instance_status "$ID" & 
 done
+wait
 
-# Holds testing every 5 seconds for 40 attempts until the instance is running
-aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
-aws ec2 wait instance-status-ok --instance-ids $CLIENT_ID
+# Get IP address for all instances
+INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 
-ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$CLIENT_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
-  	ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
-  	echo "==> Building libfabric"
-	cd ${REMOTE_DIR}
-	git clone https://github.com/dipti-kothari/libfabric
-	cd libfabric
-	git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-	git checkout $PULL_REQUEST_REF -b PRBranch
-	./autogen.sh
-	./configure --prefix=${REMOTE_DIR}/libfabric/install/ \
-					--enable-debug 	\
-					--enable-mrail 	\
-					--enable-tcp 	\
-					--enable-rxm	\
-					--disable-rxd
-	make -j 4
-	make install
-	echo "==> Building fabtests"
-	cd ${REMOTE_DIR}/libfabric/fabtests
-	./autogen.sh
-	./configure --with-libfabric=${REMOTE_DIR}/libfabric/install/ \
-			--prefix=${REMOTE_DIR}/libfabric/fabtests/install/ \
-			--enable-debug
-	make -j 4
-	make install
+for IP in "$INSTANCE_IP"
+do
+    ssh_slave_node "$IP" &
+done
+wait
+
+#SSH into SERVER node and run fabtest
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP[0]} <<EOF  && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+# Runs all the tests in the fabtests suite while only expanding failed cases
+EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+echo $EXCLUDE
+if [ -f ${EXCLUDE} ]; then
+    EXCLUDE="-R -f ${EXCLUDE}"
+else
+    EXCLUDE=""
+fi
+echo "==> Running fabtests"
+export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
+export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
+export FI_LOG_LEVEL=debug >> ~/.bash_profile
+${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER $CLIENT_IP $SERVER_IP
 EOF
 
-echo "==> Entering second node"
-ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
-  	ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
-  	# Pulls the libfabric repository and checks out the pull request commit
-	echo "==> Building libfabric"
-	cd ${REMOTE_DIR}
-	git clone https://github.com/dipti-kothari/libfabric
-	cd libfabric
-	git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-	git checkout $PULL_REQUEST_REF -b PRBranch
-	./autogen.sh
-	./configure --prefix=${REMOTE_DIR}/libfabric/install/ \
-					--enable-debug 	\
-					--enable-mrail 	\
-					--enable-tcp 	\
-					--enable-rxm	\
-					--disable-rxd
-	make -j 4
-	make install
-	echo "==> Building fabtests"
-	cd ${REMOTE_DIR}/libfabric/fabtests
-	./autogen.sh
-	./configure --with-libfabric=${REMOTE_DIR}/libfabric/install/ \
-			--prefix=${REMOTE_DIR}/libfabric/fabtests/install/ \
-			--enable-debug
-	make -j 4
-	make install
-	# Runs all the tests in the fabtests suite while only expanding failed cases
-	EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
-	echo $EXCLUDE
-	if [ -f ${EXCLUDE} ]; then
-		EXCLUDE="-R -f ${EXCLUDE}"
-	else
-		EXCLUDE=""
-	fi
-	echo "==> Running fabtests"
-	export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-	export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-	export FI_LOG_LEVEL=debug >> ~/.bash_profile
-	${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER $CLIENT_IP $SERVER_IP
-EOF
-
-# Terminates CLIENT and SERVER node. 
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $CLIENT_ID
+# Terminates all nodes. 
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $INSTANCE_IDS
 exit $EXIT_CODE
 
