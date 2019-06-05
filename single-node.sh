@@ -19,8 +19,8 @@ function test_ssh()
     while [ ${instance_code} -ne 0 ] && [ ${iteration} -ne 0 ]; do
         sleep 5
         ssh -q -o ConnectTimeout=1 -o StrictHostKeyChecking=no -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} exit
-        ${instance_code}=$?
-        ${iteration}=${iteration}-1
+        instance_code=$?
+        iteration=${iteration}-1
     done
 }
 

@@ -17,12 +17,14 @@ echo "$INSTANCE_IDS"
 # is ok
 function test_instance_status()
 {
+    echo $1
     aws ec2 wait instance-status-ok --instance-ids $1
 }
 
 # Test connection, SSH into nodes and install libfabric
 function ssh_slave_node() 
 {
+    echo $1
     while [ ${instance_code} -ne 0 ] && [ ${iteration} -ne 0 ]; do
         sleep 5
         ssh -q -o ConnectTimeout=1 -o StrictHostKeyChecking=no -i ~/${slave_keypair_name} ${ami[1]}@$1 exit
@@ -35,8 +37,9 @@ function ssh_slave_node()
 
 # SSH into nodes and install libfabric
 
-for ID in "${INSTANCE_IDS}"
+for ID in ${INSTANCE_IDS}
 do
+    echo $ID
     test_instance_status "$ID" & 
 done
 wait
@@ -44,8 +47,11 @@ wait
 # Get IP address for all instances
 INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 
-for ID in "${INSTANCE_IPS}"
+echo $INSTANCE_IPS
+
+for ID in ${INSTANCE_IPS}
 do  
+    echo $IP
     ssh_slave_node "$IP" &
 done
 wait
