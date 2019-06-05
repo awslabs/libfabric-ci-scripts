@@ -6,6 +6,8 @@ slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
 NODES= 2
+instance_code=1
+iteration=10
 
 # Starts as many Instances as specified in $NODES 
 INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
@@ -16,6 +18,17 @@ function test_instance_status()
 {
     aws ec2 wait instance-status-ok --instance-ids $1
 }
+
+function test_ssh() 
+{
+    while [ ${instance_code} -ne 0 ] && [ ${iteration} -ne 0 ]; do
+        sleep 5
+        ssh -q -o ConnectTimeout=1 -o StrictHostKeyChecking=no -i ~/${slave_keypair_name} ${ami[1]}@$1 exit
+        ${instance_code}=$?
+        ${iteration}=${iteration}-1
+    done
+}
+
 
 # SSH into nodes and install libfabric
 function ssh_slave_node()
@@ -31,6 +44,12 @@ wait
 
 # Get IP address for all instances
 INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+
+for ID in "${INSTANCE_ID}"
+do  
+    test_ssh "$ID" &
+done
+wait
 
 for IP in "$INSTANCE_IP"
 do
@@ -52,10 +71,9 @@ echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER $CLIENT_IP $SERVER_IP
+${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER ${SERVER_IP[1]} ${SERVER_IP[0]}
 EOF
 
 # Terminates all nodes. 
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $INSTANCE_IDS
 exit $EXIT_CODE
-

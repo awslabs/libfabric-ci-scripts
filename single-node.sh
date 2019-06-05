@@ -6,11 +6,23 @@ slave_value=${!slave_name}
 ami=($slave_value)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId" --output=text)
 REMOTE_DIR=/home/${ami[1]}
+instance_code=1
+iteration=10
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check
 # is ok
 aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
 SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+
+function test_ssh() 
+{
+    while [ ${instance_code} -ne 0 ] && [ ${iteration} -ne 0 ]; do
+        sleep 5
+        ssh -q -o ConnectTimeout=1 -o StrictHostKeyChecking=no -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} exit
+        ${instance_code}=$?
+        ${iteration}=${iteration}-1
+    done
+}
 
 # SSH into slave EC2 instance
 function ssh_slave_node() 
