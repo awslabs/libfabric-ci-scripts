@@ -29,7 +29,6 @@ function ssh_slave_node()
 #SSH into slave EC2 instance
 #ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} "bash -s" < ~/libfabric-ci-scripts/temp.sh
 
-echo $WORKSPACE
 cat install-libfabric.sh > single-node-install-libfabric.sh
 cat <<EOF >> single-node-install-libfabric.sh 
 ${REMOTE_DIR}/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
@@ -38,5 +37,5 @@ EOF
 test_ssh
 ssh_slave_node
 
+rm $WORKSPACE/libfabric-ci-scripts/single-node-install-libfabric.sh
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
-exit $EXIT_CODE

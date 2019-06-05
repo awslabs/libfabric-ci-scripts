@@ -2,10 +2,13 @@
 
 set +x
 echo "==> Building libfabric"
+echo "Workspace is"
+echo ${REMOTE_DIR}
+echo ${PROVIDER}
 cd ${REMOTE_DIR}
 git clone https://github.com/dipti-kothari/libfabric
 cd libfabric
-it fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
+git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
 git checkout $PULL_REQUEST_REF -b PRBranch
 ./autogen.sh
 ./configure --prefix=${REMOTE_DIR}/libfabric/install/ \
