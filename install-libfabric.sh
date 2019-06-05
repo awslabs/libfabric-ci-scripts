@@ -1,4 +1,6 @@
 #!/bin/sh
+
+set +x
 echo "==> Building libfabric"
 cd ${REMOTE_DIR}
 git clone https://github.com/dipti-kothari/libfabric
