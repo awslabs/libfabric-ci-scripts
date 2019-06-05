@@ -13,8 +13,9 @@ SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Rese
 
 function ssh_slave_node() 
 {
-    ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} < ~/libfabric-ci-scripts/install-libfabric.sh <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
-    EOF
+ssh -o SendEnv=REMOTE_DIR -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP} < ~/libfabric-ci-scripts/install-libfabric.sh <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+echo "Enetered slave node"
+EOF
 }
 
 #SSH into slave EC2 instance
