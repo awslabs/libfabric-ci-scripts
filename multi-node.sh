@@ -5,13 +5,14 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
-NODES= 2
+NODES=2
 instance_code=1
 iteration=10
 
 # Starts as many Instances as specified in $NODES 
 INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
 
+echo "$INSTANCE_IDS"
 # Holds testing every 15 seconds for 40 attempts until the instance status check
 # is ok
 function test_instance_status()
@@ -19,7 +20,8 @@ function test_instance_status()
     aws ec2 wait instance-status-ok --instance-ids $1
 }
 
-function test_ssh() 
+# Test connection, SSH into nodes and install libfabric
+function ssh_slave_node() 
 {
     while [ ${instance_code} -ne 0 ] && [ ${iteration} -ne 0 ]; do
         sleep 5
@@ -27,16 +29,13 @@ function test_ssh()
         ${instance_code}=$?
         ${iteration}=${iteration}-1
     done
+    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
 
 # SSH into nodes and install libfabric
-function ssh_slave_node()
-{
-    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
-}
 
-for ID in "${INSTANCE_ID}"
+for ID in "${INSTANCE_IDS}"
 do
     test_instance_status "$ID" & 
 done
@@ -45,14 +44,8 @@ wait
 # Get IP address for all instances
 INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 
-for ID in "${INSTANCE_ID}"
+for ID in "${INSTANCE_IPS}"
 do  
-    test_ssh "$ID" &
-done
-wait
-
-for IP in "$INSTANCE_IP"
-do
     ssh_slave_node "$IP" &
 done
 wait
