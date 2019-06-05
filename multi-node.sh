@@ -40,8 +40,19 @@ cd $WORKSPACE/libfabric/fabtests
 make -j 4
 sudo make install
 
-# Holds testing every 5 seconds for 40 attempts until the instance is running
+# Wait for the slave instance status to become OK, and poll for the SSH daemon
+# to come up before proceeding. EC2 wait retries every 15 seconds for 40
+# attempts. The SSH poll retries 40 times with a 5-second timeout each time,
+# which should be plenty after `instance-status-ok`.
+slave_ready=''
+slave_poll_count=0
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
+while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
+    echo "Waiting for slave instance to become ready"
+    ssh -T -o ConnectTimeout=1 -o StrictHostKeyChecking=no -o BatchMode=yes $USER@$SERVER_IP hostname
+    [[ $? = 0 ]] && slave_ready='1'
+    ((slave_poll_count++))
+done
 
 # Adds the IP's to the respective known hosts
 ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
