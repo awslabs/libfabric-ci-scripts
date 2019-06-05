@@ -32,7 +32,7 @@ function ssh_slave_node()
 echo $WORKSPACE
 cat install-libfabric.sh > single-node-install-libfabric.sh
 cat <<EOF >> single-node-install-libfabric.sh 
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+${REMOTE_DIR}/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 
 test_ssh

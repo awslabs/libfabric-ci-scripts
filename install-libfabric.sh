@@ -2,7 +2,6 @@
 
 set +x
 echo "==> Building libfabric"
-echo "$1,$2,$3,$4"
 cd ${REMOTE_DIR}
 git clone https://github.com/dipti-kothari/libfabric
 cd libfabric
@@ -21,12 +20,12 @@ echo "==> Building fabtests"
 cd ${REMOTE_DIR}/libfabric/fabtests
 ./autogen.sh
 ./configure --with-libfabric=${REMOTE_DIR}/libfabric/install/ \
-    --prefix=${REMOTE_DIR}/libfabric/fabtests/install/ \
+    --prefix=${REMOTE_DIR}/fabtests/install/ \
     --enable-debug
 make -j 4
 make install
 # Runs all the tests in the fabtests suite while only expanding failed cases
-EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+EXCLUDE=${REMOTE_DIR}/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 if [ -f ${EXCLUDE} ]; then
     EXCLUDE="-R -f ${EXCLUDE}"
 else
@@ -34,5 +33,5 @@ else
 fi
 echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
+export BIN_PATH=${REMOTE_DIR}/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
