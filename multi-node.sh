@@ -26,8 +26,8 @@ function ssh_slave_node()
     while [ ${instance_code} -ne 0 ] && [ ${iteration} -ne 0 ]; do
         sleep 5
         ssh -q -o ConnectTimeout=1 -o StrictHostKeyChecking=no -i ~/${slave_keypair_name} ${ami[1]}@$1 exit
-        ${instance_code}=$?
-        ${iteration}=${iteration}-1
+        instance_code=$?
+        iteration=${iteration}-1
     done
     ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
