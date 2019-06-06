@@ -31,7 +31,13 @@ function ssh_slave_node()
         instance_code=$?
         iteration=${iteration}-1
     done
-    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
+    if [ $2 -eq 0 ];then
+        cat install-libfabric.sh > server-multi-node-install-libfabric.sh
+        echo "exit 0" >> server-multi-node-install-libfabric.sh 
+        ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/server-multi-node-install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
+        return 
+    fi
+    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID"                "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
 
@@ -46,17 +52,18 @@ wait
 
 # Get IP address for all instances
 INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
-
+count=0
 for IP in ${INSTANCE_IPS}
 do  
     echo $IP
-    ssh_slave_node "$IP" &
+    ssh_slave_node "$IP" "count" &
+
 done
 wait
 
 echo "Finished building fabtest"
 #SSH into SERVER node and run fabtest. INSTANCE_IP[0] used as server
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${INSTANCE_IPS[0]} <<EOF  && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF  && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 echo $EXCLUDE
