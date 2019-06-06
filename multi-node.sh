@@ -46,10 +46,8 @@ wait
 
 # Get IP address for all instances
 INSTANCE_IPS_string=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
-INSTANCE_IPS=(${INSTANCE_IPS})
-echo $INSTANCE_IPS
 
-for ID in ${INSTANCE_IPS}
+for IP in ${INSTANCE_IPS}
 do  
     echo $IP
     ssh_slave_node "$IP" &
