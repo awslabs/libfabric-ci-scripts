@@ -80,6 +80,7 @@ for i in $(seq 1 $N)
 do
     execute_runfabtest "$i" &
 done
+wait
 
 # Terminates all nodes. 
 echo $EXIT_CODE
