@@ -75,7 +75,7 @@ done
 wait
 
 # SSH into SERVER node and run fabtest.
-N=((${#INSTANCE_IPS[@]}-1))
+N=$((${#INSTANCE_IPS[@]}-1))
 for i in $(seq 1 $N)
 do
     execute_runfabtest "$i" &
