@@ -29,7 +29,7 @@ function ssh_slave_node()
         instance_code=$?
         iteration=$((${iteration}-1))
     done
-    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
 # Wait untill all instances have passed status check
@@ -51,7 +51,6 @@ done
 wait
 
 echo ${INSTANCE_IPS[0]}
-if [ $EXIT_CODE -ne 1 ];then
 #SSH into SERVER node and run fabtest. INSTANCE_IPS[0] used as server
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 # Runs all the tests in the fabtests suite while only expanding failed cases
@@ -73,7 +72,7 @@ do
     ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$i]} ${INSTANCE_IPS[0]}
 done
 EOF
-fi
+
 # Terminates all nodes. 
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $INSTANCE_IDS
 exit $EXIT_CODE
