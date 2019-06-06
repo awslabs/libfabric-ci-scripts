@@ -57,7 +57,10 @@ EOF
 }
 
 # Wait untill all instances have passed status check
-for ID in ${INSTANCE_IDS[@]}; do test_instance_status "$ID" &; done
+for ID in ${INSTANCE_IDS[@]}
+do 
+    test_instance_status "$ID" &
+done
 wait
 
 # Get IP address for all instances
@@ -66,12 +69,18 @@ INSTANCE_IPS=($INSTANCE_IPS)
 echo ${INSTANCE_IPS[@]}
 
 # SSH into nodes and install libfabric
-for IP in ${INSTANCE_IPS[@]}; do ssh_slave_node "$IP" "count" &; done
+for IP in ${INSTANCE_IPS[@]}
+do 
+    ssh_slave_node "$IP" "count" &
+done
 wait
 
 # SSH into SERVER node and run fabtest.
 N=$((${#INSTANCE_IPS[@]}-1))
-for i in $(seq 1 $N); do execute_runfabtest "$i" &; done
+for i in $(seq 1 $N)
+do
+    execute_runfabtest "$i" &
+done
 wait
 
 # Terminates all nodes. 
