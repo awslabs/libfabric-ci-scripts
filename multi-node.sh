@@ -39,7 +39,7 @@ function ssh_slave_node()
 function execute_runfabtest()
 {
 # INSTANCE_IPS[0] used as server
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; EXIT_CODE[$1]=0; echo ${EXIT_CODE[@]} } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; EXIT_CODE[$1]=1 ; echo ${EXIT_CODE[@]} }
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; EXIT_CODE[$1]=0; echo ${EXIT_CODE[@]} ; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; EXIT_CODE[$1]=1 ; echo ${EXIT_CODE[@]} ; }
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 if [ -f ${EXCLUDE} ]; then
