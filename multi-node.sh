@@ -49,7 +49,7 @@ slave_poll_count=0
 aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
     echo "Waiting for slave instance to become ready"
-    ssh -T -o ConnectTimeout=1 -o StrictHostKeyChecking=no -o BatchMode=yes $USER@$SERVER_IP hostname
+    ssh -T -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes $USER@$SERVER_IP hostname
     if [ $? -eq 0 ]; then
       slave_ready='1'
     fi
