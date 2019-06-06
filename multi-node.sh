@@ -5,7 +5,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
-NODES=2
+NODES=5
 instance_code=1
 iteration=10
 
@@ -74,5 +74,5 @@ done
 EOF
 
 # Terminates all nodes. 
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $INSTANCE_IDS
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS}
 exit $EXIT_CODE
