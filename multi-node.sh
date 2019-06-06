@@ -67,15 +67,16 @@ echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
-N=$((${#INSTANCE_IPS[@]}-1)) 
 function execute_runfabtest()
 {
-    echo "Running fabtest on client $1" 
-    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} $1 ${INSTANCE_IPS[0]}
+    if [ $IP -ne ${INSTANCE_IPS[0]} ];then
+        echo "Running fabtest on client $1" 
+        ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} $1 ${INSTANCE_IPS[0]}
 }
-for i in $(seq 1 ${N})
+N=$((${#INSTANCE_IPS[@]}-1))
+for IP in "${INSTANCE_IPS[@]:1:N}"
 do
-    execute_runfabtest "${INSTANCE_IPS[$i]}" &
+    execute_runfabtest "$IP" &
 done
 EOF
 
