@@ -11,7 +11,7 @@ iteration=10
 
 # Starts as many Instances as specified in $NODES 
 INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair_name} --security-group-id ${security_id} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
-
+INSTANCE_IDS=($INSTANCE_IDS)
 echo "$INSTANCE_IDS"
 # Holds testing every 15 seconds for 40 attempts until the instance status check
 # is ok
@@ -43,7 +43,7 @@ function ssh_slave_node()
 
 # SSH into nodes and install libfabric
 
-for ID in ${INSTANCE_IDS}
+for ID in ${INSTANCE_IDS[@]}
 do
     echo $ID
     test_instance_status "$ID" & 
@@ -52,19 +52,20 @@ wait
 
 # Get IP address for all instances
 INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+INSTANCE_IPS=($INSTANCE_IPS)
 count=0
-for IP in ${INSTANCE_IPS}
+for IP in ${INSTANCE_IPS[@]}
 do  
     echo $IP
     ssh_slave_node "$IP" "count" &
-
 done
 wait
 
 echo "Finished building fabtest"
 echo ${INSTANCE_IPS[0]}
+echo 
 #SSH into SERVER node and run fabtest. INSTANCE_IP[0] used as server
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${INSTANCE_IPS[0]}  && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${INSTANCE_IPS[0]} && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 echo "connected"
 
 # Runs all the tests in the fabtests suite while only expanding failed cases
