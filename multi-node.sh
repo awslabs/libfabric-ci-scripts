@@ -76,6 +76,6 @@ done
 EOF
 
 # Terminates all nodes. 
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS}
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
 echo $?
 exit $EXIT_CODE
