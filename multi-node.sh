@@ -34,26 +34,9 @@ function ssh_slave_node()
     ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
-# Wait untill all instances have passed status check
-for ID in ${INSTANCE_IDS[@]}
-do
-    test_instance_status "$ID" & 
-done
-wait
-
-# Get IP address for all instances
-INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
-INSTANCE_IPS=($INSTANCE_IPS)
-echo ${INSTANCE_IPS[@]}
-# SSH into nodes and install libfabric
-for IP in ${INSTANCE_IPS[@]}
-do  
-    ssh_slave_node "$IP" "count" &
-done
-wait
-
-echo ${INSTANCE_IPS[0]}
-#SSH into SERVER node and run fabtest. INSTANCE_IPS[0] used as server
+function execute_runfabtest()
+{
+# INSTANCE_IPS[0] used as server
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
@@ -67,17 +50,35 @@ echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
-function execute_runfabtest()
-{
-    echo "Running fabtest on client $1" 
-    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} $1 ${INSTANCE_IPS[0]}
-}
-N=$((${#INSTANCE_IPS[@]}-1))
-for IP in "${INSTANCE_IPS[@]:1:N}"
-do
-    execute_runfabtest "$IP" &
-done
+echo "runfabtests on node $1"
+${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} $1 ${INSTANCE_IPS[0]}
 EOF
+}
+
+# Wait untill all instances have passed status check
+for ID in ${INSTANCE_IDS[@]}
+do
+    test_instance_status "$ID" &
+done
+wait
+  
+# Get IP address for all instances
+INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+INSTANCE_IPS=($INSTANCE_IPS)
+echo ${INSTANCE_IPS[@]}
+# SSH into nodes and install libfabric
+for IP in ${INSTANCE_IPS[@]}
+do
+    ssh_slave_node "$IP" "count" &
+done
+wait
+
+# SSH into SERVER node and run fabtest.
+N=$((${#INSTANCE_IPS[@]}-1))
+for IP in ${INSTANCE_IPS[@]:1:N}
+do
+    execute_runfabtest "$IP"
+done
 
 # Terminates all nodes. 
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
