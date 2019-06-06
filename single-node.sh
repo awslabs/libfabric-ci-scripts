@@ -20,7 +20,7 @@ function test_ssh()
         sleep 5
         ssh -q -o ConnectTimeout=1 -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${SERVER_IP} exit
         instance_code=$?
-        iteration=${iteration}-1
+        iteration=$((${iteration}-1))
     done
 }
 

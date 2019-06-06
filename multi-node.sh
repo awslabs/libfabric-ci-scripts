@@ -27,12 +27,12 @@ function ssh_slave_node()
         sleep 5
         ssh -q -o ConnectTimeout=1 -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@$1 exit
         instance_code=$?
-        iteration=${iteration}-1
+        iteration=$((${iteration}-1))
     done
     ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
-# SSH into nodes and install libfabric
+# Wait untill all instances have passed status check
 for ID in ${INSTANCE_IDS[@]}
 do
     test_instance_status "$ID" & 
@@ -43,6 +43,7 @@ wait
 INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 INSTANCE_IPS=($INSTANCE_IPS)
 
+# SSH into nodes and install libfabric
 for IP in ${INSTANCE_IPS[@]}
 do  
     ssh_slave_node "$IP" "count" &
@@ -63,7 +64,10 @@ echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER ${INSTANCE_IPS[1]} ${INSTANCE_IPS[0]}
+for i in $(seq 2 ${#INSTANCE_IPS[@]})
+do
+    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[i]} ${INSTANCE_IPS[0]} &
+done
 EOF
 
 # Terminates all nodes. 
