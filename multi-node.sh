@@ -50,6 +50,7 @@ do
 done
 wait
 
+echo ${INSTANCE_IPS[0]}
 if [ $EXIT_CODE -ne 1 ];then
 #SSH into SERVER node and run fabtest. INSTANCE_IPS[0] used as server
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
@@ -65,10 +66,11 @@ echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
-for i in $(seq 2 ${#INSTANCE_IPS[@]})
+N=$((${#INSTANCE_IPS[@]}-1)) 
+for i in $(seq 1 ${N})
 do
-    echo "Running fabtest"
-    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[i]} ${INSTANCE_IPS[0]}
+    echo "Running fabtests on all clients"
+    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$i]} ${INSTANCE_IPS[0]}
 done
 EOF
 fi
