@@ -9,7 +9,6 @@ NODES=3
 # Starts as many Instances as specified in $NODES 
 INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
 INSTANCE_IDS=($INSTANCE_IDS)
-EXIT_CODE=0
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check
 # is ok
@@ -40,7 +39,7 @@ function ssh_slave_node()
 function execute_runfabtest()
 {
 # INSTANCE_IPS[0] used as server
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; if [ EXIT_CODE -eq 0 ]; then EXIT_CODE=0; fi ; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; if [ EXIT_CODE -eq 0 ]; then EXIT_CODE=1; fi ; }
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; EXIT_CODE=0 ; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; EXIT_CODE=1 ;  }
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 if [ -f ${EXCLUDE} ]; then
@@ -52,8 +51,7 @@ echo "==> Running fabtests on ${INSTANCE_IPS[$1]}"
 export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
-if [ $1 -eq 2 ]; then
-    exit 1
+exit 2
 ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$1]} ${INSTANCE_IPS[0]}
 EOF
 }

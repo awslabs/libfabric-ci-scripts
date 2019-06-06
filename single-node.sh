@@ -6,8 +6,6 @@ slave_value=${!slave_name}
 ami=($slave_value)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId" --output=text)
 REMOTE_DIR=/home/${ami[1]}
-instance_code=1
-iteration=10
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check
 # is ok
@@ -16,12 +14,17 @@ SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Rese
 
 function test_ssh() 
 {
-    while [ ${instance_code} -ne 0 ] && [ ${iteration} -ne 0 ]; do
-        sleep 5
-        ssh -q -o ConnectTimeout=1 -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${SERVER_IP} exit
-        instance_code=$?
-        iteration=$((${iteration}-1))
+    slave_ready=''
+    slave_poll_count=0
+    while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
+        echo "Waiting for slave instance to become ready"
+        ssh -T -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes $USER@$SERVER_IP hostname
+        if [ $? -eq 0 ]; then
+            slave_ready='1'
+        fi
+        slave_poll_count=$((slave_poll_count+1))
     done
+
 }
 
 # SSH into slave EC2 instance
