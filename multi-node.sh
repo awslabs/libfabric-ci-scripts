@@ -68,14 +68,17 @@ export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> 
 export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
 N=$((${#INSTANCE_IPS[@]}-1)) 
+function execute_runfabtest()
+{
+    echo "Running fabtest on client $1" 
+    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} $1 ${INSTANCE_IPS[0]}
+}
 for i in $(seq 1 ${N})
 do
-    echo "Running fabtest on client ${INSTANCE_IPS[$i]}"
-    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$i]} ${INSTANCE_IPS[0]} &
+    execute_runfabtest "${INSTANCE_IPS[$i]}" &
 done
 EOF
 
 # Terminates all nodes. 
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
-echo $?
 exit $EXIT_CODE
