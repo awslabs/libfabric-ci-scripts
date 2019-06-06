@@ -35,17 +35,6 @@ function ssh_slave_node()
 cat install-libfabric.sh > single-node-install-libfabric.sh
 cat <<EOF >> single-node-install-libfabric.sh 
 # Runs all the tests in the fabtests suite while only expanding failed cases
-EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
-echo $EXCLUDE
-if [ -f ${EXCLUDE} ]; then
-    EXCLUDE="-R -f ${EXCLUDE}"
-else
-    EXCLUDE=""
-fi
-echo "==> Running fabtests"
-export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-export FI_LOG_LEVEL=debug >> ~/.bash_profile
 ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 
