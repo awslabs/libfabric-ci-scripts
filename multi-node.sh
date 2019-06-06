@@ -12,11 +12,12 @@ iteration=10
 # Starts as many Instances as specified in $NODES 
 INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
 INSTANCE_IDS=($INSTANCE_IDS)
-
+echo ${INSTANCE_IDS[@]}
 # Holds testing every 15 seconds for 40 attempts until the instance status check
 # is ok
 function test_instance_status()
 {
+    echo "testing status $1"
     aws ec2 wait instance-status-ok --instance-ids $1
 }
 
@@ -29,6 +30,7 @@ function ssh_slave_node()
         instance_code=$?
         iteration=$((${iteration}-1))
     done
+    echo "Building libfabric on $1"
     ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
@@ -42,7 +44,7 @@ wait
 # Get IP address for all instances
 INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 INSTANCE_IPS=($INSTANCE_IPS)
-
+echo ${INSTANCE_IPS[@]}
 # SSH into nodes and install libfabric
 for IP in ${INSTANCE_IPS[@]}
 do  
