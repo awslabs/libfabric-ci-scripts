@@ -69,9 +69,8 @@ export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
 function execute_runfabtest()
 {
-    if [ $IP -ne ${INSTANCE_IPS[0]} ];then
-        echo "Running fabtest on client $1" 
-        ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} $1 ${INSTANCE_IPS[0]}
+    echo "Running fabtest on client $1" 
+    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} $1 ${INSTANCE_IPS[0]}
 }
 N=$((${#INSTANCE_IPS[@]}-1))
 for IP in "${INSTANCE_IPS[@]:1:N}"
