@@ -50,8 +50,10 @@ aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
 while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
     echo "Waiting for slave instance to become ready"
     ssh -T -o ConnectTimeout=1 -o StrictHostKeyChecking=no -o BatchMode=yes $USER@$SERVER_IP hostname
-    [[ $? = 0 ]] && slave_ready='1'
-    ((slave_poll_count++))
+    if [ $? -eq 0 ]; then
+      slave_ready='1'
+    fi
+    slave_poll_count=$((slave_poll_count+1))
 done
 
 # Adds the IP's to the respective known hosts
