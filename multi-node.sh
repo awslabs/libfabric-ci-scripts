@@ -54,6 +54,7 @@ do
 done
 wait
 
+echo "Finished building fabtest"
 #SSH into SERVER node and run fabtest
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP[0]} <<EOF  && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 # Runs all the tests in the fabtests suite while only expanding failed cases
