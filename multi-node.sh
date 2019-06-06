@@ -55,8 +55,8 @@ done
 wait
 
 echo "Finished building fabtest"
-#SSH into SERVER node and run fabtest
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${SERVER_IP[0]} <<EOF  && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+#SSH into SERVER node and run fabtest. INSTANCE_IP[0] used as server
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair_name} ${ami[1]}@${INSTANCE_IPS[0]} <<EOF  && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 echo $EXCLUDE
@@ -69,7 +69,7 @@ echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER ${SERVER_IP[1]} ${SERVER_IP[0]}
+${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER ${INSTANCE_IPS[1]} ${INSTANCE_IPS[0]}
 EOF
 
 # Terminates all nodes. 
