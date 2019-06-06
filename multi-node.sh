@@ -8,7 +8,7 @@ REMOTE_DIR=/home/${ami[1]}
 NODES=3
 instance_code=1
 iteration=10
-EXIT_CODE[0]=0
+EXIT_CODE[0]=1
 
 # Starts as many Instances as specified in $NODES 
 INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
