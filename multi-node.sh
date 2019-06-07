@@ -1,96 +1,85 @@
 #!/bin/sh
 
 set +x
+slave_name=slave_$label
+slave_value=${!slave_name}
+ami=($slave_value)
+REMOTE_DIR=/home/${ami[1]}
+NODES=2
+# Starts as many Instances as specified in $NODES 
+INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
+INSTANCE_IDS=($INSTANCE_IDS)
 
-# Uses curl meta-data to retrieve identical information for instance creation
-AMI_ID=$(curl http://169.254.169.254/latest/meta-data/ami-id)
-AVAILABILITY_ZONE=$(curl http://169.254.169.254/latest/meta-data/placement/availability-zone)
-INSTANCE_TYPE=$(curl http://169.254.169.254/latest/meta-data/instance-type)
-SECURITY_GROUPS=$(curl http://169.254.169.254/latest/meta-data/security-groups)
-KEY_NAME=$(curl http://169.254.169.254/latest/meta-data/public-keys/ | sed -e 's,0=,,g')
-CLIENT_IP=$(curl http://169.254.169.254/latest/meta-data/local-ipv4)
+# Holds testing every 15 seconds for 40 attempts until the instance status check
+# is ok
+function test_instance_status()
+{
+    aws ec2 wait instance-status-ok --instance-ids $1
+}
 
-# Launches an identical instance and sets ID and IP environment variables for the instance
-echo "==> Launching instance"
-VOLUME=$(curl http://169.254.169.254/latest/meta-data/block-device-mapping/root)
-SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id $AMI_ID --instance-type $INSTANCE_TYPE --enable-api-termination --key-name $KEY_NAME --security-groups $SECURITY_GROUPS --placement AvailabilityZone=$AVAILABILITY_ZONE --query "Instances[*].InstanceId"   --output=text)
-# Occasionally needs to wait before describe instances may be called
+# Poll for the SSH daemon to come up before proceeding. The SSH poll retries 40 times with a 5-second timeout each time,
+# which should be plenty after `instance-status-ok`. SSH into nodes and install libfabric
+function ssh_slave_node() 
+{
+    slave_ready=''
+    slave_poll_count=0
+    while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
+        echo "Waiting for slave instance to become ready"
+        ssh -T -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes $USER@$SERVER_IP hostname
+        if [ $? -eq 0 ]; then
+            slave_ready='1'
+        fi
+        slave_poll_count=$((slave_poll_count+1))
+    done
+    echo "==> Installing libfabric on $1"
+    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/install-libfabric.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
+}
 
-for i in `seq 1 40`;
-do
-  SERVER_IP=$(aws ec2 describe-instances --instance-ids $SERVER_ID --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text) && break || sleep 5;
-done
-
-# Pulls the libfabric repository and checks out the pull request commit
-echo "==> Building libfabric on first node"
-cd $WORKSPACE
-git clone https://github.com/ofiwg/libfabric
-cd libfabric
-git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-git checkout $PULL_REQUEST_REF -b PRBranch
-./autogen.sh
-./configure --prefix=$WORKSPACE/libfabric/install/ --enable-debug --enable-mrail --enable-tcp --enable-rxm --disable-rxd
-make -j 4
-sudo make install
-
-echo "==> Building fabtests"
-cd $WORKSPACE/libfabric/fabtests
-./autogen.sh
-./configure --with-libfabric=$WORKSPACE/libfabric/install/ --prefix=$WORKSPACE/fabtests/install/ --enable-debug
-make -j 4
-sudo make install
-
-# Wait for the slave instance status to become OK, and poll for the SSH daemon
-# to come up before proceeding. EC2 wait retries every 15 seconds for 40
-# attempts. The SSH poll retries 40 times with a 5-second timeout each time,
-# which should be plenty after `instance-status-ok`.
-slave_ready=''
-slave_poll_count=0
-aws ec2 wait instance-status-ok --instance-ids $SERVER_ID
-while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
-    echo "Waiting for slave instance to become ready"
-    sleep 5
-    ssh -T -o ConnectTimeout=1 -o StrictHostKeyChecking=no -o BatchMode=yes $USER@$SERVER_IP hostname
-    if [ $? -eq 0 ]; then
-      slave_ready='1'
-    fi
-    slave_poll_count=$((slave_poll_count+1))
-done
-
-# Adds the IP's to the respective known hosts
-ssh-keyscan -H -t rsa $SERVER_IP  >> ~/.ssh/known_hosts
-ssh -T -o StrictHostKeyChecking=no $USER@$SERVER_IP <<-EOF && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
-  ssh-keyscan -H -t rsa $CLIENT_IP  >> ~/.ssh/known_hosts
-  echo "==> Building libfabric on second node"
-  cd ~
-  mkdir -p $WORKSPACE
-  cd $WORKSPACE
-  git clone https://github.com/ofiwg/libfabric
-  cd libfabric
-  git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-  git checkout $PULL_REQUEST_REF -b PRBranch
-  ./autogen.sh
-  ./configure --prefix=$WORKSPACE/libfabric/install/ --enable-debug --enable-mrail --enable-tcp --enable-rxm --disable-rxd
-  make -j 4
-  make install
-  echo "==> Building fabtests on second node"
-  cd $WORKSPACE/libfabric/fabtests
-  ./autogen.sh
-  ./configure --with-libfabric=$WORKSPACE/libfabric/install/ --prefix=$WORKSPACE/fabtests/install/ --enable-debug
-  make -j 4
-  make install
-  # Runs all tests in the fabtests suite between two nodes while only expanding
-  # failed cases
-  echo "==> Running fabtests between two nodes"
-  EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
-  if [ -f $EXCLUDE ]; then
-  	EXCLUDE="-R -f $EXCLUDE"
-  else
-  	EXCLUDE=""
-  fi
-  LD_LIBRARY_PATH=$WORKSPACE/fabtests/install/lib/:$LD_LIBRARY_PATH BIN_PATH=$WORKSPACE/fabtests/install/bin/ FI_LOG_LEVEL=debug $WORKSPACE/fabtests/install/bin/runfabtests.sh -v $EXCLUDE $PROVIDER $CLIENT_IP $SERVER_IP
+# Runs fabtests on client nodes using INSTANCE_IPS[0] as server
+function execute_runfabtest()
+{
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; EXIT_CODE=0 ; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; EXIT_CODE=1 ;  }
+# Runs all the tests in the fabtests suite while only expanding failed cases
+EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+if [ -f ${EXCLUDE} ]; then
+    EXCLUDE="-R -f ${EXCLUDE}"
+else
+    EXCLUDE=""
+fi
+echo "==> Running fabtests on ${INSTANCE_IPS[$1]}"
+export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
+export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
+export FI_LOG_LEVEL=debug >> ~/.bash_profile
+${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$1]} ${INSTANCE_IPS[0]}
 EOF
-# Terminates second node. First node will be terminated in a post build task to
-# prevent build failure
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
-exit $EXIT_CODE
+}
+
+# Wait untill all instances have passed status check
+for ID in ${INSTANCE_IDS[@]}
+do 
+    test_instance_status "$ID" &
+done
+wait
+
+# Get IP address for all instances
+INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+INSTANCE_IPS=($INSTANCE_IPS)
+
+# SSH into nodes and install libfabric
+for IP in ${INSTANCE_IPS[@]}
+do 
+    ssh_slave_node "$IP" "count" &
+done
+wait
+
+# SSH into SERVER node and run fabtest.
+N=$((${#INSTANCE_IPS[@]}-1))
+for i in $(seq 1 $N)
+do
+    execute_runfabtest "$i" &
+done
+wait
+
+# Terminates all nodes. 
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
+exit ${EXIT_CODE}
