@@ -1,12 +1,12 @@
 #!/bin/sh
 
 set +x
+. $WORKSPACE/libfabric-ci-scripts/create-job-scripts.sh
 slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId" --output=text)
 REMOTE_DIR=/home/${ami[1]}
-./create-job-scripts.sh
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check
 # is ok

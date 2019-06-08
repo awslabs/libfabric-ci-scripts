@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set +x
+. $WORKSPACE/libfabric-ci-scripts/create-job-scripts.sh
 slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
