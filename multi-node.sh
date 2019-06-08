@@ -6,7 +6,8 @@ slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
 NODES=2
-# Starts as many Instances as specified in $NODES 
+
+# Starts as many Instances as specified in $NODES
 INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
 INSTANCE_IDS=($INSTANCE_IDS)
 
