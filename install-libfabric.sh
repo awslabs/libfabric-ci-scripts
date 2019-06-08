@@ -6,6 +6,8 @@ REMOTE_DIR=$1
 PULL_REQUEST_ID=$2
 PULL_REQUEST_REF=$3
 PROVIDER=$4
+
+# Pulls the libfabric repository and checks out the pull request commit
 git clone https://github.com/dipti-kothari/libfabric
 cd libfabric
 git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
@@ -27,6 +29,8 @@ cd ${REMOTE_DIR}/libfabric/fabtests
     --enable-debug
 make -j 4
 make install
+
+# Runs all the tests in the fabtests suite between two nodes while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 echo $EXCLUDE
 if [ -f ${EXCLUDE} ]; then
