@@ -52,9 +52,9 @@ function set_var()
     cat <<-"EOF" > ${label}.sh
     #!/bin/sh
     set +x
-    PULL_REQUEST_ID=$1
-    PULL_REQUEST_REF=$2
-    PROVIDER=$3
+    PULL_REQUEST_ID=$2
+    PULL_REQUEST_REF=$3
+    PROVIDER=$4
 EOF
 }
 export -f prepare_script
