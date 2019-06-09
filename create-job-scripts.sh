@@ -22,7 +22,7 @@ function prepare_rhel()
     sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
     sudo yum -y install libevent-devel java-1.8.0-openjdk-devel java-1.8.0-openjdk gdb
     sudo yum -y install wget
-    sudo yum install libibverbs
+    sudo yum -y install libibverbs
 EOF
 }
 
