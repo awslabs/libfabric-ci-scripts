@@ -1,6 +1,6 @@
 echo "==> Building libfabric"
 # Pulls the libfabric repository and checks out the pull request commit
-ssh-keyscan -H -t rsa $1 >> ~/.ssh/known_hosts
+ssh-keyscan -H -t rsa $1 >> ${HOME}/.ssh/known_hosts
 git clone https://github.com/dipti-kothari/libfabric
 cd libfabric
 git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
