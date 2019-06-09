@@ -42,7 +42,7 @@ prepare_script
 # Creates a script for building libfabric on a single node by appending
 # runfabtest to the existing installation script
 cat <<"EOF" >> ${label}.sh
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 
 test_ssh
