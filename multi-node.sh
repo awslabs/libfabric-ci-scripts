@@ -41,7 +41,7 @@ function ssh_slave_node()
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
 function execute_runfabtest()
 {
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; EXIT_CODE=0 ; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; EXIT_CODE=1 ;  }
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo 0 ; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo 1 ;  }
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 if [ -f ${EXCLUDE} ]; then
@@ -77,17 +77,17 @@ do
     ssh_slave_node "$IP" "count" &
 done
 wait
-
+EXIT_CODE[0]=0
 # SSH into SERVER node and run fabtests
 N=$((${#INSTANCE_IPS[@]}-1))
 for i in $(seq 1 $N)
 do
-    execute_runfabtest "$i" &
+    EXIT_CODE[$i]=$(execute_runfabtest "$i") &
 done
 wait
 
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
 # Terminates all slave nodes
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
-echo ${EXIT_CODE}
+echo ${EXIT_CODE[@]}
 exit ${EXIT_CODE}
