@@ -33,7 +33,7 @@ EOF
 function generate_ssh_key()
 {
     cat <<-"EOF" >> ${label}.sh
-    ssh-keygen -f ${REMOTE_DIR}/.ssh/id_rsa -N ""
+    ssh-keygen -f ${REMOTE_DIR}/.ssh/id_rsa -N "" > /dev/null
     cat ${REMOTE_DIR}/.ssh/id_rsa.pub > ${REMOTE_DIR}/.ssh/authorized_keys
 EOF
 }
