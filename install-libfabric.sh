@@ -1,12 +1,4 @@
-#!/bin/sh
-
-set +x
 echo "==> Building libfabric"
-REMOTE_DIR=$1
-PULL_REQUEST_ID=$2
-PULL_REQUEST_REF=$3
-PROVIDER=$4
-
 # Pulls the libfabric repository and checks out the pull request commit
 git clone https://github.com/dipti-kothari/libfabric
 cd libfabric
