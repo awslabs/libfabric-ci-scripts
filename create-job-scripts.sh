@@ -24,7 +24,7 @@ function prepare_ubuntu()
     sudo apt -y install autoconf
     sudo apt -y install libltdl-dev
     sudo apt -y install make
-    EOF
+EOF
     generate_key
     cat install-libfabric.sh >> ${label}.sh
 }
@@ -35,7 +35,7 @@ function generate_ssh_key()
     cat <<-"EOF" >> ${label}.sh
     ssh-keygen -f ${REMOTE_DIR}/.ssh/id_rsa -N ""
     cat ${REMOTE_DIR}/.ssh/id_rsa.pub > ${REMOTE_DIR}/.ssh/authorized_keys
-    EOF
+EOF
 }
 
 #Initialize variables
@@ -48,7 +48,7 @@ function set_var()
     PULL_REQUEST_ID=$2
     PULL_REQUEST_REF=$3
     PROVIDER=$4
-    EOF
+EOF
 }
 export -f prepare_alinux
 export -f prepare_rhel
