@@ -37,7 +37,7 @@ function ssh_slave_node()
 }
 
 # Add AMI specific installation commands
-prepare_${label}
+prepare_script
 
 # Creates a script for building libfabric on a single node by appending
 # runfabtest to the existing installation script

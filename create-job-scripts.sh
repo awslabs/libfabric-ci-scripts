@@ -2,22 +2,27 @@
 
 # Prepares AMI specific scripts, this includes installation commands,generating
 # ssh key and libfabric script
-function prepare_alinux()
+function prepare_script()
 {
     set_var
-    echo "sudo yum -y groupinstall 'Development Tools'" >> ${label}.sh
+    prepare_${label}
     generate_ssh_key
     cat install-libfabric.sh >> ${label}.sh
+}
+function prepare_alinux()
+{
+    echo "sudo yum -y groupinstall 'Development Tools'" >> ${label}.sh
 }
 
 function prepare_rhel()
 {
     prepare_alinux
+    # IPOIB required for fabtests
+    echo "sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm" >> ${label}.sh
 }
 
 function prepare_ubuntu()
 {
-    set_var
     cat <<-EOF >> ${label}.sh
     sudo apt-get update
     sudo apt -y install python
@@ -25,11 +30,9 @@ function prepare_ubuntu()
     sudo apt -y install libltdl-dev
     sudo apt -y install make
 EOF
-    generate_ssh_key
-    cat install-libfabric.sh >> ${label}.sh
 }
 
-# Generates ssh key
+# Generates ssh key for fabtests 
 function generate_ssh_key()
 {
     cat <<-"EOF" >> ${label}.sh
@@ -50,7 +53,4 @@ function set_var()
     PROVIDER=$4
 EOF
 }
-export -f prepare_alinux
-export -f prepare_rhel
-export -f prepare_ubuntu
-
+export -f prepare_script

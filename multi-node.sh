@@ -69,7 +69,7 @@ INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --qu
 INSTANCE_IPS=($INSTANCE_IPS)
 
 # Add AMI specific installation commands
-prepare_${label}
+prepare_script
 
 # SSH into nodes and install libfabric
 for IP in ${INSTANCE_IPS[@]}
