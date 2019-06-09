@@ -6,7 +6,6 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId" --output=text)
-REMOTE_DIR=/home/${ami[1]}
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check
 # is ok
@@ -33,7 +32,7 @@ function test_ssh()
 # SSH into slave EC2 instance
 function ssh_slave_node()
 {
-    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${SERVER_IP} "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh "$REMOTE_DIR" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${SERVER_IP} "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 }
 
 # Add AMI specific installation commands

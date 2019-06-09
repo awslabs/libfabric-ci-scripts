@@ -18,7 +18,11 @@ function prepare_rhel()
 {
     prepare_alinux
     # IPOIB required for fabtests
-    # echo "sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm" >> ${label}.sh
+    cat <<-EOF >>${label}.sh 
+    sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    sudo yum -y install libevent-devel java-1.8.0-openjdk-devel java-1.8.0-openjdk gdb
+    sudo yum -y install wget
+EOF
 }
 
 function prepare_ubuntu()
@@ -47,14 +51,9 @@ function set_var()
     cat <<-"EOF" > ${label}.sh
     #!/bin/sh
     set +x
-    echo "==> Cleaning instance"
-    sudo rm -rf /tmp/* /var/tmp/* /var/log/* /etc/ssh/ssh_host*
-    sudo rm -rf /root/* /root/.ssh /root/.history /root/.bash_history
-    sudo rm -rf ~/* ~/.history ~/.bash_history ~/.cache
-    REMOTE_DIR=$1
-    PULL_REQUEST_ID=$2
-    PULL_REQUEST_REF=$3
-    PROVIDER=$4
+    PULL_REQUEST_ID=$1
+    PULL_REQUEST_REF=$2
+    PROVIDER=$3
 EOF
 }
 export -f prepare_script
