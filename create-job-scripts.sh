@@ -6,7 +6,7 @@ function prepare_alinux()
 {
     set_var
     echo "sudo yum -y groupinstall 'Development Tools'" >> ${label}.sh
-    generate_key
+    generate_ssh_key
     cat install-libfabric.sh >> ${label}.sh
 }
 
@@ -25,7 +25,7 @@ function prepare_ubuntu()
     sudo apt -y install libltdl-dev
     sudo apt -y install make
 EOF
-    generate_key
+    generate_ssh_key
     cat install-libfabric.sh >> ${label}.sh
 }
 
