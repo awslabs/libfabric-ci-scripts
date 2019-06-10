@@ -105,6 +105,7 @@ for i in $(seq 1 $N)
 do
     execute_runfabtest "$i" &
 done
+echo "DONE"
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
 # Terminates all slave nodes
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
