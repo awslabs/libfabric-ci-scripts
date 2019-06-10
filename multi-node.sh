@@ -7,7 +7,6 @@ slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
 NODES=3
-PID[0]=0
 
 # Starts as many Instances as specified in $NODES
 INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
@@ -42,7 +41,7 @@ function ssh_slave_node()
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
 function execute_runfabtest()
 {
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; EXIT_CODE=0 ;} || { echo "Build failed on ${INSTANCE_IPS[$1]}"; EXIT_CODE=1 ; exit ${EXIT_CODE}; }
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > /dev/shm/${INSTANCE_IPS[$1]}; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > /dev/shm/${INSTANCE_IPS[$1]}; }
 ssh-keyscan -H -t rsa ${INSTANCE_IPS[$1]} >> ${REMOTE_DIR}/.ssh/known_hosts
 cat ${REMOTE_DIR}/.ssh/known_hosts
 # Runs all the tests in the fabtests suite while only expanding failed cases
@@ -59,23 +58,6 @@ export FI_LOG_LEVEL=debug >> ~/.bash_profile
 ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$1]} ${INSTANCE_IPS[0]}
 EOF
 }
-
-function get_exit_codes()
-{
-    process_ids=($@)
-    N=$((${#process_id[@]}-1))
-    EXIT_CODE=0
-    for i in $(seq 1 $N); do
-        process_exit_code=0;
-        wait ${process_ids[$i]} || process_exit_code=$?
-         if [[ ${process_exit_code} -ne 0 ]]; then
-             #echo ${process_ids[$i]}
-             #echo ${process_exit_code}
-             EXIT_CODE=1;
-         fi
-    done
-    echo $EXIT_CODE
-}   
 
 # Wait untill all instances have passed status check
 for ID in ${INSTANCE_IDS[@]}
@@ -106,9 +88,13 @@ do
 done
 wait
 
-echo "DONE"
-EXIT_CODE=0
+for i in $(seq 1 $N)
+do
+    source /dev/shm/${INSTANCE_IPS[$i]}
+    echo $EXIT_CODE
+done
+
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
 # Terminates all slave nodes
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
-exit ${EXIT_CODE}
+exit 0
