@@ -42,6 +42,8 @@ function generate_ssh_key()
     cat <<-"EOF" >> ${label}.sh
     ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
     cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
+    echo "Key created and added for"
+    cat ${HOME}/.ssh/authorized_keys
 EOF
 }
 

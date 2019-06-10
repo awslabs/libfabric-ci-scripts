@@ -44,6 +44,7 @@ function execute_runfabtest()
 {
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
 ssh-keyscan -H -t rsa ${INSTANCE_IPS[$1]} >> ${REMOTE_DIR}/.ssh/known_hosts
+echo "Stroing client key"
 cat ${REMOTE_DIR}/.ssh/known_hosts
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
@@ -53,6 +54,7 @@ else
     EXCLUDE=""
 fi
 echo "==> Running fabtests on ${INSTANCE_IPS[$1]}"
+echo "==> SERVER IP ${INSTANCE_IPS[0]}"
 echo "export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bash_profile
 echo "export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bash_profile
 echo "export FI_LOG_LEVEL=debug" >> ~/.bash_profile
@@ -61,7 +63,7 @@ echo "export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PA
 echo "export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bashrc
 echo "export FI_LOG_LEVEL=debug" >> ~/.bashrc
 echo "export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bashrc
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
+${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$1]} ${INSTANCE_IPS[0]}
 EOF
 }
 
@@ -90,9 +92,9 @@ wait
 N=$((${#INSTANCE_IPS[@]}-1))
 for i in $(seq 1 $N)
 do
-    echo "Storing server public key"
     ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$i]} <<-EOF
     ssh-keyscan -H -t rsa ${INSTANCE_IPS[0]} >> ${REMOTE_DIR}/.ssh/known_hosts
+    echo "Storing server public key in ${INSTANCE_IPS[$i]}"
     cat ${REMOTE_DIR}/.ssh/known_hosts
 EOF
 done
