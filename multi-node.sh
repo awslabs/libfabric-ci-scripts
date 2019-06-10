@@ -6,7 +6,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
-NODES=3
+NODES=2
 BUILD_CODE=0
 
 # Starts as many Instances as specified in $NODES
@@ -42,7 +42,7 @@ function ssh_slave_node()
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
 function execute_runfabtest()
 {
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > /dev/shm/${INSTANCE_IDS[$1]}; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > /dev/shm/${INSTANCE_IDS[$1]}; }
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
 ssh-keyscan -H -t rsa ${INSTANCE_IPS[$1]} >> ${REMOTE_DIR}/.ssh/known_hosts
 cat ${REMOTE_DIR}/.ssh/known_hosts
 # Runs all the tests in the fabtests suite while only expanding failed cases
@@ -53,9 +53,14 @@ else
     EXCLUDE=""
 fi
 echo "==> Running fabtests on ${INSTANCE_IPS[$1]}"
-export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-export FI_LOG_LEVEL=debug >> ~/.bash_profile
+echo "export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bash_profile
+echo "export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bash_profile
+echo "export FI_LOG_LEVEL=debug" >> ~/.bash_profile
+echo "export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bash_profile
+echo "export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bashrc
+echo "export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bashrc
+echo "export FI_LOG_LEVEL=debug" >> ~/.bashrc
+echo "export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bashrc
 ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$1]} ${INSTANCE_IPS[0]}
 EOF
 }
@@ -81,12 +86,14 @@ do
 done
 wait
 
-# Store public key of INSTANCE_IPS[0] in all clients
+# Store public key of INSTANCE_IPS[0] on all clients
 N=$((${#INSTANCE_IPS[@]}-1))
 for i in $(seq 1 $N)
 do
+    echo "Storing server public key"
     ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$i]} <<-EOF
     ssh-keyscan -H -t rsa ${INSTANCE_IPS[0]} >> ${REMOTE_DIR}/.ssh/known_hosts
+    cat ${REMOTE_DIR}/.ssh/known_hosts
 EOF
 done
 wait
@@ -100,11 +107,11 @@ wait
 
 for i in $(seq 1 $N)
 do
-    source /dev/shm/${INSTANCE_IDS[$i]}
-    if [ $EXIT_CODE -ne 0];then
+    source $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$i]}.sh
+    if [ $EXIT_CODE -ne 0 ];then
         BUILD_CODE=1
     fi
-    rm /dev/shm/${INSTANCE_IDS[$i]}
+    rm $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$i]}.sh
 done
 
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
