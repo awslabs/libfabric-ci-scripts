@@ -1,6 +1,5 @@
 echo "==> Building libfabric"
 # Pulls the libfabric repository and checks out the pull request commit
-ssh-keyscan -H -t rsa $1 >> ${HOME}/.ssh/known_hosts
 git clone https://github.com/dipti-kothari/libfabric
 cd libfabric
 git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
@@ -35,3 +34,6 @@ echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
+export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bashrc
+export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bashrc
+export FI_LOG_LEVEL=debug >> ~/.bashrc
