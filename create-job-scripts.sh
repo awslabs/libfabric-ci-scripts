@@ -19,7 +19,9 @@ function prepare_rhel()
     prepare_alinux
     # IPOIB required for fabtests
     cat <<-EOF >>${label}.sh 
-    sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    # RHEL 8 is being shipped without default python enabled
+    sudo yum install python36 -y
+    sudo alternatives --set python /usr/bin/python3
 EOF
 }
 
