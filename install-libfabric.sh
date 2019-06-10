@@ -33,7 +33,9 @@ fi
 echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
+export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
 export FI_LOG_LEVEL=debug >> ~/.bash_profile
 echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bashrc
 echo "export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/" >> ~/.bashrc
+echo "export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH" >> ~/.bashrc
 echo "export FI_LOG_LEVEL=debug" >> ~/.bashrc
