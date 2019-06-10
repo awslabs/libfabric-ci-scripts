@@ -63,7 +63,7 @@ echo "export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PA
 echo "export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bashrc
 echo "export FI_LOG_LEVEL=debug" >> ~/.bashrc
 echo "export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bashrc
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[$1]} ${INSTANCE_IPS[0]}
+${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
 EOF
 }
 
