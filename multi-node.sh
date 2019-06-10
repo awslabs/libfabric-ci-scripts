@@ -55,15 +55,7 @@ else
 fi
 echo "==> Running fabtests on ${INSTANCE_IPS[$1]}"
 echo "==> SERVER IP ${INSTANCE_IPS[0]}"
-echo "export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bash_profile
-echo "export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bash_profile
-echo "export FI_LOG_LEVEL=debug" >> ~/.bash_profile
-echo "export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bash_profile
-echo "export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bashrc
-echo "export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bashrc
-echo "export FI_LOG_LEVEL=debug" >> ~/.bashrc
-echo "export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/" >> ~/.bashrc
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
+${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
 EOF
 }
 
