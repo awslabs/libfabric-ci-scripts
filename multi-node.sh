@@ -46,6 +46,11 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTAN
 ssh-keyscan -H -t rsa ${INSTANCE_IPS[$1]} >> ${REMOTE_DIR}/.ssh/known_hosts
 echo "Stroing client key"
 cat ${REMOTE_DIR}/.ssh/known_hosts
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$i]} <<-EOFII
+      ssh-keyscan -H -t rsa ${INSTANCE_IPS[0]} >> ${REMOTE_DIR}/.ssh/known_hosts
+      echo "Storing server public key in ${INSTANCE_IPS[$i]}"
+      cat ${REMOTE_DIR}/.ssh/known_hosts
+EOFII
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 if [ -f ${EXCLUDE} ]; then
@@ -77,18 +82,6 @@ prepare_script
 for IP in ${INSTANCE_IPS[@]}
 do
     ssh_slave_node "$IP" "count" &
-done
-wait
-
-# Store public key of INSTANCE_IPS[0] on all clients
-N=$((${#INSTANCE_IPS[@]}-1))
-for i in $(seq 1 $N)
-do
-    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$i]} <<-EOF
-    ssh-keyscan -H -t rsa ${INSTANCE_IPS[0]} >> ${REMOTE_DIR}/.ssh/known_hosts
-    echo "Storing server public key in ${INSTANCE_IPS[$i]}"
-    cat ${REMOTE_DIR}/.ssh/known_hosts
-EOF
 done
 wait
 
