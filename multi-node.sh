@@ -69,6 +69,8 @@ function get_exit_codes()
         process_exit_code=0;
         wait ${process_ids[$i]} || process_exit_code=$?
          if [[ ${process_exit_code} -ne 0 ]]; then
+             echo ${process_ids[$i]}
+             echo ${process_exit_code}
              EXIT_CODE=1;
          fi
     done
@@ -104,7 +106,7 @@ do
     PID[$i]=&!
 done
 wait
-
+echo "PID is"
 echo "${PID[@]}"
 BUILD_CODE=$(get_exit_codes ${PID[@]})
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
