@@ -69,8 +69,8 @@ function get_exit_codes()
         process_exit_code=0;
         wait ${process_ids[$i]} || process_exit_code=$?
          if [[ ${process_exit_code} -ne 0 ]]; then
-             echo ${process_ids[$i]}
-             echo ${process_exit_code}
+             #echo ${process_ids[$i]}
+             #echo ${process_exit_code}
              EXIT_CODE=1;
          fi
     done
@@ -105,10 +105,10 @@ do
     execute_runfabtest "$i" &
     PID[$i]=&!
 done
-wait
 echo "PID is"
 echo "${PID[@]}"
 BUILD_CODE=$(get_exit_codes ${PID[@]})
+wait
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
 # Terminates all slave nodes
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
