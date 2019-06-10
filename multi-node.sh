@@ -43,7 +43,7 @@ function ssh_slave_node()
 function execute_runfabtest()
 {
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair}
-${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; EXIT_CODE=0 } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; EXIT_CODE=1 ;  }
+${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; EXIT_CODE=0 ;} || { echo "Build failed on ${INSTANCE_IPS[$1]}"; EXIT_CODE=1 ; exit ${EXIT_CODE} }
 ssh-keyscan -H -t rsa ${INSTANCE_IPS[$1]} >> ${REMOTE_DIR}/.ssh/known_hosts
 cat ${REMOTE_DIR}/.ssh/known_hosts
 # Runs all the tests in the fabtests suite while only expanding failed cases
@@ -109,4 +109,4 @@ EXIT_CODE=0
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
 # Terminates all slave nodes
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
-exit $EXIT_CODE
+exit ${EXIT_CODE}
