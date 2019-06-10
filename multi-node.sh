@@ -46,9 +46,9 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTAN
 ssh-keyscan -H -t rsa ${INSTANCE_IPS[$1]} >> ${REMOTE_DIR}/.ssh/known_hosts
 echo "Stroing client key"
 cat ${REMOTE_DIR}/.ssh/known_hosts
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$i]} <<-EOFII
+ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} <<-EOFII
       ssh-keyscan -H -t rsa ${INSTANCE_IPS[0]} >> ${REMOTE_DIR}/.ssh/known_hosts
-      echo "Storing server public key in ${INSTANCE_IPS[$i]}"
+      echo "Storing server public key in ${INSTANCE_IPS[$1]}"
       cat ${REMOTE_DIR}/.ssh/known_hosts
 EOFII
 # Runs all the tests in the fabtests suite while only expanding failed cases
