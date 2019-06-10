@@ -36,7 +36,7 @@ function ssh_slave_node()
         slave_poll_count=$((slave_poll_count+1))
     done
     echo "==> Installing libfabric on $1"
-    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "${INSTANCE_IPS[0]}" "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
+    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
