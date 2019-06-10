@@ -104,6 +104,8 @@ for i in $(seq 1 $N)
 do
     execute_runfabtest "$i" &
 done
+wait
+
 EXIT_CODE=0
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
 # Terminates all slave nodes
