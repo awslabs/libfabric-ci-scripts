@@ -49,5 +49,5 @@ ssh_slave_node
 
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
 # Terminates slave node
-#AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 exit $EXIT_CODE
