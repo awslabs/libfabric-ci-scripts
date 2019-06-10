@@ -106,6 +106,7 @@ do
 done
 wait
 
+echo "DONE"
 EXIT_CODE=0
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
 # Terminates all slave nodes
