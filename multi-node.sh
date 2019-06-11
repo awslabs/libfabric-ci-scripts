@@ -55,6 +55,10 @@ fi
 cat ${REMOTE_DIR}/.ssh/id_rsa
 echo "==> Running fabtests on ${INSTANCE_IPS[$1]}"
 echo "==> SERVER IP ${INSTANCE_IPS[0]}"
+export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
+export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
+export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
+export FI_LOG_LEVEL=debug >> ~/.bash_profile
 ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
 EOF
 }
