@@ -56,6 +56,10 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTAN
     export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
     export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
     export FI_LOG_LEVEL=debug >> ~/.bash_profile
+    echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bashrc
+    echo "export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/" >> ~/.bashrc
+    echo "export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH" >> ~/.bashrc
+    echo "export FI_LOG_LEVEL=debug" >> ~/.bashrc
     ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
 EOF
 }
