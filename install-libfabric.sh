@@ -24,18 +24,15 @@ make install
 
 # Runs all the tests in the fabtests suite between two nodes while only expanding failed cases
 EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
-echo $EXCLUDE
 if [ -f ${EXCLUDE} ]; then
     EXCLUDE="-R -f ${EXCLUDE}"
 else
     EXCLUDE=""
 fi
-echo "==> Running fabtests"
 export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
-export FI_LOG_LEVEL=debug >> ~/.bash_profile
-export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bashrc
-export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bashrc
-export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bashrc
-export FI_LOG_LEVEL=debug >> ~/.bashrc
+echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bashrc
+echo "export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/" >> ~/.bashrc
+echo "export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH" >> ~/.bashrc
+echo "export FI_LOG_LEVEL=debug" >> ~/.bashrc

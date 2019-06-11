@@ -45,21 +45,18 @@ function ssh_slave_node()
 function execute_runfabtest()
 {
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
-# Runs all the tests in the fabtests suite while only expanding failed cases
-EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
-if [ -f ${EXCLUDE} ]; then
-    EXCLUDE="-R -f ${EXCLUDE}"
-else
-    EXCLUDE=""
-fi
-cat ${REMOTE_DIR}/.ssh/id_rsa
-echo "==> Running fabtests on ${INSTANCE_IPS[$1]}"
-echo "==> SERVER IP ${INSTANCE_IPS[0]}"
-export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
-export FI_LOG_LEVEL=debug >> ~/.bash_profile
-${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
+    # Runs all the tests in the fabtests suite while only expanding failed cases
+    EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.EXCLUDE
+    if [ -f ${EXCLUDE} ]; then
+        EXCLUDE="-R -f ${EXCLUDE}"
+    else
+        EXCLUDE=""
+    fi
+    export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
+    export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
+    export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
+    export FI_LOG_LEVEL=debug >> ~/.bash_profile
+    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
 EOF
 }
 
@@ -78,9 +75,7 @@ INSTANCE_IPS=($INSTANCE_IPS)
 prepare_script
 
 # Generate ssh key for fabtests
-echo "Building file"
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
-cat $WORKSPACE/libfabric-ci-scripts/id_rsa
 cat <<-EOF >>${label}.sh 
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
     chmod 700  ~/.ssh/id_rsa
@@ -111,6 +106,8 @@ do
 done
 
 rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
+rm $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa
+rm $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa.pub
 # Terminates all slave nodes
-# AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
 exit ${BUILD_CODE}

@@ -6,7 +6,6 @@ function prepare_script()
 {
     set_var
     prepare_${label}
-    # generate_ssh_key
     cat install-libfabric.sh >> ${label}.sh
 }
 function prepare_alinux()
@@ -17,7 +16,6 @@ function prepare_alinux()
 function prepare_rhel()
 {
     prepare_alinux
-    # IPOIB required for fabtests
     cat <<-EOF >>${label}.sh 
     # RHEL 8 is being shipped without default python enabled
     sudo yum install python36 -y
@@ -33,15 +31,6 @@ function prepare_ubuntu()
     sudo apt -y install autoconf
     sudo apt -y install libltdl-dev
     sudo apt -y install make
-EOF
-}
-
-# Generates ssh key for fabtests 
-function generate_ssh_key()
-{
-    cat <<-"EOF" >> ${label}.sh
-    ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
-    cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 EOF
 }
 
