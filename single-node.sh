@@ -49,9 +49,6 @@ EOF
 test_ssh
 ssh_slave_node
 
-rm ${WORKSPACE}/libfabric-ci-scripts/${label}.sh
-rm ${WORKSPACE}/libfabric-ci-scripts/.ssh/id_rsa
-rm ${WORKSPACE}/libfabric-ci-scripts/.ssh/id_rsa.pub
 # Terminates slave node
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID
 exit $EXIT_CODE

@@ -6,7 +6,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
-NODES=2
+NODES=4
 BUILD_CODE=0
 
 
@@ -104,11 +104,6 @@ do
     fi
     rm $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$i]}.sh
 done
-
-# Clean up
-rm ${WORKSPACE}/libfabric-ci-scripts/${label}.sh
-rm ${WORKSPACE}/libfabric-ci-scripts/.ssh/id_rsa
-rm ${WORKSPACE}/libfabric-ci-scripts/.ssh/id_rsa.pub
 
 # Terminates all slave nodes
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
