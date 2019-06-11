@@ -37,14 +37,14 @@ function ssh_slave_node()
         slave_poll_count=$((slave_poll_count+1))
     done
     echo "==> Installing libfabric on $1"
-    scp $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa.pub ${ami[1]}@$1:${REMOTE_DIR}/.ssh
-    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
+    scp $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa.pub ${ami[1]}@$1:${REMOTE_DIR}/.ssh/
+    ssh -o StrictHostKeyChecking=no -vvv -T -i $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa  ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
 function execute_runfabtest()
 {
-ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
+ssh -o StrictHostKeyChecking=no -vvv -T -i $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 if [ -f ${EXCLUDE} ]; then
