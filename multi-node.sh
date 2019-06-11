@@ -77,7 +77,7 @@ prepare_script
 echo "Building file"
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
 cat $WORKSPACE/libfabric-ci-scripts/id_rsa
-echo "cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys" >>${label}.sh
+echo "cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys" >>${label}.sh
 
 # SSH into nodes and install libfabric
 for IP in ${INSTANCE_IPS[@]}
