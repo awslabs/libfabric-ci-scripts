@@ -38,7 +38,7 @@ function ssh_slave_node()
     done
     echo "==> Installing libfabric on $1"
     scp -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
-    ssh -o StrictHostKeyChecking=no -vvv -T -i $WORKSPACE/libfabric-ci-scripts/id_rsa  ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
+    ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
