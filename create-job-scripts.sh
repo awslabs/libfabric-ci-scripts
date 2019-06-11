@@ -6,7 +6,7 @@ function prepare_script()
 {
     set_var
     prepare_${label}
-    generate_ssh_key
+    # generate_ssh_key
     cat install-libfabric.sh >> ${label}.sh
 }
 function prepare_alinux()
@@ -42,8 +42,6 @@ function generate_ssh_key()
     cat <<-"EOF" >> ${label}.sh
     ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
     cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
-    echo "Key created and added for"
-    cat ${HOME}/.ssh/authorized_keys
 EOF
 }
 
