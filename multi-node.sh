@@ -37,7 +37,7 @@ function ssh_slave_node()
         slave_poll_count=$((slave_poll_count+1))
     done
     echo "==> Installing libfabric on $1"
-    scp -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
+    scp -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
     ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
@@ -77,7 +77,10 @@ prepare_script
 echo "Building file"
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
 cat $WORKSPACE/libfabric-ci-scripts/id_rsa
-echo "cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys" >>${label}.sh
+cat <<-EOF >>${label}.sh 
+    cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+    chmod 700  ~/.ssh/id_rsa
+EOF
 
 # SSH into nodes and install libfabric
 for IP in ${INSTANCE_IPS[@]}
