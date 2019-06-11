@@ -52,14 +52,10 @@ ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTAN
     else
         EXCLUDE=""
     fi
-    export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-    export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-    export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
+    export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
+    export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
+    export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
     export FI_LOG_LEVEL=debug >> ~/.bash_profile
-    echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH" >> ~/.bashrc
-    echo "export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/" >> ~/.bashrc
-    echo "export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH" >> ~/.bashrc
-    echo "export FI_LOG_LEVEL=debug" >> ~/.bashrc
     ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
 EOF
 }
@@ -109,9 +105,11 @@ do
     rm $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$i]}.sh
 done
 
-rm $WORKSPACE/libfabric-ci-scripts/${label}.sh
-rm $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa
-rm $WORKSPACE/libfabric-ci-scripts/.ssh/id_rsa.pub
+# Clean up
+rm ${WORKSPACE}/libfabric-ci-scripts/${label}.sh
+rm ${WORKSPACE}/libfabric-ci-scripts/.ssh/id_rsa
+rm ${WORKSPACE}/libfabric-ci-scripts/.ssh/id_rsa.pub
+
 # Terminates all slave nodes
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
 exit ${BUILD_CODE}
