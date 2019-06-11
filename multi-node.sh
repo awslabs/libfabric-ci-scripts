@@ -6,7 +6,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 REMOTE_DIR=/home/${ami[1]}
-NODES=4
+NODES=2
 BUILD_CODE=0
 
 
