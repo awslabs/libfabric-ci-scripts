@@ -92,9 +92,8 @@ wait
 N=$((${#INSTANCE_IPS[@]}-1))
 for i in $(seq 1 $N)
 do
-    execute_runfabtest "$i" &
+    execute_runfabtest "$i" 
 done
-wait
 
 # Get build status
 for i in $(seq 1 $N)
