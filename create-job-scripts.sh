@@ -7,6 +7,7 @@ prepare_script()
     set_var
     prepare_${label}
     cat install-libfabric.sh >> ${label}.sh
+    echo "Finished script prep"
 }
 prepare_alinux()
 {
@@ -28,7 +29,7 @@ prepare_ubuntu()
     cat <<-EOF >> ${label}.sh
     sudo apt-get update
     sudo apt -y install python
-    sudo apt -y install autoconf
+    sudo apt -y install autoconf 
     sudo apt -y install libltdl-dev
     sudo apt -y install make
 EOF

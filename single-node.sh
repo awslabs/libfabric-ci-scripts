@@ -16,7 +16,7 @@ prepare_script
 
 # Creates a script for building libfabric on a single node by appending
 # fabtests to the existing installation script
-cat <<"EOF" >> ${label}.sh
+cat <<-"EOF" >> ${label}.sh
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
