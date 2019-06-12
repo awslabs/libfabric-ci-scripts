@@ -10,7 +10,10 @@ function prepare_script()
 }
 function prepare_alinux()
 {
-    echo "sudo yum -y groupinstall 'Development Tools'" >> ${label}.sh
+    cat <<-EOF >>${label}.sh
+    sudo yum -y update
+    sudo yum -y groupinstall 'Development Tools'"
+EOF
 }
 
 function prepare_rhel()
@@ -43,6 +46,21 @@ function set_var()
     PULL_REQUEST_ID=$1
     PULL_REQUEST_REF=$2
     PROVIDER=$3
+EOF
+}
+
+function efa_drivers()
+{
+    cat <<-EOF >> ${label}.sh
+    wget https://github.com/amzn/amzn-drivers/archive/efa_linux_0.9.2.tar.gz
+    tar zxvf efa_linux_0.9.2.tar.gz
+    cd amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
+    make
+    insmod efa.ko
+    cd
+    sudo yum install kernel-devel-$(uname -r)
+    modprobe ib_core
+    modprobe ib_uverbs
 EOF
 }
 export -f prepare_script
