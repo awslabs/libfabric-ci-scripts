@@ -19,11 +19,6 @@ EOF
 prepare_rhel()
 {
     prepare_alinux
-    cat <<-EOF >>${label}.sh 
-    # RHEL 8 is being shipped without default python enabled
-    sudo yum install python36 -y
-    sudo alternatives --set python /usr/bin/python3
-EOF
 }
 
 prepare_ubuntu()
@@ -67,3 +62,4 @@ test_ssh()
 }
 
 export -f prepare_script
+export -f test_ssh
