@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set +x
 source $WORKSPACE/libfabric-ci-scripts/create-job-scripts.sh

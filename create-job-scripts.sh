@@ -1,15 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 # Prepares AMI specific scripts, this includes installation commands and adding
 # libfabric script
 prepare_script()
 {
     set_var
-    echo "variable set"
     prepare_${label}
-    echo "installation done"
     cat install-libfabric.sh >> ${label}.sh
-    echo "Finished script prep"
 }
 prepare_alinux()
 {
@@ -44,7 +41,7 @@ EOF
 set_var()
 {
     cat <<-"EOF" > ${label}.sh
-    #!/bin/sh
+    #!/bin/bash
     set +x
     PULL_REQUEST_ID=$1
     PULL_REQUEST_REF=$2
