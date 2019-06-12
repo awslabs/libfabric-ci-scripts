@@ -15,7 +15,7 @@ prepare_alinux()
 {
     cat <<-EOF >>${label}.sh
     sudo yum -y update
-    sudo yum -y groupinstall 'Development Tools'"
+    sudo yum -y groupinstall 'Development Tools'
 EOF
 }
 
