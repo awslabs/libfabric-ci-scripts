@@ -22,35 +22,23 @@ else
 fi
 INSTANCE_IDS=($INSTANCE_IDS)
 
-# Holds testing every 15 seconds for 40 attempts until the instance status check
-# is ok
-function test_instance_status()
+# Holds testing every 15 seconds for 40 attempts until the instance status check is ok
+test_instance_status()
 {
     aws ec2 wait instance-status-ok --instance-ids $1
 }
 
-# Poll for the SSH daemon to come up before proceeding. The SSH poll retries 40 times with a 5-second timeout each time,
-# which should be plenty after `instance-status-ok`. SSH into nodes and install libfabric
-function ssh_slave_node() 
+# Test whether the instance is ready for SSH or not. Once the instance is ready,
+# copy SSH keys from Jenkins and install libfabric
+install_libfabric()
 {
-    slave_ready=''
-    slave_poll_count=0
-    while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
-        echo "Waiting for slave instance to become ready"
-        sleep 5
-        ssh -T -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -i ~/${slave_keypair} ${ami[1]}@$1 hostname
-        if [ $? -eq 0 ]; then
-            slave_ready='1'
-        fi
-        slave_poll_count=$((slave_poll_count+1))
-    done
-    echo "==> Installing libfabric on $1"
+    test_ssh
     scp -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
     ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
-function execute_runfabtest()
+execute_runfabtests()
 {
 ssh -o StrictHostKeyChecking=no -vvv -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
     # Runs all the tests in the fabtests suite while only expanding failed cases
@@ -79,20 +67,20 @@ wait
 INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 INSTANCE_IPS=($INSTANCE_IPS)
 
-# Add AMI specific installation script
+# Prepare AMI specific libfabric installation script 
 prepare_script
 
 # Generate ssh key for fabtests
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
-cat <<-EOF >>${label}.sh 
+cat <<-"EOF" >>${label}.sh
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-    chmod 700  ~/.ssh/id_rsa
+    chmod 600  ~/.ssh/id_rsa
 EOF
 
-# SSH into nodes and install libfabric
+# SSH into nodes and install libfabric concurrently on all nodes
 for IP in ${INSTANCE_IPS[@]}
 do
-    ssh_slave_node "$IP" "count" &
+    install_libfabric "$IP" &
 done
 wait
 
@@ -100,7 +88,7 @@ wait
 N=$((${#INSTANCE_IPS[@]}-1))
 for i in $(seq 1 $N)
 do
-    execute_runfabtest "$i" 
+    execute_runfabtests "$i"
 done
 
 # Get build status
@@ -110,7 +98,6 @@ do
     if [ $EXIT_CODE -ne 0 ];then
         BUILD_CODE=1
     fi
-    rm $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$i]}.sh
 done
 
 # Terminates all slave nodes

@@ -1,14 +1,17 @@
 #!/bin/sh
 
-# Prepares AMI specific scripts, this includes installation commands,generating
-# ssh key and libfabric script
-function prepare_script()
+# Prepares AMI specific scripts, this includes installation commands and adding
+# libfabric script
+prepare_script()
 {
     set_var
+    echo "variable set"
     prepare_${label}
+    echo "installation done"
     cat install-libfabric.sh >> ${label}.sh
+    echo "Finished script prep"
 }
-function prepare_alinux()
+prepare_alinux()
 {
     cat <<-EOF >>${label}.sh
     sudo yum -y update
@@ -16,7 +19,7 @@ function prepare_alinux()
 EOF
 }
 
-function prepare_rhel()
+prepare_rhel()
 {
     prepare_alinux
     cat <<-EOF >>${label}.sh 
@@ -26,19 +29,19 @@ function prepare_rhel()
 EOF
 }
 
-function prepare_ubuntu()
+prepare_ubuntu()
 {
     cat <<-EOF >> ${label}.sh
     sudo apt-get update
     sudo apt -y install python
-    sudo apt -y install autoconf
+    sudo apt -y install autoconf 
     sudo apt -y install libltdl-dev
     sudo apt -y install make
 EOF
 }
 
 #Initialize variables
-function set_var()
+set_var()
 {
     cat <<-"EOF" > ${label}.sh
     #!/bin/sh
@@ -49,18 +52,21 @@ function set_var()
 EOF
 }
 
-function efa_drivers()
+# Poll for the SSH daemon to come up before proceeding. The SSH poll retries 40 times with a 5-second timeout each time,
+# which should be plenty after `instance-status-ok`. SSH into nodes and install libfabric
+test_ssh()
 {
-    cat <<-EOF >> ${label}.sh
-    wget https://github.com/amzn/amzn-drivers/archive/efa_linux_0.9.2.tar.gz
-    tar zxvf efa_linux_0.9.2.tar.gz
-    cd amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
-    make
-    insmod efa.ko
-    cd
-    sudo yum install kernel-devel-$(uname -r)
-    modprobe ib_core
-    modprobe ib_uverbs
-EOF
+    slave_ready=''
+    slave_poll_count=0
+    while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
+        echo "Waiting for slave instance to become ready"
+        sleep 5
+        ssh -T -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -i ~/${slave_keypair} ${ami[1]}@${SERVER_IP}  hostname
+        if [ $? -eq 0 ]; then
+            slave_ready='1'
+        fi
+        slave_poll_count=$((slave_poll_count+1))
+    done
 }
+
 export -f prepare_script
