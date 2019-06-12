@@ -5,7 +5,9 @@
 prepare_script()
 {
     set_var
+    echo "variable set"
     prepare_${label}
+    echo "installation done"
     cat install-libfabric.sh >> ${label}.sh
     echo "Finished script prep"
 }

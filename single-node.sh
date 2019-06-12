@@ -1,3 +1,4 @@
+p
 #!/bin/sh
 
 set +x
