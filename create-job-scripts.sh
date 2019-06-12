@@ -1,19 +1,19 @@
 #!/bin/sh
 
-# Prepares AMI specific scripts, this includes installation commands,generating
-# ssh key and libfabric script
-function prepare_script()
+# Prepares AMI specific scripts, this includes installation commands and adding
+# libfabric script
+prepare_script()
 {
     set_var
     prepare_${label}
     cat install-libfabric.sh >> ${label}.sh
 }
-function prepare_alinux()
+prepare_alinux()
 {
     echo "sudo yum -y groupinstall 'Development Tools'" >> ${label}.sh
 }
 
-function prepare_rhel()
+prepare_rhel()
 {
     prepare_alinux
     cat <<-EOF >>${label}.sh 
@@ -23,7 +23,7 @@ function prepare_rhel()
 EOF
 }
 
-function prepare_ubuntu()
+prepare_ubuntu()
 {
     cat <<-EOF >> ${label}.sh
     sudo apt-get update
@@ -35,7 +35,7 @@ EOF
 }
 
 #Initialize variables
-function set_var()
+set_var()
 {
     cat <<-"EOF" > ${label}.sh
     #!/bin/sh
@@ -45,4 +45,22 @@ function set_var()
     PROVIDER=$3
 EOF
 }
+
+# Poll for the SSH daemon to come up before proceeding. The SSH poll retries 40 times with a 5-second timeout each time,
+# which should be plenty after `instance-status-ok`. SSH into nodes and install libfabric
+test_ssh()
+{
+    slave_ready=''
+    slave_poll_count=0
+    while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
+        echo "Waiting for slave instance to become ready"
+        sleep 5
+        ssh -T -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -i ~/${slave_keypair} ${ami[1]}@${SERVER_IP}  hostname
+        if [ $? -eq 0 ]; then
+            slave_ready='1'
+        fi
+        slave_poll_count=$((slave_poll_count+1))
+    done
+}
+
 export -f prepare_script

@@ -1,7 +1,7 @@
 echo "==> Building libfabric"
 # Pulls the libfabric repository and checks out the pull request commit
 git clone https://github.com/dipti-kothari/libfabric
-cd libfabric
+cd ${HOME}/libfabric
 git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
 git checkout $PULL_REQUEST_REF -b PRBranch
 ./autogen.sh
