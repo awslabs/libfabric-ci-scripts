@@ -6,9 +6,6 @@ prepare_script()
 {
     set_var
     prepare_${label}
-    if [ ${PROVIDER} = "efa" ]; then
-        efa_kernel_drivers_${label}
-    fi
     cat install-libfabric.sh >> ${label}.sh
 }
 prepare_alinux()
@@ -47,20 +44,6 @@ set_var()
 EOF
 }
 
-efa_kernel_drivers_alinux()
-{
-    
-}
-
-efa_kernel_drivers_rhel()
-{
-
-}
-
-efa_kernel_drivers_ubuntu()
-{
-
-}
 # Poll for the SSH daemon to come up before proceeding. The SSH poll retries 40 times with a 5-second timeout each time,
 # which should be plenty after `instance-status-ok`. SSH into nodes and install libfabric
 test_ssh()
@@ -77,8 +60,6 @@ test_ssh()
         slave_poll_count=$((slave_poll_count+1))
     done
 }
-
-
 
 export -f prepare_script
 export -f test_ssh
