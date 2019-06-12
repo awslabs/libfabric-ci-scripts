@@ -21,6 +21,10 @@ EOF
 prepare_rhel()
 {
     prepare_alinux
+    cat <<-EOF >>${label}.sh
+    sudo yum -y install wget
+    sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+EOF
 }
 
 prepare_ubuntu()
@@ -77,8 +81,6 @@ test_ssh()
         slave_poll_count=$((slave_poll_count+1))
     done
 }
-
-
 
 export -f prepare_script
 export -f test_ssh

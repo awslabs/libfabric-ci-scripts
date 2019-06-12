@@ -5,6 +5,7 @@ source $WORKSPACE/libfabric-ci-scripts/common.sh
 slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
+
 if [ ${PROVIDER} = "efa" ];then
     SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type c5n.18xlarge --enable-api-termination --key-name ${slave_keypair} --network-interface "[{\"DeviceIndex\":0,\"SubnetId\":\"${subnet_id}\",\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]}]" --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId" --output=text)
 else
@@ -13,6 +14,10 @@ fi
 # Holds testing every 15 seconds for 40 attempts until the instance status check is ok
 aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
 SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+
+if [ ${PROVIDER} = "efa" ] && [ ${label} = "ubuntu" ];then
+    ubuntu_kernel_upgrade
+fi
 
 # Add AMI specific installation commands
 prepare_script
