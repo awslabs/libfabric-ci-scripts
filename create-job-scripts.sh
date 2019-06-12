@@ -13,7 +13,10 @@ prepare_script()
 }
 prepare_alinux()
 {
-    echo "sudo yum -y groupinstall 'Development Tools'" >> ${label}.sh
+    cat <<-EOF >>${label}.sh
+    sudo yum -y update
+    sudo yum -y groupinstall 'Development Tools'"
+EOF
 }
 
 prepare_rhel()
