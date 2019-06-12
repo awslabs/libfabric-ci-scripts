@@ -1,10 +1,14 @@
 #!/bin/bash
+
 # Prepares AMI specific scripts, this includes installation commands and adding
 # libfabric script
 prepare_script()
 {
     set_var
     prepare_${label}
+    if [ ${PROVIDER} = "efa" ]; then
+        efa_kernel_drivers
+    fi
     cat install-libfabric.sh >> ${label}.sh
 }
 prepare_alinux()
@@ -12,14 +16,16 @@ prepare_alinux()
     cat <<-EOF >>${label}.sh
     sudo yum -y update
     sudo yum -y groupinstall 'Development Tools'
+    sudo yum -y install libelf-dev || sudo yum -y install libelf-devel || sudo yum -y install elfutils-libelf-devel
+    sudo yum install kernel-devel-$(uname -r)
 EOF
 }
-
+  
 prepare_rhel()
 {
     prepare_alinux
 }
-
+  
 prepare_ubuntu()
 {
     cat <<-EOF >> ${label}.sh
@@ -28,9 +34,11 @@ prepare_ubuntu()
     sudo apt -y install autoconf
     sudo apt -y install libltdl-dev
     sudo apt -y install make
+    sudo apt -y install libelf-dev || sudo yum -y install libelf-devel || sudo yum -y install elfutils-libelf-devel
+    sudo apt install $(uname -r)
 EOF
 }
-
+  
 #Initialize variables
 set_var()
 {
@@ -43,7 +51,7 @@ set_var()
     echo "==>Installing OS specific packages"
 EOF
 }
-
+  
 # Poll for the SSH daemon to come up before proceeding. The SSH poll retries 40 times with a 5-second timeout each time,
 # which should be plenty after `instance-status-ok`. SSH into nodes and install libfabric
 test_ssh()
@@ -61,5 +69,24 @@ test_ssh()
     done
 }
 
+efa_kernel_drivers()
+{
+    cat <<-EOF >> ${label}.sh
+    wget https://github.com/amzn/amzn-drivers/archive/efa_linux_0.9.2.tar.gz
+    tar zxvf efa_linux_0.9.2.tar.gz
+    cd amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
+    make
+    sudo insmod efa.ko
+    sudo modprobe ib_core
+    sudo modprobe ib_uverbs
+EOF    
+}
+
+ubuntu_kernel_upgrade()
+{
+    test_ssh
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade    
+    sudo reboot
+}
 export -f prepare_script
 export -f test_ssh
