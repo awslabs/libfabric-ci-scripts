@@ -9,17 +9,7 @@ REMOTE_DIR=/home/${ami[1]}
 NODES=2
 BUILD_CODE=0
 
-
-# Starts as many Instances as specified in $NODES
-if [ ${PROVIDER} = efa ];then
-    INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type c5n.18xlarge --enable-api-termination --key-name ${slave_keypair} --network-interface "[{\"DeviceIndex\":0,\"SubnetId\":\"${subnet_id}\",\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\"}]" --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"  --output=text)
-    for i in ${INSTANCE_IDS}
-    do
-        aws ec2 modify-instance-attribute --instance-id $i --groups ${slave_security_group}
-    done
-else
-    INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
-fi
+INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId"   --output=text)
 INSTANCE_IDS=($INSTANCE_IDS)
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check is ok
