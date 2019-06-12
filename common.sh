@@ -17,13 +17,17 @@ prepare_alinux()
     sudo yum -y update
     sudo yum -y groupinstall 'Development Tools'
     sudo yum -y install libelf-dev || sudo yum -y install libelf-devel || sudo yum -y install elfutils-libelf-devel
-    sudo yum install kernel-devel-$(uname -r)
+    sudo yum -y install kernel-devel-$(uname -r)
 EOF
 }
   
 prepare_rhel()
 {
     prepare_alinux
+    cat <<-EOF >>${label}.sh
+    sudo yum -y install wget
+    sudo yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+EOF
 }
   
 prepare_ubuntu()
@@ -35,7 +39,7 @@ prepare_ubuntu()
     sudo apt -y install libltdl-dev
     sudo apt -y install make
     sudo apt -y install libelf-dev || sudo yum -y install libelf-devel || sudo yum -y install elfutils-libelf-devel
-    sudo apt install $(uname -r)
+    sudo apt -y install $(uname -r)
 EOF
 }
   
@@ -84,9 +88,12 @@ EOF
 
 ubuntu_kernel_upgrade()
 {
-    test_ssh
+    test_ssh $1
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade    
     sudo reboot
+EOF
 }
+
 export -f prepare_script
 export -f test_ssh
