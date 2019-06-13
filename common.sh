@@ -32,14 +32,14 @@ alinux_install()
     sudo yum -y groupinstall 'Development Tools'
 EOF
 }
-  
+
 rhel_install()
 {
     alinux_install
     cat <<-EOF >>${label}.sh
 EOF
 }
-  
+
 ubuntu_install()
 {
     cat <<-"EOF" >> ${label}.sh
@@ -50,7 +50,7 @@ ubuntu_install()
     sudo apt -y install make
 EOF
 }
-  
+
 #Initialize variables
 set_var()
 {
@@ -63,7 +63,7 @@ set_var()
     echo "==>Installing OS specific packages"
 EOF
 }
-  
+
 # Poll for the SSH daemon to come up before proceeding. The SSH poll retries 40 times with a 5-second timeout each time,
 # which should be plenty after `instance-status-ok`. SSH into nodes and install libfabric
 test_ssh()

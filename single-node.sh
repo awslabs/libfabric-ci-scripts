@@ -7,7 +7,7 @@ slave_value=${!slave_name}
 ami=($slave_value)
 NODES=1
 
-create_instance 
+create_instance
 test_instance_status ${INSTANCE_IDS}
 get_instance_ip
 
