@@ -83,4 +83,3 @@ test_ssh()
 }
 export -f prepare_script
 export -f test_ssh
-export -f ubuntu_kernel_upgrade
