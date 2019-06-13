@@ -71,5 +71,5 @@ test_ssh()
 }
 
 export -f create_instance
-export -f prepare_script
+export -f slave_install_script
 export -f test_ssh
