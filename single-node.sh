@@ -17,7 +17,7 @@ SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Rese
 
 if [ ${PROVIDER} = "efa" ] && [ ${label} = "ubuntu" ];then
     echo "Entering efa ubuntu"
-    ubuntu_kernel_upgrade
+    ubuntu_kernel_upgrade "${SERVER_IP}"
 fi
 
 # Add AMI specific installation commands
