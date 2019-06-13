@@ -1,6 +1,5 @@
 echo "==> Building libfabric"
 # Pulls the libfabric repository and checks out the pull request commit
-cd ${HOME}
 git clone https://github.com/ofiwg/libfabric
 cd ${HOME}/libfabric
 git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
@@ -33,4 +32,3 @@ fi
 export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
-echo "Fabtest build completed"
