@@ -116,6 +116,7 @@ ubuntu_kernel_upgrade()
     tar -xf aws-efa-installer-latest.tar.gz
     cd ${HOME}/aws-efa-installer
     sudo ./efa_installer.sh -y
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
     sudo reboot    
 EOF
 }
