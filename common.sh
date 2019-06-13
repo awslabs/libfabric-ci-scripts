@@ -23,9 +23,10 @@ get_instance_ip()
 }
 
 # Check provider and OS type, If EFA and Ubuntu then call ubuntu_kernel_upgrade
-function check_provider_os()
+check_provider_os()
 {
     if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
+        echo"Performin kernel upgrade on $1"
         ubuntu_kernel_upgrade "$1"
     fi
 }
