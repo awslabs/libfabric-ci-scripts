@@ -8,16 +8,13 @@ ami=($slave_value)
 NODES=1
 
 create_instance 
-
-# Holds testing every 15 seconds for 40 attempts until the instance status check is ok
-aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
-SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+test_instance_status ${INSTANCE_IDS}
+get_instance_ip
 
 # Add AMI specific installation commands
 slave_install_script
 
-# Creates a script for building libfabric on a single node by appending
-# fabtests to the existing installation script
+# Appending fabtests to the existing installation script
 cat <<-"EOF" >> ${label}.sh
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
@@ -25,11 +22,11 @@ ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 
 EOF
 
 # Test whether node is ready for SSH connection or not
-test_ssh ${SERVER_IP}
+test_ssh ${INSTANCE_IPS}
 
 # For single node, the ssh connection is established only once. The script
 # builds libfabric and also executes fabtests
-ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${SERVER_IP} "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 
 # Terminates slave node
 #AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids $SERVER_ID

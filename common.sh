@@ -5,15 +5,29 @@
 
 create_instance()
 {
-    SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId" --output=text)
+    INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId" --output=text)
 }
 
+# Holds testing every 15 seconds for 40 attempts until the instance status check is ok
+test_instance_status()
+{
+    aws ec2 wait instance-status-ok --instance-ids $1
+}
+
+# Get IP address for instances
+get_instance_ip()
+{
+    INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+}
+
+# Prepares AMI specific scripts, this includes installation commands and adding libfabric script
 slave_install_script()
 {
     set_var
     ${label}_install
     cat install-libfabric.sh >> ${label}.sh
 }
+
 alinux_install()
 {
     cat <<-"EOF" >>${label}.sh
@@ -71,5 +85,7 @@ test_ssh()
 }
 
 export -f create_instance
+export -f test_instance_status
+export -f get_instance_ip
 export -f slave_install_script
 export -f test_ssh
