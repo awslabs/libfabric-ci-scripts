@@ -93,6 +93,7 @@ ubuntu_kernel_upgrade()
 {
     test_ssh $1
     ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
+    echo "Installing kernel updgrad and then rebooting"
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
     sudo reboot
 EOF
