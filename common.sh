@@ -12,7 +12,7 @@ prepare_script()
 }
 prepare_alinux()
 {
-    cat <<-EOF >>${label}.sh
+    cat <<-"EOF" >>${label}.sh
     sudo yum -y update
     sudo yum -y groupinstall 'Development Tools'
 EOF
@@ -29,7 +29,7 @@ EOF
 
 prepare_ubuntu()
 {
-    cat <<-EOF >> ${label}.sh
+    cat <<-"EOF" >> ${label}.sh
     sudo apt-get update
     sudo apt -y install python
     sudo apt -y install autoconf
@@ -83,3 +83,4 @@ test_ssh()
 }
 export -f prepare_script
 export -f test_ssh
+export -f ubuntu_kernel_upgrade
