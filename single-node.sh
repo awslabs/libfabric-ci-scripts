@@ -16,6 +16,7 @@ aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
 SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 
 if [ ${PROVIDER} = "efa" ] && [ ${label} = "ubuntu" ];then
+    echo "Entering efa ubuntu"
     ubuntu_kernel_upgrade
 fi
 
