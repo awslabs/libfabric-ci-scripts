@@ -73,15 +73,6 @@ test_ssh()
     done
 }
 
-function ubuntu_kernel_upgrade()
-{
-    test_ssh $1
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
-    sudo reboot
-EOF
-}
-
 efa_kernel_drivers()
 {
     cat <<-EOF >> ${label}.sh
@@ -97,4 +88,3 @@ EOF
 
 export -f prepare_script
 export -f test_ssh
-export -f ubuntu_kernel_upgrade
