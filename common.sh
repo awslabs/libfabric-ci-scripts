@@ -25,7 +25,7 @@ get_instance_ip()
 # Check provider and OS type, If EFA and Ubuntu then call ubuntu_kernel_upgrade
 function check_provider_os()
 {
-    if [ ${PROVIDER} == "efa" ] && [ ${label} != "ubuntu" ];then
+    if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
         ubuntu_kernel_upgrade "$1"
     fi
 }
@@ -35,7 +35,7 @@ installation_script()
 {
     set_var
     ${label}_install
-    if [ ${PROVIDER} = "efa" ] && [ ${label} != "ubuntu" ]; then
+    if [ ${PROVIDER} == "efa" ] && [ ${label} != "ubuntu" ]; then
         efa_kernel_drivers
     fi
     cat install-libfabric.sh >> ${label}.sh

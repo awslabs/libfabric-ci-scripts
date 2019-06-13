@@ -12,7 +12,7 @@ test_instance_status ${INSTANCE_IDS}
 get_instance_ip
 
 # Kernel upgrade only for Ubuntu and provider EFA
-check_provider_os ${INSTANCE_IDS}
+check_provider_os ${INSTANCE_IPS}
 
 # Add AMI specific installation commands
 installation_script
