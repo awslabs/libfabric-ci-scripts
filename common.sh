@@ -2,13 +2,19 @@
 
 # Prepares AMI specific scripts, this includes installation commands and adding
 # libfabric script
-prepare_script()
+
+create_instance()
+{
+    SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId" --output=text)
+}
+
+slave_install_script()
 {
     set_var
-    prepare_${label}
+    ${label}_install
     cat install-libfabric.sh >> ${label}.sh
 }
-prepare_alinux()
+alinux_install()
 {
     cat <<-"EOF" >>${label}.sh
     sudo yum -y update
@@ -16,14 +22,14 @@ prepare_alinux()
 EOF
 }
   
-prepare_rhel()
+rhel_install()
 {
     prepare_alinux
     cat <<-EOF >>${label}.sh
 EOF
 }
   
-prepare_ubuntu()
+ubuntu_install()
 {
     cat <<-"EOF" >> ${label}.sh
     sudo apt-get update
@@ -64,5 +70,6 @@ test_ssh()
     done
 }
 
+export -f create_instance
 export -f prepare_script
 export -f test_ssh

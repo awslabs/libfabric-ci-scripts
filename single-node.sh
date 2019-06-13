@@ -5,14 +5,16 @@ source $WORKSPACE/libfabric-ci-scripts/common.sh
 slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
-SERVER_ID=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --query "Instances[*].InstanceId" --output=text)
+NODES=1
+
+create_instance 
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check is ok
 aws ec2 wait instance-status-ok --instance-ids ${SERVER_ID}
 SERVER_IP=$(aws ec2 describe-instances --instance-ids ${SERVER_ID} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 
 # Add AMI specific installation commands
-prepare_script
+slave_install_script
 
 # Creates a script for building libfabric on a single node by appending
 # fabtests to the existing installation script
