@@ -22,7 +22,7 @@ cat <<-"EOF" >> ${label}.sh
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 gid=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
-${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -t all -C "-P 0" -s $gid ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -t all -C "-P 0" -s $gid -c $gid ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 EOF
 
 # Test whether node is ready for SSH connection or not
