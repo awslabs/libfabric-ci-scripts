@@ -110,12 +110,13 @@ ubuntu_kernel_upgrade()
 {
     test_ssh $1
     ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
+    echo "==>EFA drivers will be installed and system will reboot"
     sudo apt-get update
     wget https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz
     tar -xf aws-efa-installer-latest.tar.gz
     cd ${HOME}/aws-efa-installer
     sudo ./efa_installer.sh -y
-    sudo reboot
+    sudo reboot    
 EOF
 }
 
