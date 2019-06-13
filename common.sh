@@ -95,5 +95,6 @@ ubuntu_kernel_upgrade()
 EOF
 }
 
+export -f ubuntu_kernel_upgrade
 export -f prepare_script
 export -f test_ssh
