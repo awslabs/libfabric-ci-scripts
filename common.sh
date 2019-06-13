@@ -75,14 +75,17 @@ test_ssh()
 
 efa_kernel_drivers()
 {
-    cat <<-EOF >> ${label}.sh
+    cat <<-"EOF" >> ${label}.sh
     wget https://github.com/amzn/amzn-drivers/archive/efa_linux_0.9.2.tar.gz
     tar zxvf efa_linux_0.9.2.tar.gz
-    cd amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
+    cd ${HOME}/amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
     sudo make
-    sudo insmod efa.ko
+    echo "make completed"
     sudo modprobe ib_core
     sudo modprobe ib_uverbs
+    cd ${HOME}/amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
+    sudo modprobe efa.ko
+    sudo insmod efa.ko
 EOF
 }
 
