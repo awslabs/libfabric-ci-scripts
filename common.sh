@@ -80,11 +80,10 @@ efa_kernel_drivers()
     tar zxvf efa_linux_0.9.2.tar.gz
     cd ${HOME}/amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
     sudo make
-    echo "make completed"
+    wait
+    sudo insmod efa.ko
     sudo modprobe ib_core
     sudo modprobe ib_uverbs
-    cd ${HOME}/amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
-    sudo insmod efa.ko
 EOF
 }
 
@@ -94,6 +93,7 @@ ubuntu_kernel_upgrade()
     ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
     echo "Installing kernel updgrad and then rebooting"
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+    wait
     sudo reboot
 EOF
 }
