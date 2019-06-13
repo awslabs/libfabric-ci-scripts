@@ -109,11 +109,10 @@ efa_kernel_drivers()
     wget https://github.com/amzn/amzn-drivers/archive/efa_linux_0.9.2.tar.gz
     tar zxvf efa_linux_0.9.2.tar.gz
     cd ${HOME}/amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
-    sudo make
-    wait
-    sudo insmod efa.ko
+    make
     sudo modprobe ib_core
     sudo modprobe ib_uverbs
+    sudo insmod efa.ko
 EOF
 }
 
