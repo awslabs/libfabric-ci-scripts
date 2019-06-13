@@ -23,9 +23,9 @@ ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 if [ ${PROVIDER} == "efa" ];then
     gid=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
-    ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vv -t all -C "-P 0" -s $gid -c $gid ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+    ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v -t all -C "-P 0" -s $gid -c $gid ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 else
-    ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+    ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
 fi
 EOF
 

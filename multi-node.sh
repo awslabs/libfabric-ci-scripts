@@ -36,11 +36,10 @@ ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IP
     if [ ${PROVIDER} == "efa" ];then
         gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
         gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)  
-        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vv -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+        ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
     else
-        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+        ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -vv ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
     fi
-    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
 EOF
 }
 
