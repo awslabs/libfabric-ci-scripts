@@ -81,6 +81,5 @@ test_ssh()
         slave_poll_count=$((slave_poll_count+1))
     done
 }
-
 export -f prepare_script
 export -f test_ssh
