@@ -24,7 +24,11 @@ install_libfabric()
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
 execute_runfabtests()
 {
-ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
+    gid_s=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+    echo $gid_s
+    gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)  
+    echo $gid_c
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
     # Runs all the tests in the fabtests suite while only expanding failed cases
     EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.EXCLUDE
     if [ -f ${EXCLUDE} ]; then
@@ -37,10 +41,6 @@ ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IP
     export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
     echo "Running Fabtest"
     if [ ${PROVIDER} == "efa" ];then
-        gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
-        echo $gid_s
-        gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)  
-        echo $gid_c
         ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
     else
         ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -vv ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
