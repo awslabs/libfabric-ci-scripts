@@ -38,7 +38,7 @@ EOF
   
 rhel_install()
 {
-    prepare_alinux
+    alinux_install
     cat <<-EOF >>${label}.sh
 EOF
 }
