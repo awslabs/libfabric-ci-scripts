@@ -27,7 +27,7 @@ test_instance_status()
 install_libfabric()
 {
     if [ ${PROVIDER} = "efa" ] && [ ${label} = "ubuntu" ];then
-        ubuntu_kernel_upgrade
+        ubuntu_kernel_upgrade "$1"
     fi
     test_ssh "$1"
     scp -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/

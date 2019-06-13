@@ -84,7 +84,6 @@ efa_kernel_drivers()
     sudo modprobe ib_core
     sudo modprobe ib_uverbs
     cd ${HOME}/amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
-    sudo modprobe efa.ko
     sudo insmod efa.ko
 EOF
 }
