@@ -33,4 +33,3 @@ fi
 export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
-echo "Fabtest build completed"
