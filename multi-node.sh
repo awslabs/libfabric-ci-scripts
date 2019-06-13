@@ -9,15 +9,6 @@ REMOTE_DIR=/home/${ami[1]}
 NODES=2
 BUILD_CODE=0
 
-INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId" --output=text)
-INSTANCE_IDS=($INSTANCE_IDS)
-
-# Holds testing every 15 seconds for 40 attempts until the instance status check is ok
-test_instance_status()
-{
-    aws ec2 wait instance-status-ok --instance-ids $1
-}
-
 # Test whether the instance is ready for SSH or not. Once the instance is ready,
 # copy SSH keys from Jenkins and install libfabric
 install_libfabric()
@@ -45,6 +36,9 @@ ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IP
 EOF
 }
 
+create_instance
+INSTANCE_IDS=($INSTANCE_IDS)
+
 # Wait until all instances have passed status check
 for ID in ${INSTANCE_IDS[@]}
 do
@@ -52,12 +46,11 @@ do
 done
 wait
 
-# Get IP address for all instances
-INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
+get_instance_ip
 INSTANCE_IPS=($INSTANCE_IPS)
 
 # Prepare AMI specific libfabric installation script
-prepare_script
+installation_script
 
 # Generate ssh key for fabtests
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null

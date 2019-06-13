@@ -12,7 +12,7 @@ test_instance_status ${INSTANCE_IDS}
 get_instance_ip
 
 # Add AMI specific installation commands
-slave_install_script
+installation_script
 
 # Appending fabtests to the existing installation script
 cat <<-"EOF" >> ${label}.sh

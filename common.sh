@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Prepares AMI specific scripts, this includes installation commands and adding
-# libfabric script
-
 create_instance()
 {
     INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId" --output=text)
@@ -20,8 +17,8 @@ get_instance_ip()
     INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 }
 
-# Prepares AMI specific scripts, this includes installation commands and adding libfabric script
-slave_install_script()
+# Prepares AMI specific script, this includes installation commands and adding libfabric script
+installation_script()
 {
     set_var
     ${label}_install
@@ -87,5 +84,5 @@ test_ssh()
 export -f create_instance
 export -f test_instance_status
 export -f get_instance_ip
-export -f slave_install_script
+export -f installation_script
 export -f test_ssh
