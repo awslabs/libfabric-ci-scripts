@@ -81,6 +81,35 @@ test_ssh()
         slave_poll_count=$((slave_poll_count+1))
     done
 }
+<<<<<<< HEAD
+=======
+
+efa_kernel_drivers()
+{
+    cat <<-"EOF" >> ${label}.sh
+    wget https://github.com/amzn/amzn-drivers/archive/efa_linux_0.9.2.tar.gz
+    tar zxvf efa_linux_0.9.2.tar.gz
+    cd ${HOME}/amzn-drivers-efa_linux_0.9.2/kernel/linux/efa/
+    sudo make
+    wait
+    sudo insmod efa.ko
+    sudo modprobe ib_core
+    sudo modprobe ib_uverbs
+EOF
+}
+
+ubuntu_kernel_upgrade()
+{
+    test_ssh $1
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
+    echo "Installing kernel updgrad and then rebooting"
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+    wait
+    sudo reboot
+EOF
+}
+
+>>>>>>> 5a15584... export not a function
 export -f prepare_script
 export -f test_ssh
 export -f ubuntu_kernel_upgrade
