@@ -86,7 +86,7 @@ efa_kernel_drivers()
 EOF    
 }
 
-ubuntu_kernel_upgrade()
+function ubuntu_kernel_upgrade()
 {
     test_ssh $1
     ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
