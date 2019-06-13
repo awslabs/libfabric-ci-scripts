@@ -13,7 +13,7 @@ prepare_script()
 }
 prepare_alinux()
 {
-    cat <<-EOF >>${label}.sh
+    cat <<-"EOF" >>${label}.sh
     sudo yum -y update
     sudo yum -y groupinstall 'Development Tools'
     sudo yum -y install libelf-dev || sudo yum -y install libelf-devel || sudo yum -y install elfutils-libelf-devel
@@ -32,7 +32,7 @@ EOF
   
 prepare_ubuntu()
 {
-    cat <<-EOF >> ${label}.sh
+    cat <<-"EOF" >> ${label}.sh
     sudo apt-get update
     sudo apt -y install python
     sudo apt -y install autoconf
@@ -73,6 +73,15 @@ test_ssh()
     done
 }
 
+function ubuntu_kernel_upgrade()
+{
+    test_ssh $1
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+    sudo reboot
+EOF
+}
+
 efa_kernel_drivers()
 {
     cat <<-EOF >> ${label}.sh
@@ -86,15 +95,6 @@ efa_kernel_drivers()
 EOF    
 }
 
-function ubuntu_kernel_upgrade()
-{
-    test_ssh $1
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 <<-EOF
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade    
-    sudo reboot
-EOF
-}
-
-export -f ubuntu_kernel_upgrade
 export -f prepare_script
 export -f test_ssh
+export -f ubuntu_kernel_upgrade
