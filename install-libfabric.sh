@@ -24,7 +24,7 @@ make -j 4
 make install
 
 # Runs all the tests in the fabtests suite between two nodes while only expanding failed cases
-EXCLUDE=${HOME}/libfabric/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 if [ -f ${EXCLUDE} ]; then
     EXCLUDE="-R -f ${EXCLUDE}"
 else

@@ -26,7 +26,7 @@ runfabtests_script_builder()
     SERVER_IP=$2
     CLIENT_IP=$3
     # Runs all the tests in the fabtests suite while only expanding failed cases
-    EXCLUDE=${HOME}/libfabric/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+    EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
     if [ -f ${EXCLUDE} ]; then
         EXCLUDE="-R -f ${EXCLUDE}"
     else
@@ -53,7 +53,13 @@ execute_runfabtests()
     else
         gid_c=""
     fi
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh  "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
+        "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh \
+        "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" && \
+        {echo "Build success on ${INSTANCE_IPS[$1]}" ; \
+        echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || \
+        {echo "Build failed on ${INSTANCE_IPS[$1]}"; \
+        echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
 }
 
 create_instance
