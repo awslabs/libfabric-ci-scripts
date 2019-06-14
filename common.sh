@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Launches EC2 instances. 
+# Launches EC2 instances.
 create_instance()
 {
     if [ ${PROVIDER} == "efa" ];then
@@ -26,13 +26,13 @@ get_instance_ip()
 check_provider_os()
 {
     if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
-        echo"Performin kernel upgrade on $1"
         ubuntu_kernel_upgrade "$1"
     fi
 }
- 
-# Prepares AMI specific script, this includes installation commands and adding libfabric script
-installation_script()
+
+# Creates a script, the script includes installation commands for
+# different AMIs and libfabric script
+script_builder()
 {
     set_var
     ${label}_install
@@ -118,7 +118,6 @@ ubuntu_kernel_upgrade()
     cd ${HOME}/aws-efa-installer
     sudo ./efa_installer.sh -y
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
-    sudo reboot    
+    sudo reboot
 EOF
 }
-

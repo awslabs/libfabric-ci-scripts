@@ -15,7 +15,7 @@ get_instance_ip
 check_provider_os ${INSTANCE_IPS}
 
 # Add AMI specific installation commands
-installation_script
+script_builder
 
 # Appending fabtests to the existing installation script
 cat <<-"EOF" >> ${label}.sh

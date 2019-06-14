@@ -12,7 +12,7 @@ BUILD_CODE=0
 # Test whether the instance is ready for SSH or not. Once the instance is ready,
 # copy SSH keys from Jenkins and install libfabric
 install_libfabric()
-{ 
+{
     check_provider_os "$1"
     test_ssh "$1"
     scp -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
@@ -24,7 +24,7 @@ runfabtests_script_builder()
     cat <<-"EOF" > multinode_runfabtests.sh
     PROVIDER=$1
     SERVER_IP=$2
-    CLIENT_IP=$3  
+    CLIENT_IP=$3
     # Runs all the tests in the fabtests suite while only expanding failed cases
     EXCLUDE=${HOME}/libfabric/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
     if [ -f ${EXCLUDE} ]; then
@@ -70,7 +70,7 @@ get_instance_ip
 INSTANCE_IPS=($INSTANCE_IPS)
 
 # Prepare AMI specific libfabric installation script
-installation_script
+script_builder
 
 # Generate ssh key for fabtests
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
@@ -86,7 +86,7 @@ do
 done
 wait
 
-# Prepare runfabtests script to be run on the server (INSTANCE_IPS[0]) 
+# Prepare runfabtests script to be run on the server (INSTANCE_IPS[0])
 runfabtests_script_builder
 
 # SSH into SERVER node and run fabtests
