@@ -26,15 +26,12 @@ runfabtests_script_builder()
     SERVER_IP=$2
     CLIENT_IP=$3  
     # Runs all the tests in the fabtests suite while only expanding failed cases
-    EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.EXCLUDE
+    EXCLUDE=${HOME}/libfabric/fabtests/test_configs/${PROVIDER}/${PROVIDER}.EXCLUDE
     if [ -f ${EXCLUDE} ]; then
         EXCLUDE="-R -f ${EXCLUDE}"
     else
         EXCLUDE=""
     fi
-    export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-    export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-    export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
     if [ ${PROVIDER} == "efa" ];then
         gid_c=$4
         gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
