@@ -23,10 +23,8 @@ runfabtests_script_builder()
 {
     cat <<-"EOF" > multinode_runfabtests.sh
     PROVIDER=$1
-    SERVER_IP=$3
-    CLIENT_IP=$4  
-    gid_c=$2
-    gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+    SERVER_IP=$2
+    CLIENT_IP=$3  
     # Runs all the tests in the fabtests suite while only expanding failed cases
     EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.EXCLUDE
     if [ -f ${EXCLUDE} ]; then
@@ -34,10 +32,13 @@ runfabtests_script_builder()
     else
         EXCLUDE=""
     fi
+    echo ${EXCLUDE}
     export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
     export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
     export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
     if [ ${PROVIDER} == "efa" ];then
+        gid_c=$4
+        gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
         ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
     else
         ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
@@ -48,8 +49,13 @@ EOF
 # Runs fabtests on client nodes using INSTANCE_IPS[0] as server
 execute_runfabtests()
 {
-    gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh  "${PROVIDER}" "${gid_c}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
+    if [ ${PROVIDER} == "efa" ];then
+        gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+    fi
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair}
+    ${ami[1]}@${INSTANCE_IPS[0]} "bash -s" -- <
+    $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh  "${PROVIDER}"
+    "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
 }
 
 create_instance
