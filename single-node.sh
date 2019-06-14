@@ -21,7 +21,6 @@ installation_script
 cat <<-"EOF" >> ${label}.sh
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
-echo $EXCLUDE
 if [ ${PROVIDER} == "efa" ];then
     gid=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
     ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v -t all -C "-P 0" -s $gid -c $gid ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
@@ -38,5 +37,5 @@ test_ssh ${INSTANCE_IPS}
 ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
 
 # Terminates slave node
-# AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS}
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS}
 exit $EXIT_CODE

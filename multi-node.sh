@@ -27,13 +27,11 @@ runfabtests_script_builder()
     CLIENT_IP=$3  
     # Runs all the tests in the fabtests suite while only expanding failed cases
     EXCLUDE=${HOME}/libfabric/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
-    echo $EXCLUDE
     if [ -f ${EXCLUDE} ]; then
         EXCLUDE="-R -f ${EXCLUDE}"
     else
         EXCLUDE=""
     fi
-    echo $EXCLUDE
     export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
     export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
     export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
@@ -52,6 +50,8 @@ execute_runfabtests()
 {
     if [ ${PROVIDER} == "efa" ];then
         gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+    else
+        gid_c=""
     fi
     ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh  "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
 }
@@ -106,5 +106,5 @@ do
 done
 
 # Terminates all slave nodes
-#AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
 exit ${BUILD_CODE}
