@@ -31,13 +31,13 @@ check_provider_os()
 }
 
 # Creates a script, the script includes installation commands for
-# different AMIs and libfabric script
+# different AMIs and appends libfabric script
 script_builder()
 {
     set_var
     ${label}_install
-    if [ ${PROVIDER} == "efa" ] && [ ${label} != "ubuntu" ]; then
-        efa_kernel_drivers
+    if [ ${PROVIDER} == "efa" ]; then
+         efa_software_components
     fi
     cat install-libfabric.sh >> ${label}.sh
 }
@@ -97,7 +97,7 @@ test_ssh()
     done
 }
 
-efa_kernel_drivers()
+efa_software_components()
 {
     cat <<-"EOF" >> ${label}.sh
     wget https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz
@@ -110,14 +110,11 @@ EOF
 ubuntu_kernel_upgrade()
 {
     test_ssh $1
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1<<-"EOF"
-    echo "==>EFA drivers will be installed and system will reboot"
+    cat <<-"EOF" > ubuntu_kernel_upgrade.sh
+    echo "==>System will reboot after EFA software components are installed"
     sudo apt-get update
-    wget https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz
-    tar -xf aws-efa-installer-latest.tar.gz
-    cd ${HOME}/aws-efa-installer
-    sudo ./efa_installer.sh -y
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
     sudo reboot
 EOF
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/ubuntu_kernel_upgrade.sh  
 }
