@@ -1,43 +1,33 @@
-#!/bin/sh
+#!/bin/bash
 
 set +x
+source $WORKSPACE/libfabric-ci-scripts/common.sh
+slave_name=slave_$label
+slave_value=${!slave_name}
+ami=($slave_value)
+NODES=1
 
-# Pulls the libfabric repository and checks out the pull request commit
-echo "==> Building libfabric"
-cd $WORKSPACE
-git clone https://github.com/ofiwg/libfabric
-cd libfabric
-git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-git checkout $PULL_REQUEST_REF -b PRBranch
-./autogen.sh
-./configure --prefix=$WORKSPACE/libfabric/install/ \
-				--enable-debug 	\
-				--enable-mrail 	\
-				--enable-tcp 	\
-				--enable-rxm	\
-				--disable-rxd
-make -j 4
-sudo make install
+create_instance
+test_instance_status ${INSTANCE_IDS}
+get_instance_ip
 
-echo "==> Building fabtests"
-cd $WORKSPACE/libfabric/fabtests
-./autogen.sh
-./configure --with-libfabric=$WORKSPACE/libfabric/install/ \
-		--prefix=$WORKSPACE/fabtests/install/ \
-		--enable-debug
-make -j 4
-sudo make install
+# Add AMI specific installation commands
+installation_script
 
-# Runs all the tests in the fabtests suite while only expanding failed cases
-EXCLUDE=$WORKSPACE/fabtests/install/share/fabtests/test_configs/$PROVIDER/${PROVIDER}.exclude
-if [ -f $EXCLUDE ]; then
-	EXCLUDE="-R -f $EXCLUDE"
-else
-	EXCLUDE=""
-fi
+# Appending fabtests to the existing installation script
+cat <<-"EOF" >> ${label}.sh
+ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
+cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
+${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+EOF
 
-echo "==> Running fabtests"
-LD_LIBRARY_PATH=$WORKSPACE/fabtests/install/lib/:$LD_LIBRARY_PATH	\
-BIN_PATH=$WORKSPACE/fabtests/install/bin/ FI_LOG_LEVEL=debug		\
-$WORKSPACE/fabtests/install/bin/runfabtests.sh -v $EXCLUDE		\
-$PROVIDER 127.0.0.1 127.0.0.1
+# Test whether node is ready for SSH connection or not
+test_ssh ${INSTANCE_IPS}
+
+# For single node, the ssh connection is established only once. The script
+# builds libfabric and also executes fabtests
+ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+
+# Terminates slave node
+AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS}
+exit $EXIT_CODE
