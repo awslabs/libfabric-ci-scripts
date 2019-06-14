@@ -26,7 +26,7 @@ runfabtests_script_builder()
     SERVER_IP=$2
     CLIENT_IP=$3  
     # Runs all the tests in the fabtests suite while only expanding failed cases
-    EXCLUDE=${HOME}/libfabric/fabtests/test_configs/${PROVIDER}/${PROVIDER}.EXCLUDE
+    EXCLUDE=${HOME}/libfabric/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
     echo $EXCLUDE
     if [ -f ${EXCLUDE} ]; then
         EXCLUDE="-R -f ${EXCLUDE}"
