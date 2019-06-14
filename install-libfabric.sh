@@ -25,6 +25,8 @@ make install
 
 # Runs all the tests in the fabtests suite between two nodes while only expanding failed cases
 EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+echo "printing exclude"
+echo $EXCLUDE
 if [ -f ${EXCLUDE} ]; then
     EXCLUDE="-R -f ${EXCLUDE}"
 else
