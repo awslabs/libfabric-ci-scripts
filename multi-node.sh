@@ -32,7 +32,6 @@ runfabtests_script_builder()
     else
         EXCLUDE=""
     fi
-    echo ${EXCLUDE}
     export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
     export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
     export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
@@ -105,5 +104,5 @@ do
 done
 
 # Terminates all slave nodes
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
+#AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
 exit ${BUILD_CODE}
