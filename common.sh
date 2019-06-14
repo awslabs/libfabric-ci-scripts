@@ -122,10 +122,3 @@ ubuntu_kernel_upgrade()
 EOF
 }
 
-export -f create_instance
-export -f test_instance_status
-export -f get_instance_ip
-export -f installation_script
-export -f test_ssh
-export -f check_provider_os
-export -f ubuntu_kernel_upgrade
