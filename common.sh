@@ -16,6 +16,7 @@ create_instance()
         --query "Instances[*].InstanceId" \
         --output=text)
     else
+        echo "creating instance"
         INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
         --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
         --image-id ${ami[0]} \
