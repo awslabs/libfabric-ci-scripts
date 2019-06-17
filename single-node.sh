@@ -11,14 +11,22 @@ create_instance
 test_instance_status ${INSTANCE_IDS}
 get_instance_ip
 
+# Kernel upgrade only for Ubuntu and provider EFA
+check_provider_os ${INSTANCE_IPS}
+
 # Add AMI specific installation commands
-installation_script
+script_builder
 
 # Appending fabtests to the existing installation script
 cat <<-"EOF" >> ${label}.sh
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
-${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+if [ ${PROVIDER} == "efa" ];then
+    gid=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+    ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v -t all -C "-P 0" -s $gid -c $gid ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+else
+    ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
+fi
 EOF
 
 # Test whether node is ready for SSH connection or not
