@@ -13,27 +13,51 @@ BUILD_CODE=0
 # copy SSH keys from Jenkins and install libfabric
 install_libfabric()
 {
+    check_provider_os "$1"
     test_ssh "$1"
     scp -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
     ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
 }
 
-# Runs fabtests on client nodes using INSTANCE_IPS[0] as server
-execute_runfabtests()
+runfabtests_script_builder()
 {
-ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} <<-EOF && { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
+    cat <<-"EOF" > multinode_runfabtests.sh
+    PROVIDER=$1
+    SERVER_IP=$2
+    CLIENT_IP=$3
     # Runs all the tests in the fabtests suite while only expanding failed cases
-    EXCLUDE=${REMOTE_DIR}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.EXCLUDE
+    EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
     if [ -f ${EXCLUDE} ]; then
         EXCLUDE="-R -f ${EXCLUDE}"
     else
         EXCLUDE=""
     fi
-    export LD_LIBRARY_PATH=${REMOTE_DIR}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-    export BIN_PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-    export PATH=${REMOTE_DIR}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
-    ${REMOTE_DIR}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${INSTANCE_IPS[0]} ${INSTANCE_IPS[$1]}
+    export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
+    export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
+    export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
+    if [ ${PROVIDER} == "efa" ];then
+        gid_c=$4
+        gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
+    else
+        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
+    fi
 EOF
+}
+
+# Runs fabtests on client nodes using INSTANCE_IPS[0] as server
+execute_runfabtests()
+{
+    if [ ${PROVIDER} == "efa" ];then
+        gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+    else
+        gid_c=""
+    fi
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
+        "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh \
+        "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" && \
+        { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || \
+        { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
 }
 
 create_instance
@@ -50,7 +74,7 @@ get_instance_ip
 INSTANCE_IPS=($INSTANCE_IPS)
 
 # Prepare AMI specific libfabric installation script
-installation_script
+script_builder
 
 # Generate ssh key for fabtests
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
@@ -65,6 +89,9 @@ do
     install_libfabric "$IP" &
 done
 wait
+
+# Prepare runfabtests script to be run on the server (INSTANCE_IPS[0])
+runfabtests_script_builder
 
 # SSH into SERVER node and run fabtests
 N=$((${#INSTANCE_IPS[@]}-1))

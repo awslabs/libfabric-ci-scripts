@@ -1,8 +1,34 @@
 #!/bin/bash
 
+# Launches EC2 instances.
 create_instance()
 {
-    INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' --image-id ${ami[0]} --instance-type ${instance_type} --enable-api-termination --key-name ${slave_keypair} --security-group-id ${slave_security_group} --subnet-id ${subnet_id} --placement AvailabilityZone=${availability_zone} --count ${NODES}:${NODES} --query "Instances[*].InstanceId" --output=text)
+    if [ ${PROVIDER} == "efa" ];then
+        INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
+            --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
+            --image-id ${ami[0]} \
+            --instance-type c5n.18xlarge \
+            --enable-api-termination \
+            --key-name ${slave_keypair} \
+            --network-interface "[{\"DeviceIndex\":0,\"SubnetId\":\"${subnet_id}\",\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]}]" \
+            --placement AvailabilityZone=${availability_zone} \
+            --count ${NODES}:${NODES} \
+            --query "Instances[*].InstanceId" \
+            --output=text)
+    else
+        INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
+            --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
+            --image-id ${ami[0]} \
+            --instance-type ${instance_type} \
+            --enable-api-termination \
+            --key-name ${slave_keypair} \
+            --security-group-id ${slave_security_group} \
+            --subnet-id ${subnet_id} \
+            --placement AvailabilityZone=${availability_zone} \
+            --count ${NODES}:${NODES} \
+            --query "Instances[*].InstanceId" \
+            --output=text)
+    fi
 }
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check is ok
@@ -17,17 +43,29 @@ get_instance_ip()
     INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} --query "Reservations[*].Instances[*].PrivateIpAddress" --output=text)
 }
 
-# Prepares AMI specific script, this includes installation commands and adding libfabric script
-installation_script()
+# Check provider and OS type, If EFA and Ubuntu then call ubuntu_kernel_upgrade
+check_provider_os()
+{
+    if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
+        ubuntu_kernel_upgrade "$1"
+    fi
+}
+
+# Creates a script, the script includes installation commands for
+# different AMIs and appends libfabric script
+script_builder()
 {
     set_var
     ${label}_install
+    if [ ${PROVIDER} == "efa" ]; then
+         efa_software_components
+    fi
     cat install-libfabric.sh >> ${label}.sh
 }
 
 alinux_install()
 {
-    cat <<-"EOF" >>${label}.sh
+    cat <<-"EOF" >> ${label}.sh
     sudo yum -y update
     sudo yum -y groupinstall 'Development Tools'
 EOF
@@ -36,8 +74,7 @@ EOF
 rhel_install()
 {
     alinux_install
-    cat <<-EOF >>${label}.sh
-EOF
+    echo "sudo yum -y install wget" >> ${label}.sh
 }
 
 ubuntu_install()
@@ -81,8 +118,24 @@ test_ssh()
     done
 }
 
-export -f create_instance
-export -f test_instance_status
-export -f get_instance_ip
-export -f installation_script
-export -f test_ssh
+efa_software_components()
+{
+    cat <<-"EOF" >> ${label}.sh
+    wget https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz
+    tar -xf aws-efa-installer-latest.tar.gz
+    cd ${HOME}/aws-efa-installer
+    sudo ./efa_installer.sh -y
+EOF
+}
+
+ubuntu_kernel_upgrade()
+{
+    test_ssh $1
+    cat <<-"EOF" > ubuntu_kernel_upgrade.sh
+    echo "==>System will reboot after kernel upgrade"
+    sudo apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+    sudo reboot
+EOF
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/ubuntu_kernel_upgrade.sh
+}
