@@ -5,29 +5,29 @@ create_instance()
 {
     if [ ${PROVIDER} == "efa" ];then
         INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
-        --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
-        --image-id ${ami[0]} \
-        --instance-type c5n.18xlarge \
-        --enable-api-termination \
-        --key-name ${slave_keypair} \
-        --network-interface "[{\"DeviceIndex\":0,\"SubnetId\":\"${subnet_id}\",\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]}]" \
-        --placement AvailabilityZone=${availability_zone} \
-        --count ${NODES}:${NODES} \
-        --query "Instances[*].InstanceId" \
-        --output=text)
+            --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
+            --image-id ${ami[0]} \
+            --instance-type c5n.18xlarge \
+            --enable-api-termination \
+            --key-name ${slave_keypair} \
+            --network-interface "[{\"DeviceIndex\":0,\"SubnetId\":\"${subnet_id}\",\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]}]" \
+            --placement AvailabilityZone=${availability_zone} \
+            --count ${NODES}:${NODES} \
+            --query "Instances[*].InstanceId" \
+            --output=text)
     else
         INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
-        --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
-        --image-id ${ami[0]} \
-        --instance-type ${instance_type} \
-        --enable-api-termination \
-        --key-name ${slave_keypair} \
-        --security-group-id ${slave_security_group} \
-        --subnet-id ${subnet_id} \
-        --placement AvailabilityZone=${availability_zone} \
-        --count ${NODES}:${NODES} \
-        --query "Instances[*].InstanceId" \
-        --output=text)
+            --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
+            --image-id ${ami[0]} \
+            --instance-type ${instance_type} \
+            --enable-api-termination \
+            --key-name ${slave_keypair} \
+            --security-group-id ${slave_security_group} \
+            --subnet-id ${subnet_id} \
+            --placement AvailabilityZone=${availability_zone} \
+            --count ${NODES}:${NODES} \
+            --query "Instances[*].InstanceId" \
+            --output=text)
     fi
 }
 
@@ -137,5 +137,5 @@ ubuntu_kernel_upgrade()
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
     sudo reboot
 EOF
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/ubuntu_kernel_upgrade.sh  
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/ubuntu_kernel_upgrade.sh
 }
