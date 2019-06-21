@@ -16,7 +16,9 @@ install_libfabric()
     check_provider_os "$1"
     test_ssh "$1"
     scp -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER"
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 \
+        "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh \
+        "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
 }
 
 runfabtests_script_builder()
@@ -53,11 +55,11 @@ execute_runfabtests()
     else
         gid_c=""
     fi
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
+    (ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
         "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh \
-        "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" && \
-        { echo "Build success on ${INSTANCE_IPS[$1]}" ; echo "EXIT_CODE=0" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; } || \
-        { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
+        "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" 2>&1; \
+        echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh) | \
+        tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS[0]}' \1/'
 }
 
 create_instance || { echo "==>Unable to create instance"; exit 1; }
@@ -104,9 +106,7 @@ done
 for i in $(seq 1 $N)
 do
     source $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$i]}.sh
-    if [ $EXIT_CODE -ne 0 ];then
-        BUILD_CODE=1
-    fi
+    exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
 done
 
 # Terminates all slave nodes

@@ -137,5 +137,17 @@ ubuntu_kernel_upgrade()
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
     sudo reboot
 EOF
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/ubuntu_kernel_upgrade.sh
+    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
+        "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/ubuntu_kernel_upgrade.sh \
+        2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+}
+
+exit_status()
+{
+    if [ $1 -ne 0 ];then
+        BUILD_CODE=1
+        echo "Build failure on $2"
+    else
+        echo "Build success on $2"
+    fi
 }
