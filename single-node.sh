@@ -6,6 +6,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 NODES=1
+BUILD_CODE=0
 
 create_instance || { echo "==>Unable to create instance"; exit 1; }
 test_instance_status ${INSTANCE_IDS}
@@ -34,8 +35,14 @@ test_ssh ${INSTANCE_IPS}
 
 # For single node, the ssh connection is established only once. The script
 # builds libfabric and also executes fabtests
-ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" && { echo "Build success" ; EXIT_CODE=0 ; } || { echo "Build failed"; EXIT_CODE=1 ;}
+ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} \
+    "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh \
+    "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS}' \1/'
+EXIT_CODE=${PIPESTATUS[0]}
+
+# Get build status
+exit_status "$EXIT_CODE" "${INSTANCE_IPS}"
 
 # Terminates slave node
 AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS}
-exit $EXIT_CODE
+exit ${BUILD_CODE}
