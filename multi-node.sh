@@ -60,7 +60,7 @@ execute_runfabtests()
         { echo "Build failed on ${INSTANCE_IPS[$1]}"; echo "EXIT_CODE=1" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh; }
 }
 
-create_instance
+create_instance || { echo "==>Unable to create instance"; exit 1; }
 INSTANCE_IDS=($INSTANCE_IDS)
 
 # Wait until all instances have passed status check
