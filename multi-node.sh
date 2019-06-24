@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set +x
+set -x
 source $WORKSPACE/libfabric-ci-scripts/common.sh
 slave_name=slave_$label
 slave_value=${!slave_name}
@@ -15,15 +15,18 @@ install_libfabric()
 {
     check_provider_os "$1"
     test_ssh "$1"
+    set +x
     scp -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
     ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 \
         "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh \
         "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+    set -x
 }
 
 runfabtests_script_builder()
 {
     cat <<-"EOF" > multinode_runfabtests.sh
+    set -x
     PROVIDER=$1
     SERVER_IP=$2
     CLIENT_IP=$3
@@ -55,14 +58,18 @@ execute_runfabtests()
     else
         gid_c=""
     fi
+    set +x
     (ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
         "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh \
         "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" 2>&1; \
         echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh) | \
         tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS[0]}' \1/'
+    set -x
 }
 
+set +x
 create_instance || { echo "==>Unable to create instance"; exit 1; }
+set -x
 INSTANCE_IDS=($INSTANCE_IDS)
 
 # Wait until all instances have passed status check
@@ -79,11 +86,15 @@ INSTANCE_IPS=($INSTANCE_IPS)
 script_builder
 
 # Generate ssh key for fabtests
+set +x
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
 cat <<-"EOF" >>${label}.sh
+    set +x
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
     chmod 600  ~/.ssh/id_rsa
+    set -x
 EOF
+set -x
 
 # SSH into nodes and install libfabric concurrently on all nodes
 for IP in ${INSTANCE_IPS[@]}

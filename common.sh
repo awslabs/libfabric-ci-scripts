@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -x
 # Launches EC2 instances.
 create_instance()
 {
@@ -93,7 +94,7 @@ set_var()
 {
     cat <<-"EOF" > ${label}.sh
     #!/bin/bash
-    set +x
+    set -x
     PULL_REQUEST_ID=$1
     PULL_REQUEST_REF=$2
     PROVIDER=$3
@@ -107,6 +108,7 @@ test_ssh()
 {
     slave_ready=''
     slave_poll_count=0
+    set +x
     while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
         echo "Waiting for slave instance to become ready"
         sleep 5
@@ -116,6 +118,7 @@ test_ssh()
         fi
         slave_poll_count=$((slave_poll_count+1))
     done
+    set -x
 }
 
 efa_software_components()
@@ -132,6 +135,7 @@ ubuntu_kernel_upgrade()
 {
     test_ssh $1
     cat <<-"EOF" > ubuntu_kernel_upgrade.sh
+    set -x
     echo "==>System will reboot after kernel upgrade"
     sudo apt-get update
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
