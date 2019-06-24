@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set +x
+set -x
 source $WORKSPACE/libfabric-ci-scripts/common.sh
 slave_name=slave_$label
 slave_value=${!slave_name}
@@ -8,7 +8,9 @@ ami=($slave_value)
 NODES=1
 BUILD_CODE=0
 
+set +x
 create_instance || { echo "==>Unable to create instance"; exit 1; }
+set -x
 test_instance_status ${INSTANCE_IDS}
 get_instance_ip
 
@@ -35,10 +37,12 @@ test_ssh ${INSTANCE_IPS}
 
 # For single node, the ssh connection is established only once. The script
 # builds libfabric and also executes fabtests
+set +x
 ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} \
     "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh \
     "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS}' \1/'
 EXIT_CODE=${PIPESTATUS[0]}
+set -x
 
 # Get build status
 exit_status "$EXIT_CODE" "${INSTANCE_IPS}"
