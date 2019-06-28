@@ -4,32 +4,65 @@ set -x
 # Launches EC2 instances.
 create_instance()
 {
-    if [ ${PROVIDER} == "efa" ];then
-        INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
-            --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
-            --image-id ${ami[0]} \
-            --instance-type c5n.18xlarge \
-            --enable-api-termination \
-            --key-name ${slave_keypair} \
-            --network-interface "[{\"DeviceIndex\":0,\"SubnetId\":\"${subnet_id}\",\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]}]" \
-            --placement AvailabilityZone=${availability_zone} \
-            --count ${NODES}:${NODES} \
-            --query "Instances[*].InstanceId" \
-            --output=text)
-    else
-        INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
-            --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
-            --image-id ${ami[0]} \
-            --instance-type ${instance_type} \
-            --enable-api-termination \
-            --key-name ${slave_keypair} \
-            --security-group-id ${slave_security_group} \
-            --subnet-id ${subnet_id} \
-            --placement AvailabilityZone=${availability_zone} \
-            --count ${NODES}:${NODES} \
-            --query "Instances[*].InstanceId" \
-            --output=text)
-    fi
+    subnet_ids=$(aws ec2 describe-subnets --filter "Name=availability-zone,Values=[us-west-2a,us-west-2b,us-west-2c]" --query "Subnets[*].SubnetId" --output=text)
+    INSTANCE_IDS=''
+    SERVER_ERROR=(InsufficientInstanceCapacity RequestLimitExceeded ServiceUnavailable Unavailable)
+    create_instance_count=0
+    error=1
+    case "${PROVIDER}" in
+        efa)
+            instance_type=c5n.18xlarge
+            network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
+            ;;
+        tcp|udp)
+            network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
+            ;;
+        *)
+            exit 1
+    esac
+    echo "==> Creating instances"
+    while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]
+    do
+        for subnet in ${subnet_ids[@]}
+        do
+            error=1
+            INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
+                    --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
+                    --image-id ${ami[0]} \
+                    --instance-type ${instance_type} \
+                    --enable-api-termination \
+                    --key-name ${slave_keypair} \
+                    --network-interface ${network_interface}",\"SubnetId\":\"${subnet}\"}]" \
+                    --count ${NODES}:${NODES} \
+                    --query "Instances[*].InstanceId" \
+                    --output=text 2>&1)
+            create_instance_exit_code=$?
+            echo "${INSTANCE_IDS}"
+            # If run-instances is successful break from both the loops, else
+            # find out whether the error was due to SERVER_ERROR or some other error
+            if [ $create_instance_exit_code -ne 0 ]; then
+                # If the error was due to SERVER_ERROR, set error=1 else for
+                # some other error set error=0
+                for code in ${SERVER_ERROR[@]}; do
+                    if [[ "${INSTANCE_IDS}" == *${code}* ]]; then
+                        error=1
+                        break
+                    else
+                        error=0
+                    fi
+                done
+            else
+                break 2
+            fi
+            # If run-instances wasn't successful, and it was due to some other
+            # error, exit and fail the test.
+            if [ ${error} -eq 0 ]; then
+                exit ${create_instance_exit_code}
+            fi
+        done
+        sleep 2m
+        create_instance_count=$((create_instance_count+1))
+    done
 }
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check is ok
