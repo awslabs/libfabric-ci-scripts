@@ -145,7 +145,7 @@ test_ssh()
     while [ ! $slave_ready ] && [ $slave_poll_count -lt 40 ] ; do
         echo "Waiting for slave instance to become ready"
         sleep 5
-        ssh -T -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -i ~/${slave_keypair} ${ami[1]}@$1  hostname
+        ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes -i ~/${slave_keypair} ${ami[1]}@$1  hostname
         if [ $? -eq 0 ]; then
             slave_ready='1'
         fi
@@ -174,7 +174,7 @@ ubuntu_kernel_upgrade()
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
     sudo reboot
 EOF
-    ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
         "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/ubuntu_kernel_upgrade.sh \
         2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
 }

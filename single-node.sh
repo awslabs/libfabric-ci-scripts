@@ -38,7 +38,7 @@ test_ssh ${INSTANCE_IPS}
 # For single node, the ssh connection is established only once. The script
 # builds libfabric and also executes fabtests
 set +x
-ssh -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} \
+ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} \
     "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh \
     "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS}' \1/'
 EXIT_CODE=${PIPESTATUS[0]}
