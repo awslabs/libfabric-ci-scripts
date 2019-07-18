@@ -1,0 +1,18 @@
+sudo: required
+dist: trusty
+language: bash
+
+addons:
+  apt:
+    sources:
+    - sourceline: 'deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse'
+    packages:
+    - shellcheck
+
+before_install:
+    - sudo pip install bashate
+
+script:
+- bashate *.sh
+- # Commenting out shell-check till we fully resolve existing warnings
+- # shellcheck -S warning *.sh
