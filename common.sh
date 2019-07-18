@@ -21,10 +21,8 @@ create_instance()
             exit 1
     esac
     echo "==> Creating instances"
-    while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]
-    do
-        for subnet in ${subnet_ids[@]}
-        do
+    while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]; do
+        for subnet in ${subnet_ids[@]}; do
             error=1
             INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
                     --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
@@ -92,7 +90,7 @@ script_builder()
     set_var
     ${label}_install
     if [ ${PROVIDER} == "efa" ]; then
-         efa_software_components
+        efa_software_components
     fi
     cat install-libfabric.sh >> ${label}.sh
 }

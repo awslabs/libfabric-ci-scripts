@@ -73,8 +73,7 @@ set -x
 INSTANCE_IDS=($INSTANCE_IDS)
 
 # Wait until all instances have passed status check
-for ID in ${INSTANCE_IDS[@]}
-do
+for ID in ${INSTANCE_IDS[@]}; do
     test_instance_status "$ID" &
 done
 wait
@@ -97,8 +96,7 @@ EOF
 set -x
 
 # SSH into nodes and install libfabric concurrently on all nodes
-for IP in ${INSTANCE_IPS[@]}
-do
+for IP in ${INSTANCE_IPS[@]}; do
     install_libfabric "$IP" &
 done
 wait
@@ -108,14 +106,12 @@ runfabtests_script_builder
 
 # SSH into SERVER node and run fabtests
 N=$((${#INSTANCE_IPS[@]}-1))
-for i in $(seq 1 $N)
-do
+for i in $(seq 1 $N); do
     execute_runfabtests "$i"
 done
 
 # Get build status
-for i in $(seq 1 $N)
-do
+for i in $(seq 1 $N); do
     source $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$i]}.sh
     exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
 done
