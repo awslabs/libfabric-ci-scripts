@@ -117,5 +117,5 @@ for i in $(seq 1 $N); do
 done
 
 # Terminates all slave nodes
-AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
+# AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
 exit ${BUILD_CODE}
