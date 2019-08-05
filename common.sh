@@ -25,7 +25,7 @@ create_instance()
         for subnet in ${subnet_ids[@]}; do
             error=1
             INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
-                    --tag-specification 'ResourceType=instance,Tags=[{Key=Type,Value=Slave},{Key=Name,Value=Slave}]' \
+                    --tag-specification "ResourceType=instance,Tags=[{Key=Workspace,Value="${WORKSPACE}"},{Key=Name,Value=Slave},{Key=Build_Number,Value="${BUILD_NUMBER}"}]" \
                     --image-id ${ami[0]} \
                     --instance-type ${instance_type} \
                     --enable-api-termination \
