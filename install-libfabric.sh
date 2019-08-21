@@ -11,7 +11,8 @@ git checkout $PULL_REQUEST_REF -b PRBranch
     --enable-mrail  \
     --enable-tcp    \
     --enable-rxm    \
-    --disable-rxd
+    --disable-rxd   \
+    --disable-verbs
 make -j 4
 make install
 echo "==> Building fabtests"
