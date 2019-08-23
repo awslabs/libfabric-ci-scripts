@@ -15,9 +15,12 @@ install_libfabric()
     test_ssh "$1"
     set +x
     scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
-    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 \
+    execution_seq=$((${execution_seq}+1))
+    (ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 \
         "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh \
-        "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+        "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1; \
+        echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/$1_install_libfabric.sh) \
+        | tr \\r \\n | sed 's/\(.*\)/'$1' \1/' | tee $WORKSPACE/libfabric-ci-scripts/${execution_seq}_$1_install_libfabric.txt
     set -x
 }
 
@@ -41,9 +44,9 @@ runfabtests_script_builder()
     if [ ${PROVIDER} == "efa" ];then
         gid_c=$4
         gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
-        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
+        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vvv -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
     else
-        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -v ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
+        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vvv ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
     fi
 EOF
 }
@@ -57,11 +60,12 @@ execute_runfabtests()
         gid_c=""
     fi
     set +x
+    execution_seq=$((${execution_seq}+1))
     (ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
         "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh \
         "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" 2>&1; \
-        echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$1]}.sh) | \
-        tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS[0]}' \1/'
+        echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IPS[$1]}_execute_runfabtests.sh) | \
+        tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS[0]}' \1/' | tee $WORKSPACE/libfabric-ci-scripts/temp_execute_runfabtests.txt
     set -x
 }
 
@@ -70,6 +74,7 @@ create_instance || { echo "==>Unable to create instance"; exit 1; }
 set -x
 INSTANCE_IDS=($INSTANCE_IDS)
 
+execution_seq=$((${execution_seq}+1))
 # Wait until all instances have passed status check
 for ID in ${INSTANCE_IDS[@]}; do
     test_instance_status "$ID" &
@@ -93,6 +98,7 @@ cat <<-"EOF" >>${label}.sh
 EOF
 set -x
 
+execution_seq=$((${execution_seq}+1))
 # SSH into nodes and install libfabric concurrently on all nodes
 for IP in ${INSTANCE_IPS[@]}; do
     install_libfabric "$IP" &
@@ -102,6 +108,7 @@ wait
 # Prepare runfabtests script to be run on the server (INSTANCE_IPS[0])
 runfabtests_script_builder
 
+execution_seq=$((${execution_seq}+1))
 # SSH into SERVER node and run fabtests
 N=$((${#INSTANCE_IPS[@]}-1))
 for i in $(seq 1 $N); do
@@ -110,7 +117,7 @@ done
 
 # Get build status
 for i in $(seq 1 $N); do
-    source $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS[$i]}.sh
+    source $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IPS[$i]}_execute_runfabtests.sh
     exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
 done
 
