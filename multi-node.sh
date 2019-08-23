@@ -27,7 +27,7 @@ install_libfabric()
 runfabtests_script_builder()
 {
     cat <<-"EOF" > multinode_runfabtests.sh
-    set -x
+    set -xe
     PROVIDER=$1
     SERVER_IP=$2
     CLIENT_IP=$3
