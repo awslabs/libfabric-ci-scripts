@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -xe
 trap 'on_exit'  EXIT
 execution_seq=1
 BUILD_CODE=0
@@ -28,6 +28,7 @@ create_instance()
     while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]; do
         for subnet in ${subnet_ids[@]}; do
             error=1
+            set +e
             INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
                     --tag-specification "ResourceType=instance,Tags=[{Key=Workspace,Value="${WORKSPACE}"},{Key=Name,Value=Slave},{Key=Build_Number,Value="${BUILD_NUMBER}"}]" \
                     --image-id ${ami[0]} \
@@ -39,6 +40,7 @@ create_instance()
                     --query "Instances[*].InstanceId" \
                     --output=text 2>&1)
             create_instance_exit_code=$?
+            set -e
             echo "${INSTANCE_IDS}"
             # If run-instances is successful break from both the loops, else
             # find out whether the error was due to SERVER_ERROR or some other error
@@ -135,7 +137,7 @@ set_var()
 {
     cat <<-"EOF" > ${label}.sh
     #!/bin/bash
-    set -x
+    set -xe
     PULL_REQUEST_ID=$1
     PULL_REQUEST_REF=$2
     PROVIDER=$3
@@ -149,7 +151,7 @@ test_ssh()
 {
     slave_ready=1
     slave_poll_count=0
-    set +x
+    set +xe
     while [ $slave_ready -ne 0 ] && [ $slave_poll_count -lt 40 ] ; do
         echo "Waiting for slave instance to become ready"
         sleep 5
@@ -160,7 +162,7 @@ test_ssh()
         slave_poll_count=$((slave_poll_count+1))
     done
     echo "Slave instance ssh exited with status ${slave_ready}" > $WORKSPACE/libfabric-ci-scripts/${execution_seq}_$1_test_ssh.txt
-    set -x
+    set -xe
 }
 
 efa_software_components()
@@ -177,7 +179,7 @@ ubuntu_kernel_upgrade()
 {
     test_ssh $1
     cat <<-"EOF" > ubuntu_kernel_upgrade.sh
-    set -x
+    set -xe
     echo "==>System will reboot after kernel upgrade"
     sudo apt-get update
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
