@@ -313,11 +313,20 @@ EOF
     fi
 }
 
+terminate_instances()
+{
+    # Terminates slave node
+    if [[ ! -z ${INSTANCE_IDS[@]} ]]; then
+        AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
+    fi
+}
+
 on_exit()
 {
     set +e
     split_files
     parse_txt_junit_xml
+    terminate_instances
 }
 
 exit_status()
