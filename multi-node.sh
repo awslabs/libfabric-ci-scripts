@@ -5,9 +5,7 @@ source $WORKSPACE/libfabric-ci-scripts/common.sh
 slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
-REMOTE_DIR=/home/${ami[1]}
 NODES=2
-BUILD_CODE=0
 
 # Test whether the instance is ready for SSH or not. Once the instance is ready,
 # copy SSH keys from Jenkins and install libfabric

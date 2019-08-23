@@ -6,7 +6,6 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 NODES=1
-BUILD_CODE=0
 
 set +x
 create_instance || { echo "==>Unable to create instance"; exit 1; }
