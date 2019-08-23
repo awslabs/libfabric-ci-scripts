@@ -1,6 +1,8 @@
 #!/bin/bash
 
 set -x
+BUILD_CODE=0
+
 # Launches EC2 instances.
 create_instance()
 {
