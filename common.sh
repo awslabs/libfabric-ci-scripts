@@ -112,11 +112,13 @@ alinux_install()
     cat <<-"EOF" >> ${label}.sh
     sudo yum -y update
     sudo yum -y groupinstall 'Development Tools'
+    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig valgrind-devel
 EOF
 }
 
 rhel_install()
 {
+    echo "sudo yum-config-manager --enable rhui-REGION-rhel-server-extras rhui-REGION-rhel-server-optional" >> ${label}.sh
     alinux_install
     echo "sudo yum -y install wget" >> ${label}.sh
 }
@@ -129,6 +131,7 @@ ubuntu_install()
     sudo apt -y install autoconf
     sudo apt -y install libltdl-dev
     sudo apt -y install make
+    sudo apt -y install build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev ninja-build pkg-config valgrind python3-dev cython3
 EOF
 }
 

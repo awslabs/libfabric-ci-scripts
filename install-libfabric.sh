@@ -1,4 +1,8 @@
 echo "==> Building libfabric"
+cd ${HOME}
+git clone https://github.com/amzn/rdma-core.git
+cd ${HOME}/rdma-core && git checkout v26.amzn0
+./build.sh
 # Pulls the libfabric repository and checks out the pull request commit
 cd ${HOME}
 git clone https://github.com/ofiwg/libfabric
@@ -12,7 +16,8 @@ git checkout $PULL_REQUEST_REF -b PRBranch
     --enable-tcp    \
     --enable-rxm    \
     --disable-rxd   \
-    --disable-verbs
+    --disable-verbs \
+    --enable-efa=${HOME}/rdma-core/build
 make -j 4
 make install
 echo "==> Building fabtests"
@@ -31,6 +36,6 @@ if [ -f ${EXCLUDE} ]; then
 else
     EXCLUDE=""
 fi
-export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
+export LD_LIBRARY_PATH=${HOME}/rdma-core/build/lib:${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
