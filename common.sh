@@ -5,6 +5,55 @@ trap 'on_exit'  EXIT
 execution_seq=1
 BUILD_CODE=0
 
+get_alinux_ami_id() {
+    region=$1
+    aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2 \
+        --region $region | jq -r ".Parameters[0].Value"
+    return $?
+}
+
+get_alinux2_ami_id() {
+    region=$1
+    aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 \
+        --region $region | jq -r ".Parameters[0].Value"
+    return $?
+}
+
+get_ubuntu_1604_ami_id() {
+    region=$1
+    aws ec2 describe-images --owners 099720109477 \
+        --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-????????' \
+        'Name=state,Values=available' 'Name=ena-support,Values=true' \
+        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    return $?
+}
+
+get_ubuntu_1804_ami_id() {
+    region=$1
+    aws ec2 describe-images --owners 099720109477 \
+        --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-????????' \
+        'Name=state,Values=available' 'Name=ena-support,Values=true' \
+        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    return $?
+}
+
+get_centos7_ami_id() {
+    region=$1
+    aws ec2 describe-images --owners aws-marketplace \
+        --filters 'Name=product-code,Values=aw0evgkw8e5c1q413zgy5pjce' 'Name=ena-support,Values=true' \
+        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    return $?
+}
+
+get_rhel76_ami_id() {
+    region=$1
+    aws ec2 describe-images --owners 309956199498 \
+        --filters 'Name=name,Values=RHEL-7.6_HVM_GA*' \
+        'Name=state,Values=available' 'Name=ena-support,Values=true' \
+        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    return $?
+}
+
 # Launches EC2 instances.
 create_instance()
 {
