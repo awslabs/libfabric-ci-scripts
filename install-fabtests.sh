@@ -5,7 +5,7 @@ if [ ! -d libfabric ]; then
 fi
 cd ${HOME}/libfabric/fabtests
 ./autogen.sh
-./configure --with-libfabric=${HOME}/libfabric/install/ \
+./configure --with-libfabric=${LIBFABRIC_INSTALL_PATH} \
     --prefix=${HOME}/libfabric/fabtests/install/ \
     --enable-debug
 make -j 4
@@ -18,6 +18,6 @@ if [ -f ${EXCLUDE} ]; then
 else
     EXCLUDE=""
 fi
-export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
+export LD_LIBRARY_PATH=${LIBFABRIC_INSTALL_PATH}/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
 export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
 export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
