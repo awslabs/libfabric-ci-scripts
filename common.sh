@@ -154,6 +154,7 @@ script_builder()
         efa_software_components
     fi
     cat install-libfabric.sh >> ${label}.sh
+    cat install-fabtests.sh >> ${label}.sh
 }
 
 alinux_install()
