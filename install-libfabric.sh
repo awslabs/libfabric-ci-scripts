@@ -15,3 +15,4 @@ git checkout $PULL_REQUEST_REF -b PRBranch
     --disable-verbs
 make -j 4
 make install
+LIBFABRIC_INSTALL_PATH=${HOME}/libfabric/install

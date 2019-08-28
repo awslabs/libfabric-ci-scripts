@@ -153,7 +153,11 @@ script_builder()
     if [ ${PROVIDER} == "efa" ]; then
         efa_software_components
     fi
-    cat install-libfabric.sh >> ${label}.sh
+    if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
+        echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${label}.sh
+    else
+        cat install-libfabric.sh >> ${label}.sh
+    fi
     cat install-fabtests.sh >> ${label}.sh
 }
 
