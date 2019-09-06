@@ -154,16 +154,16 @@ script_builder()
         efa_software_components
     fi
     if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
-        echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${label}.sh
+        echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${tmp_script}
     else
-        cat install-libfabric.sh >> ${label}.sh
+        cat install-libfabric.sh >> ${tmp_script}
     fi
-    cat install-fabtests.sh >> ${label}.sh
+    cat install-fabtests.sh >> ${tmp_script}
 }
 
 alinux_install()
 {
-    cat <<-"EOF" >> ${label}.sh
+    cat <<-"EOF" >> ${tmp_script}
     sudo yum -y update
     sudo yum -y groupinstall 'Development Tools'
 EOF
@@ -172,12 +172,12 @@ EOF
 rhel_install()
 {
     alinux_install
-    echo "sudo yum -y install wget" >> ${label}.sh
+    echo "sudo yum -y install wget" >> ${tmp_script}
 }
 
 ubuntu_install()
 {
-    cat <<-"EOF" >> ${label}.sh
+    cat <<-"EOF" >> ${tmp_script}
     sudo apt-get update
     sudo apt -y install python
     sudo apt -y install autoconf
@@ -189,7 +189,7 @@ EOF
 #Initialize variables
 set_var()
 {
-    cat <<-"EOF" > ${label}.sh
+    cat <<-"EOF" > ${tmp_script}
     #!/bin/bash
     set -xe
     PULL_REQUEST_ID=$1
@@ -221,7 +221,7 @@ test_ssh()
 
 efa_software_components()
 {
-    cat <<-"EOF" >> ${label}.sh
+    cat <<-"EOF" >> ${tmp_script}
     wget https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz
     tar -xf aws-efa-installer-latest.tar.gz
     cd ${HOME}/aws-efa-installer
