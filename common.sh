@@ -236,9 +236,12 @@ test_ssh()
 
 efa_software_components()
 {
+    if [ -z "$EFA_INSTALLER_URL" ]; then
+        EFA_INSTALLER_URL="https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz"
+    fi
+    echo "curl -o efa-installer.tar.gz $EFA_INSTALLER_URL" >> ${tmp_script}
     cat <<-"EOF" >> ${tmp_script}
-    curl -O https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz
-    tar -xf aws-efa-installer-latest.tar.gz
+    tar -xf efa-installer.tar.gz
     cd ${HOME}/aws-efa-installer
     sudo ./efa_installer.sh -y
     . /etc/profile.d/efa.sh
