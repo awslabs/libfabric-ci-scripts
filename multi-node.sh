@@ -90,7 +90,9 @@ script_builder
 
 # Generate ssh key for fabtests
 set +x
-ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
+if [ ! -f $WORKSPACE/libfabric-ci-scripts/id_rsa ]; then
+    ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
+fi
 cat <<-"EOF" >>${tmp_script}
     set +x
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
