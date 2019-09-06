@@ -149,10 +149,11 @@ check_provider_os()
 script_builder()
 {
     set_var
-    ${label}_install
+    ${label}_update
     if [ ${PROVIDER} == "efa" ]; then
         efa_software_components
     fi
+    ${label}_install_deps
     if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
         echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${tmp_script}
     else
@@ -161,24 +162,38 @@ script_builder()
     cat install-fabtests.sh >> ${tmp_script}
 }
 
-alinux_install()
+alinux_update()
 {
     cat <<-"EOF" >> ${tmp_script}
     sudo yum -y update
+EOF
+}
+
+alinux_install_deps() {
+    cat <<-"EOF" >> ${tmp_script}
     sudo yum -y groupinstall 'Development Tools'
 EOF
 }
 
-rhel_install()
+rhel_update()
 {
-    alinux_install
-    echo "sudo yum -y install wget" >> ${tmp_script}
+    alinux_update
 }
 
-ubuntu_install()
+rhel_install_deps() {
+    alinux_install_deps
+}
+
+ubuntu_update()
 {
     cat <<-"EOF" >> ${tmp_script}
     sudo apt-get update
+EOF
+}
+
+ubuntu_install_deps()
+{
+    cat <<-"EOF" >> ${tmp_script}
     sudo apt -y install python
     sudo apt -y install autoconf
     sudo apt -y install libltdl-dev
@@ -222,10 +237,11 @@ test_ssh()
 efa_software_components()
 {
     cat <<-"EOF" >> ${tmp_script}
-    wget https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz
+    curl -O https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz
     tar -xf aws-efa-installer-latest.tar.gz
     cd ${HOME}/aws-efa-installer
     sudo ./efa_installer.sh -y
+    . /etc/profile.d/efa.sh
 EOF
 }
 
