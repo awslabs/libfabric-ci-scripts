@@ -6,6 +6,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 NODES=1
+tmp_script=$(mktemp -p $WORKSPACE)
 
 set +x
 create_instance || { echo "==>Unable to create instance"; exit 1; }
@@ -24,7 +25,7 @@ check_provider_os ${INSTANCE_IPS}
 script_builder
 
 # Appending fabtests to the existing installation script
-cat <<-"EOF" >> ${label}.sh
+cat <<-"EOF" >> ${tmp_script}
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 if [ ${PROVIDER} == "efa" ];then
@@ -43,7 +44,7 @@ execution_seq=$((${execution_seq}+1))
 # builds libfabric and also executes fabtests
 set +x
 ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} \
-    "bash -s" -- <$WORKSPACE/libfabric-ci-scripts/${label}.sh \
+    "bash -s" -- <${tmp_script} \
     "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | \
     sed 's/\(.*\)/'${INSTANCE_IPS}' \1/' | tee $WORKSPACE/libfabric-ci-scripts/temp_execute_runfabtests.txt
 EXIT_CODE=${PIPESTATUS[0]}

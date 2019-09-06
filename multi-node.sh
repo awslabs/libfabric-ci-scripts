@@ -6,6 +6,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 NODES=2
+tmp_script=$(mktemp -p $WORKSPACE)
 
 # Test whether the instance is ready for SSH or not. Once the instance is ready,
 # copy SSH keys from Jenkins and install libfabric
@@ -17,7 +18,7 @@ install_libfabric()
     scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} $WORKSPACE/libfabric-ci-scripts/id_rsa $WORKSPACE/libfabric-ci-scripts/id_rsa.pub ${ami[1]}@$1:~/.ssh/
     execution_seq=$((${execution_seq}+1))
     (ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 \
-        "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/${label}.sh \
+        "bash -s" -- < ${tmp_script} \
         "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1; \
         echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/$1_install_libfabric.sh) \
         | tr \\r \\n | sed 's/\(.*\)/'$1' \1/' | tee $WORKSPACE/libfabric-ci-scripts/${execution_seq}_$1_install_libfabric.txt
@@ -90,7 +91,7 @@ script_builder
 # Generate ssh key for fabtests
 set +x
 ssh-keygen -f $WORKSPACE/libfabric-ci-scripts/id_rsa -N "" > /dev/null
-cat <<-"EOF" >>${label}.sh
+cat <<-"EOF" >>${tmp_script}
     set +x
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
     chmod 600  ~/.ssh/id_rsa
