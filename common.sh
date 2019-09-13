@@ -177,11 +177,28 @@ EOF
 
 rhel_update()
 {
-    alinux_update
+    cat <<-"EOF" >> ${tmp_script}
+    sudo yum -y update
+EOF
 }
 
 rhel_install_deps() {
-    alinux_install_deps
+    cat <<-"EOF" >> ${tmp_script}
+    sudo yum -y groupinstall 'Development Tools'
+EOF
+}
+
+centos_update()
+{
+    cat <<-"EOF" >> ${tmp_script}
+    sudo yum -y update
+EOF
+}
+
+centos_install_deps() {
+    cat <<-"EOF" >> ${tmp_script}
+    sudo yum -y groupinstall 'Development Tools'
+EOF
 }
 
 ubuntu_update()
