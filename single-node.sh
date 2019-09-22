@@ -26,6 +26,7 @@ script_builder
 
 # Appending fabtests to the existing installation script
 cat <<-"EOF" >> ${tmp_script}
+. ~/.bash_profile
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 if [ ${PROVIDER} == "efa" ];then

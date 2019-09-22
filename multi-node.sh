@@ -28,6 +28,7 @@ install_libfabric()
 runfabtests_script_builder()
 {
     cat <<-"EOF" > multinode_runfabtests.sh
+    . ~/.bash_profile
     set -xe
     PROVIDER=$1
     SERVER_IP=$2
@@ -39,9 +40,6 @@ runfabtests_script_builder()
     else
         EXCLUDE=""
     fi
-    export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-    export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-    export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
     if [ ${PROVIDER} == "efa" ];then
         gid_c=$4
         gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
