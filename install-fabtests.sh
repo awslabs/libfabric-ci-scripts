@@ -18,6 +18,6 @@ if [ -f ${EXCLUDE} ]; then
 else
     EXCLUDE=""
 fi
-export LD_LIBRARY_PATH=${LIBFABRIC_INSTALL_PATH}/lib/:$LD_LIBRARY_PATH >> ~/.bash_profile
-export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/ >> ~/.bash_profile
-export PATH=${HOME}/libfabric/fabtests/install/bin:$PATH >> ~/.bash_profile
+echo "export LD_LIBRARY_PATH=${LIBFABRIC_INSTALL_PATH}/lib/:\$LD_LIBRARY_PATH" >> ~/.bash_profile
+echo "export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/" >> ~/.bash_profile
+echo "export PATH=${HOME}/libfabric/fabtests/install/bin:\$PATH" >> ~/.bash_profile
