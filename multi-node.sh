@@ -84,7 +84,7 @@ get_instance_ip
 INSTANCE_IPS=($INSTANCE_IPS)
 
 # Prepare AMI specific libfabric installation script
-script_builder
+script_builder multi-node
 
 # Generate ssh key for fabtests
 set +x
@@ -121,5 +121,24 @@ for i in $(seq 1 $N); do
     source $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IPS[$i]}_execute_runfabtests.sh
     exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
 done
+
+# Run ring_c MPI test only for EFA provider for now.
+if [ ${PROVIDER} == "efa" ]; then
+    scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
+        $WORKSPACE/libfabric-ci-scripts/mpi_ring_c_test.sh ${ami[1]}@${INSTANCE_IPS[0]}:
+    for mpi in ompi impi; do
+        execution_seq=$((${execution_seq}+1))
+        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
+            bash mpi_ring_c_test.sh ${mpi} ${INSTANCE_IPS[@]} | tee $WORKSPACE/libfabric-ci-scripts/temp_execute_ring_c_${mpi}.txt
+
+        set +e
+        grep -q "Test Passed" ${output_dir}/temp_execute_ring_c_${mpi}.txt
+        if [ $? -ne 0 ]; then
+            BUILD_CODE=1
+            echo "${mpi} ring_c test failed."
+        fi
+        set -e
+    done
+fi
 
 exit ${BUILD_CODE}

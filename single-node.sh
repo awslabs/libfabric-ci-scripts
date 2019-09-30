@@ -22,7 +22,7 @@ execution_seq=$((${execution_seq}+1))
 check_provider_os ${INSTANCE_IPS}
 
 # Add AMI specific installation commands
-script_builder
+script_builder single-node
 
 # Appending fabtests to the existing installation script
 cat <<-"EOF" >> ${tmp_script}

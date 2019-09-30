@@ -148,6 +148,7 @@ check_provider_os()
 # different AMIs and appends libfabric script
 script_builder()
 {
+    type=$1
     set_var
     ${label}_update
     if [ ${PROVIDER} == "efa" ]; then
@@ -159,6 +160,14 @@ script_builder()
     else
         cat install-libfabric.sh >> ${tmp_script}
     fi
+
+    # Run the MPI test for EFA and multi-node tests.
+    # Open MPI will be installed by the EFA installer so use that, install
+    # Intel MPI using the AWS script for now.
+    if [ ${PROVIDER} == "efa" ] && [ ${type} == "multi-node" ]; then
+            cat install-impi.sh >> ${tmp_script}
+    fi
+
     cat install-fabtests.sh >> ${tmp_script}
 }
 
@@ -309,6 +318,13 @@ split_files()
         mv $WORKSPACE/libfabric-ci-scripts/xx01 $WORKSPACE/libfabric-ci-scripts/${execution_seq}_${INSTANCE_IPS[0]}_fabtests.txt
     fi
     rm temp_execute_runfabtests.txt
+
+    execution_seq=$((${execution_seq}+1))
+    mv $WORKSPACE/libfabric-ci-scripts/temp_execute_ring_c_ompi.txt \
+       $WORKSPACE/libfabric-ci-scripts/${execution_seq}_${INSTANCE_IPS[0]}_ring_c_ompi.txt
+    execution_seq=$((${execution_seq}+1))
+    mv $WORKSPACE/libfabric-ci-scripts/temp_execute_ring_c_impi.txt \
+       $WORKSPACE/libfabric-ci-scripts/${execution_seq}_${INSTANCE_IPS[0]}_ring_c_impi.txt
 }
 # Parses the output text file to yaml and then runs rft_yaml_to_junit_xml script
 # to generate junit xml file. Calls parse_fabtests function for fabtests result.
@@ -394,7 +410,15 @@ junit_xml()
     # rft_yaml_to_junit_xml else create an xml for empty yaml
     if [ -s $WORKSPACE/libfabric-ci-scripts/${file_name} ]; then
         sed -i "s/\(testsuite name=\)\(.*\)\(tests=\)/\1\"${file_name_xml}\" \3/g" $WORKSPACE/libfabric-ci-scripts/rft_yaml_to_junit_xml
+        # TODO: change this, we should only use this ruby script for fabtests.
         ruby $WORKSPACE/libfabric-ci-scripts/rft_yaml_to_junit_xml < $WORKSPACE/libfabric-ci-scripts/${file_name} > ${file_name_xml}.xml || true
+        # Check MPI tests for pass/failure and update the xml if a failure
+        # occurred.
+        if [[ ${file_name} =~ "ompi" ]] || [[ ${file_name} =~ "impi" ]]; then
+            if ! grep -q "Test Passed" ${file_name_xml}.xml; then
+                sed -i 's/failures="0"/failures="1"/' ${file_name_xml}.xml
+            fi
+        fi
     else
         cat<<-EOF > $WORKSPACE/libfabric-ci-scripts/${file_name_xml}.xml
 <testsuite name="${file_name_xml}" tests="${file_name_xml}" skipped="0" time="0.000">
@@ -427,6 +451,7 @@ exit_status()
         BUILD_CODE=1
         echo "Build failure on $2"
     else
+        BUILD_CODE=0
         echo "Build success on $2"
     fi
 }
