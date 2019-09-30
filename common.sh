@@ -3,6 +3,7 @@
 execution_seq=1
 BUILD_CODE=0
 output_dir=${output_dir:-$(mktemp -d -p $WORKSPACE)}
+tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
 
 get_alinux_ami_id() {
     region=$1

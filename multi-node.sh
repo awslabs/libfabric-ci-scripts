@@ -7,7 +7,6 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 NODES=2
-tmp_script=$(mktemp -p $WORKSPACE)
 
 # Test whether the instance is ready for SSH or not. Once the instance is ready,
 # copy SSH keys from Jenkins and install libfabric
