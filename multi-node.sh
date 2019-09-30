@@ -22,7 +22,7 @@ install_libfabric()
         "bash -s" -- < ${tmp_script} \
         "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1; \
         echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/$1_install_libfabric.sh) \
-        | tr \\r \\n | sed 's/\(.*\)/'$1' \1/' | tee $WORKSPACE/libfabric-ci-scripts/${execution_seq}_$1_install_libfabric.txt
+        | tr \\r \\n | sed 's/\(.*\)/'$1' \1/' | tee ${output_dir}/${execution_seq}_$1_install_libfabric.txt
     set -x
 }
 
@@ -65,7 +65,7 @@ execute_runfabtests()
         "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh \
         "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" 2>&1; \
         echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IPS[$1]}_execute_runfabtests.sh) | \
-        tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS[0]}' \1/' | tee $WORKSPACE/libfabric-ci-scripts/temp_execute_runfabtests.txt
+        tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS[0]}' \1/' | tee ${output_dir}/temp_execute_runfabtests.txt
     set -x
 }
 
@@ -130,7 +130,7 @@ if [ ${PROVIDER} == "efa" ]; then
     for mpi in ompi impi; do
         execution_seq=$((${execution_seq}+1))
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-            bash mpi_ring_c_test.sh ${mpi} ${INSTANCE_IPS[@]} | tee $WORKSPACE/libfabric-ci-scripts/temp_execute_ring_c_${mpi}.txt
+            bash mpi_ring_c_test.sh ${mpi} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_${mpi}.txt
 
         set +e
         grep -q "Test Passed" ${output_dir}/temp_execute_ring_c_${mpi}.txt

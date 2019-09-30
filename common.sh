@@ -2,6 +2,7 @@
 
 execution_seq=1
 BUILD_CODE=0
+output_dir=${output_dir:-$(mktemp -d -p $WORKSPACE)}
 
 get_alinux_ami_id() {
     region=$1
@@ -114,14 +115,12 @@ create_instance()
         sleep 2m
         create_instance_count=$((create_instance_count+1))
     done
-    echo -n > $WORKSPACE/libfabric-ci-scripts/${execution_seq}_0_create_instance.txt
 }
 
 # Holds testing every 15 seconds for 40 attempts until the instance status check is ok
 test_instance_status()
 {
-    aws ec2 wait instance-status-ok --instance-ids $1 \
-    > $WORKSPACE/libfabric-ci-scripts/${execution_seq}_$1_test_instance_status.txt 2>&1
+    aws ec2 wait instance-status-ok --instance-ids $1
 }
 
 # Get IP address for instances
@@ -130,8 +129,7 @@ get_instance_ip()
     execution_seq=$((${execution_seq}+1))
     INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} \
                         --query "Reservations[*].Instances[*].PrivateIpAddress" \
-                        --output=text 2>&1 | \
-                        tee $WORKSPACE/libfabric-ci-scripts/${execution_seq}_0_get_instance_ip.txt )
+                        --output=text)
 }
 
 # Check provider and OS type, If EFA and Ubuntu then call ubuntu_kernel_upgrade
@@ -254,7 +252,7 @@ test_ssh()
         fi
         slave_poll_count=$((slave_poll_count+1))
     done
-    echo "Slave instance ssh exited with status ${slave_ready}" > $WORKSPACE/libfabric-ci-scripts/${execution_seq}_$1_test_ssh.txt
+    echo "Slave instance ssh exited with status ${slave_ready}"
     set -xe
 }
 
@@ -293,11 +291,13 @@ EOF
 # as skipped
 get_rft_yaml_to_junit_xml()
 {
+    pushd ${output_dir}
     # fabtests junit parser script
     wget https://raw.githubusercontent.com/ofiwg/libfabric/master/fabtests/scripts/rft_yaml_to_junit_xml
     # Add Excluded tag
-    sed -i "s,<skipped />,<skipped />\n    EOT\n  when 'Excluded'\n    puts <<-EOT\n    <skipped />,g" $WORKSPACE/libfabric-ci-scripts/rft_yaml_to_junit_xml
-    sed -i "s,skipped += 1,skipped += 1\n  when 'Excluded'\n    skipped += 1,g" $WORKSPACE/libfabric-ci-scripts/rft_yaml_to_junit_xml
+    sed -i "s,<skipped />,<skipped />\n    EOT\n  when 'Excluded'\n    puts <<-EOT\n    <skipped />,g" rft_yaml_to_junit_xml
+    sed -i "s,skipped += 1,skipped += 1\n  when 'Excluded'\n    skipped += 1,g" rft_yaml_to_junit_xml
+    popd
 }
 
 # Split out output files into fabtest build and fabtests, this is done to
@@ -305,24 +305,26 @@ get_rft_yaml_to_junit_xml()
 # common for both single node and multinode
 split_files()
 {
-    csplit -k $WORKSPACE/libfabric-ci-scripts/temp_execute_runfabtests.txt '/- name/'
+    pushd ${output_dir}
+    csplit -k temp_execute_runfabtests.txt '/- name/'
+    # If the installation failed, fabtests will not have run. In that case, do
+    # not split the file.
     if [ $? -ne 0 ]; then
         execution_seq=$((${execution_seq}+1))
-        mv $WORKSPACE/libfabric-ci-scripts/temp_execute_runfabtests.txt $WORKSPACE/libfabric-ci-script/${execution_seq}_${INSTANCE_IPS[0]}_install_libfabric_or_fabtests_parameters.txt
+        mv temp_execute_runfabtests.txt ${execution_seq}_${INSTANCE_IPS[0]}_install_libfabric_or_fabtests_parameters.txt
     else
         execution_seq=$((${execution_seq}+1))
-        mv $WORKSPACE/libfabric-ci-scripts/xx00 $WORKSPACE/libfabric-ci-scripts/${execution_seq}_${INSTANCE_IPS[0]}_install_libfabric_or_fabtests_parameters.txt
+        mv xx00 ${execution_seq}_${INSTANCE_IPS[0]}_install_libfabric_or_fabtests_parameters.txt
         execution_seq=$((${execution_seq}+1))
-        mv $WORKSPACE/libfabric-ci-scripts/xx01 $WORKSPACE/libfabric-ci-scripts/${execution_seq}_${INSTANCE_IPS[0]}_fabtests.txt
+        mv xx01 ${execution_seq}_${INSTANCE_IPS[0]}_fabtests.txt
     fi
     rm temp_execute_runfabtests.txt
 
     execution_seq=$((${execution_seq}+1))
-    mv $WORKSPACE/libfabric-ci-scripts/temp_execute_ring_c_ompi.txt \
-       $WORKSPACE/libfabric-ci-scripts/${execution_seq}_${INSTANCE_IPS[0]}_ring_c_ompi.txt
+    mv temp_execute_ring_c_ompi.txt ${execution_seq}_${INSTANCE_IPS[0]}_ring_c_ompi.txt
     execution_seq=$((${execution_seq}+1))
-    mv $WORKSPACE/libfabric-ci-scripts/temp_execute_ring_c_impi.txt \
-       $WORKSPACE/libfabric-ci-scripts/${execution_seq}_${INSTANCE_IPS[0]}_ring_c_impi.txt
+    mv temp_execute_ring_c_impi.txt ${execution_seq}_${INSTANCE_IPS[0]}_ring_c_impi.txt
+    popd
 }
 # Parses the output text file to yaml and then runs rft_yaml_to_junit_xml script
 # to generate junit xml file. Calls parse_fabtests function for fabtests result.
@@ -332,11 +334,12 @@ parse_txt_junit_xml()
 {
     exit_code=$?
     set +x
+    pushd ${output_dir}
     get_rft_yaml_to_junit_xml
     # Read all .txt files
     for file in *.txt; do
         if [[ ${file} == '*.txt' ]]; then
-            break
+            continue
         fi
         # Get instance id or instance ip from the file name
         instance_ip_or_id=($(echo ${file} | tr "_" "\n"))
@@ -351,7 +354,7 @@ parse_txt_junit_xml()
             sed -i "1s/\(${instance_ip_or_id[1]} [+]\+ \)*\(.\+\)/${instance_ip_or_id[1]} + \2/g" ${file}
         else
             parse_fabtests ${file}
-            break
+            continue
         fi
         while read line; do
             # If the line is a command indicated by + sign then assign name tag
@@ -361,15 +364,16 @@ parse_txt_junit_xml()
                 # them to underscores. Parse the command to yaml, by inserting
                 # - name tag before the command
                 echo ${line//[\":]/_} | sed "s/\(${instance_ip_or_id[1]} [+]\+\)\(.*\)/- name: $(printf '%08d\n' $line_no)-\2\n  time: 0\n  result:\n  server_stdout: |/g" \
-                >> $WORKSPACE/libfabric-ci-scripts/${file_name}
+                >> ${file_name}
                 line_no=$((${line_no}+1))
             else
                 # These are output lines and are put under server_stdout tag
-                echo "    "${line}  >> $WORKSPACE/libfabric-ci-scripts/${file_name}
+                echo "    "${line}  >> ${file_name}
             fi
         done < ${file}
         junit_xml ${file_name}
     done
+    popd
     set -x
 }
 
@@ -378,23 +382,25 @@ parse_txt_junit_xml()
 # grouped under server_stdout.
 parse_fabtests()
 {
+    pushd ${output_dir}
     while read line; do
         # If the line has - name: it indicates its a fabtests command and is
         # already yaml format, it already has name tag. It is the testname
         # used in the xml
         if [[ ${line} == *${instance_ip_or_id[1]}' - 'name:* ]]; then
-            echo ${line//[\"]/_} | sed "s/\(${instance_ip_or_id[1]} [-] name: \)\(.*\)/- name: \2/g" >> $WORKSPACE/libfabric-ci-scripts/${file_name}
+            echo ${line//[\"]/_} | sed "s/\(${instance_ip_or_id[1]} [-] name: \)\(.*\)/- name: \2/g" >> ${file_name}
         elif [[ ${line} == *'time: '* ]]; then
-            echo ${line} | sed "s/\(${instance_ip_or_id[1]}\)\(.*time:.*\)/ \2\n  server_stdout: |/g" >> $WORKSPACE/libfabric-ci-scripts/${file_name}
+            echo ${line} | sed "s/\(${instance_ip_or_id[1]}\)\(.*time:.*\)/ \2\n  server_stdout: |/g" >> ${file_name}
         else
             # Yaml spacing for result tag should be aligned with name,
             # time, server_stdout tags; whereas all other should be under
             # server_stdout tag
-            echo ${line} | sed "s/\(${instance_ip_or_id[1]}\)\(.*\(result\):.*\)*\(.*\)/ \2  \4/g" >> $WORKSPACE/libfabric-ci-scripts/${file_name}
+            echo ${line} | sed "s/\(${instance_ip_or_id[1]}\)\(.*\(result\):.*\)*\(.*\)/ \2  \4/g" >> ${file_name}
         fi
         line_no=$((${line_no}+1))
     done < $1
     junit_xml ${file_name}
+    popd
 }
 
 # It updates the filename in rft_yaml_to_junit_xml on the fly to the file_name
@@ -402,14 +408,15 @@ parse_fabtests()
 # rft_yaml_to_junit_xml instead creates the xml itself
 junit_xml()
 {
+    pushd ${output_dir}
     file_name=$1
     file_name_xml=${file_name//[.-]/_}
     # If the yaml file is not empty then convert it to xml using
     # rft_yaml_to_junit_xml else create an xml for empty yaml
-    if [ -s $WORKSPACE/libfabric-ci-scripts/${file_name} ]; then
-        sed -i "s/\(testsuite name=\)\(.*\)\(tests=\)/\1\"${file_name_xml}\" \3/g" $WORKSPACE/libfabric-ci-scripts/rft_yaml_to_junit_xml
+    if [ -s ${file_name} ]; then
+        sed -i "s/\(testsuite name=\)\(.*\)\(tests=\)/\1\"${file_name_xml}\" \3/g" rft_yaml_to_junit_xml
         # TODO: change this, we should only use this ruby script for fabtests.
-        ruby $WORKSPACE/libfabric-ci-scripts/rft_yaml_to_junit_xml < $WORKSPACE/libfabric-ci-scripts/${file_name} > ${file_name_xml}.xml || true
+        ruby rft_yaml_to_junit_xml < ${file_name} > ${file_name_xml}.xml || true
         # Check MPI tests for pass/failure and update the xml if a failure
         # occurred.
         if [[ ${file_name} =~ "ompi" ]] || [[ ${file_name} =~ "impi" ]]; then
@@ -418,13 +425,14 @@ junit_xml()
             fi
         fi
     else
-        cat<<-EOF > $WORKSPACE/libfabric-ci-scripts/${file_name_xml}.xml
+        cat<<-EOF > ${file_name_xml}.xml
 <testsuite name="${file_name_xml}" tests="${file_name_xml}" skipped="0" time="0.000">
     <testcase name="${file_name_xml}" time="0">
     </testcase>
 </testsuite>
 EOF
     fi
+    popd
 }
 
 terminate_instances()
