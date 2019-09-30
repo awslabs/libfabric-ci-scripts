@@ -16,3 +16,5 @@ git checkout $PULL_REQUEST_REF -b PRBranch
 make -j 4
 make install
 LIBFABRIC_INSTALL_PATH=${HOME}/libfabric/install
+# ld.so.conf.d files are preferred in alphabetical order
+sudo bash -c "echo ${LIBFABRIC_INSTALL_PATH} > /etc/ld.so.conf.d/aaaa-libfabric-testing.sh"
