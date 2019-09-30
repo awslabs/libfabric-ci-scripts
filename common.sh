@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -xe
-trap 'on_exit'  EXIT
 execution_seq=1
 BUILD_CODE=0
 
