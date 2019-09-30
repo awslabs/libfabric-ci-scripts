@@ -1,7 +1,8 @@
 #!/bin/bash
 
-set -x
+set -xe
 source $WORKSPACE/libfabric-ci-scripts/common.sh
+trap 'on_exit'  EXIT
 slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
