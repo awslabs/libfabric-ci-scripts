@@ -4,6 +4,8 @@ execution_seq=1
 BUILD_CODE=0
 output_dir=${output_dir:-$(mktemp -d -p $WORKSPACE)}
 tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
+# Disable IMPI tests for now until apt/yum repo issues are addressed.
+RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-0}
 
 get_alinux_ami_id() {
     region=$1
@@ -161,7 +163,7 @@ script_builder()
     # Run the MPI test for EFA and multi-node tests.
     # Open MPI will be installed by the EFA installer so use that, install
     # Intel MPI using the AWS script for now.
-    if [ ${PROVIDER} == "efa" ] && [ ${type} == "multi-node" ]; then
+    if [ ${PROVIDER} == "efa" ] && [ ${type} == "multi-node" ] && [ ${RUN_IMPI_TESTS} -eq 1 ]; then
             cat install-impi.sh >> ${tmp_script}
     fi
 
@@ -323,8 +325,10 @@ split_files()
 
     execution_seq=$((${execution_seq}+1))
     mv temp_execute_ring_c_ompi.txt ${execution_seq}_${INSTANCE_IPS[0]}_ring_c_ompi.txt
-    execution_seq=$((${execution_seq}+1))
-    mv temp_execute_ring_c_impi.txt ${execution_seq}_${INSTANCE_IPS[0]}_ring_c_impi.txt
+    if [ ${RUN_IMPI_TESTS} -eq 1 ]; then
+        execution_seq=$((${execution_seq}+1))
+        mv temp_execute_ring_c_impi.txt ${execution_seq}_${INSTANCE_IPS[0]}_ring_c_impi.txt
+    fi
     popd
 }
 # Parses the output text file to yaml and then runs rft_yaml_to_junit_xml script

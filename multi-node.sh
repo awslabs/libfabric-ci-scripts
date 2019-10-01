@@ -126,7 +126,12 @@ done
 if [ ${PROVIDER} == "efa" ]; then
     scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
         $WORKSPACE/libfabric-ci-scripts/mpi_ring_c_test.sh ${ami[1]}@${INSTANCE_IPS[0]}:
-    for mpi in ompi impi; do
+
+    test_list="ompi"
+    if [ ${RUN_IMPI_TESTS} -eq 1 ]; then
+        test_list="$test_list impi"
+    fi
+    for mpi in $test_list; do
         execution_seq=$((${execution_seq}+1))
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
             bash mpi_ring_c_test.sh ${mpi} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_${mpi}.txt
