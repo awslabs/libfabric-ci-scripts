@@ -143,7 +143,7 @@ check_provider_os()
 
         # Ubuntu disallows non-child process ptrace by default, which is
         # required for the use of CMA in the shared-memory codepath.
-        echo 0 > /proc/sys/kernel/yama/ptrace_scope
+        sudo sysctl -w kernel.yama.ptrace_scope=0
     fi
 }
 
