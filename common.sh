@@ -140,10 +140,6 @@ check_provider_os()
 {
     if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
         ubuntu_kernel_upgrade "$1"
-
-        # Ubuntu disallows non-child process ptrace by default, which is
-        # required for the use of CMA in the shared-memory codepath.
-        sudo sysctl -w kernel.yama.ptrace_scope=0
     fi
 }
 
@@ -157,6 +153,13 @@ script_builder()
     if [ ${PROVIDER} == "efa" ]; then
         efa_software_components
     fi
+
+    # Ubuntu disallows non-child process ptrace by default, which is
+    # required for the use of CMA in the shared-memory codepath.
+    if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
+        echo "sudo sysctl -w kernel.yama.ptrace_scope=0" >> ${tmp_script}
+    fi
+
     ${label}_install_deps
     if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
         echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${tmp_script}
