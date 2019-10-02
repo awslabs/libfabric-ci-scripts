@@ -140,6 +140,10 @@ check_provider_os()
 {
     if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
         ubuntu_kernel_upgrade "$1"
+
+        # Ubuntu disallows non-child process ptrace by default, which is
+        # required for the use of CMA in the shared-memory codepath.
+        echo 0 > /proc/sys/kernel/yama/ptrace_scope
     fi
 }
 
