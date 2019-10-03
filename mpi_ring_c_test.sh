@@ -28,8 +28,8 @@ for host in $hosts; do
     scp /tmp/ring_c $host:/tmp
 done
 
-$mpirun_path --version
-$mpirun_path -n $(( $ranks * $# )) -hostfile $hostfile /tmp/ring_c 2>&1 | tee $out
+$mpirun_cmd --version
+$mpirun_cmd -n $(( $ranks * $# )) -hostfile $hostfile /tmp/ring_c 2>&1 | tee $out
 if [ $? -ne 0 ] || ! grep -q "Process 0 exiting" $out; then
     echo "mpirun ring_c failed"
     exit 1

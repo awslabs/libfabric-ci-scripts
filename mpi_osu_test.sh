@@ -37,10 +37,10 @@ for host in $hosts; do
     scp -r ${osu_dir} $host:/tmp
 done
 
-$mpirun_path --version
+$mpirun_cmd --version
 
 # TODO: split this output so that it shows up as three separate tests in the xml output
-$mpirun_path -n 2 ${one_rank_per_node} -hostfile $hostfile /tmp/${osu_dir}/mpi/pt2pt/osu_latency 2>&1 | tee $out
+$mpirun_cmd -n 2 ${one_rank_per_node} -hostfile $hostfile /tmp/${osu_dir}/mpi/pt2pt/osu_latency 2>&1 | tee $out
 if [ $? -ne 0 ]; then
     echo "osu_latency failed"
     exit 1
@@ -52,7 +52,7 @@ elif [ "${mpi}" == "impi" ]; then
     check_efa_impi $out
 fi
 
-$mpirun_path -n 2 ${one_rank_per_node} -hostfile $hostfile /tmp/${osu_dir}/mpi/pt2pt/osu_bw 2>&1 | tee $out
+$mpirun_cmd -n 2 ${one_rank_per_node} -hostfile $hostfile /tmp/${osu_dir}/mpi/pt2pt/osu_bw 2>&1 | tee $out
 if [ $? -ne 0 ]; then
     echo "osu_bw failed"
     exit 1
@@ -64,7 +64,7 @@ elif [ "${mpi}" == "impi" ]; then
     check_efa_impi $out
 fi
 
-$mpirun_path -n $(( $ranks * $# )) -hostfile $hostfile /tmp/${osu_dir}/mpi/pt2pt/osu_mbw_mr 2>&1 | tee $out
+$mpirun_cmd -n $(( $ranks * $# )) -hostfile $hostfile /tmp/${osu_dir}/mpi/pt2pt/osu_mbw_mr 2>&1 | tee $out
 if [ $? -ne 0 ]; then
     echo "osu_mbw_mr failed"
     exit 1
