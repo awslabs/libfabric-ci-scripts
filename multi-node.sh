@@ -125,10 +125,12 @@ for i in $(seq 1 $N); do
     exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
 done
 
-# Run ring_c MPI test only for EFA provider for now.
+# Run MPI tests only for EFA provider for now.
 if [ ${PROVIDER} == "efa" ]; then
     scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
-        $WORKSPACE/libfabric-ci-scripts/mpi_ring_c_test.sh ${ami[1]}@${INSTANCE_IPS[0]}:
+	$WORKSPACE/libfabric-ci-scripts/mpi_ring_c_test.sh \
+	$WORKSPACE/libfabric-ci-scripts/mpi_common.sh \
+	${ami[1]}@${INSTANCE_IPS[0]}:
 
     test_list="ompi"
     if [ ${RUN_IMPI_TESTS} -eq 1 ]; then
