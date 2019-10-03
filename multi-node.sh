@@ -128,9 +128,10 @@ done
 # Run MPI tests only for EFA provider for now.
 if [ ${PROVIDER} == "efa" ]; then
     scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
-	$WORKSPACE/libfabric-ci-scripts/mpi_ring_c_test.sh \
-	$WORKSPACE/libfabric-ci-scripts/mpi_common.sh \
-	${ami[1]}@${INSTANCE_IPS[0]}:
+        $WORKSPACE/libfabric-ci-scripts/mpi_ring_c_test.sh \
+        $WORKSPACE/libfabric-ci-scripts/mpi_osu_test.sh \
+        $WORKSPACE/libfabric-ci-scripts/mpi_common.sh \
+        ${ami[1]}@${INSTANCE_IPS[0]}:
 
     test_list="ompi"
     if [ ${RUN_IMPI_TESTS} -eq 1 ]; then
@@ -146,6 +147,17 @@ if [ ${PROVIDER} == "efa" ]; then
         if [ $? -ne 0 ]; then
             BUILD_CODE=1
             echo "${mpi} ring_c test failed."
+        fi
+        set -e
+
+        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
+            bash mpi_osu_test.sh ${mpi} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_osu_${mpi}.txt
+
+        set +e
+        grep -q "Test Passed" ${output_dir}/temp_execute_osu_${mpi}.txt
+        if [ $? -ne 0 ]; then
+            BUILD_CODE=1
+            echo "${mpi} osu test failed."
         fi
         set -e
     done

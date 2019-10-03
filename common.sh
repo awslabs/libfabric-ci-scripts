@@ -354,9 +354,13 @@ split_files()
 
     execution_seq=$((${execution_seq}+1))
     mv temp_execute_ring_c_ompi.txt ${execution_seq}_${INSTANCE_IPS[0]}_ring_c_ompi.txt
+    execution_seq=$((${execution_seq}+1))
+    mv temp_execute_osu_ompi.txt ${execution_seq}_${INSTANCE_IPS[0]}_osu_ompi.txt
     if [ ${RUN_IMPI_TESTS} -eq 1 ]; then
         execution_seq=$((${execution_seq}+1))
         mv temp_execute_ring_c_impi.txt ${execution_seq}_${INSTANCE_IPS[0]}_ring_c_impi.txt
+        execution_seq=$((${execution_seq}+1))
+        mv temp_execute_osu_impi.txt ${execution_seq}_${INSTANCE_IPS[0]}_osu_impi.txt
     fi
     popd
 }
