@@ -22,7 +22,8 @@ function ompi_setup {
     export OMPI_MCA_mtl_base_verbose=100
     # Pass LD_LIBRARY_PATH arg so that we use the right libfabric. Ubuntu
     # doesn't load .bashrc/.bash_profile for non-interactive shells.
-    export MPI_ARGS="-x LD_LIBRARY_PATH"
+    # Only load the OFI component so MPI will fail if it cannot be used.
+    export MPI_ARGS="-x LD_LIBRARY_PATH --mca mtl ofi"
 }
 
 function impi_setup {
