@@ -7,6 +7,9 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 NODES=2
+# Current LibfabricCI IAM permissions do not allow placement group creation,
+# enable this after it is fixed.
+# export ENABLE_PLACEMENT_GROUP=1
 
 # Test whether the instance is ready for SSH or not. Once the instance is ready,
 # copy SSH keys from Jenkins and install libfabric

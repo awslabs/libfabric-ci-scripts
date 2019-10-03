@@ -6,6 +6,7 @@ output_dir=${output_dir:-$(mktemp -d -p $WORKSPACE)}
 tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
 # Disable IMPI tests for now until apt/yum repo issues are addressed.
 RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-0}
+ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
 
 get_alinux_ami_id() {
     region=$1
@@ -56,6 +57,28 @@ get_rhel76_ami_id() {
     return $?
 }
 
+create_pg()
+{
+    if [ ${ENABLE_PLACEMENT_GROUP} -eq 0 ]; then
+        return 0
+    fi
+    PLACEMENT_GROUP="slave-pg-$RANDOM"
+    AWS_DEFAULT_REGION=us-west-2 aws ec2 create-placement-group \
+        --group-name ${PLACEMENT_GROUP} \
+        --strategy cluster
+    return $?
+}
+
+delete_pg()
+{
+    if [ ${ENABLE_PLACEMENT_GROUP} -eq 0 ] || [ -z $PLACEMENT_GROUP ]; then
+        return 0
+    fi
+    AWS_DEFAULT_REGION=us-west-2 aws ec2 delete-placement-group \
+        --group-name ${PLACEMENT_GROUP}
+    return $?
+}
+
 # Launches EC2 instances.
 create_instance()
 {
@@ -75,6 +98,12 @@ create_instance()
         *)
             exit 1
     esac
+    addl_args=""
+    if [ ${ENABLE_PLACEMENT_GROUP} -eq 1 ]; then
+        echo "==> Creating placement group"
+        create_pg || return 1
+        addl_args="--placement GroupName=${PLACEMENT_GROUP}"
+    fi
     echo "==> Creating instances"
     while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]; do
         for subnet in ${subnet_ids[@]}; do
@@ -89,7 +118,7 @@ create_instance()
                     --network-interface ${network_interface}",\"SubnetId\":\"${subnet}\"}]" \
                     --count ${NODES}:${NODES} \
                     --query "Instances[*].InstanceId" \
-                    --output=text 2>&1)
+                    --output=text ${addl_args} 2>&1)
             create_instance_exit_code=$?
             set -e
             echo "${INSTANCE_IDS}"
@@ -445,15 +474,23 @@ terminate_instances()
     # Terminates slave node
     if [[ ! -z ${INSTANCE_IDS[@]} ]]; then
         AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
+        AWS_DEFAULT_REGION=us-west-2 aws ec2 wait instance-terminated --instance-ids ${INSTANCE_IDS[@]}
     fi
 }
 
 on_exit()
 {
     set +e
+    # Some of the commands run are background procs, wait for them.
+    wait
     split_files
     parse_txt_junit_xml
     terminate_instances
+    # Not sure why 'wait instance-terminated' isn't good enough here as I am
+    # sometimes seeing an in-use error when attempting to delete the placement
+    # group. Add a small delay as a workaround.
+    sleep 1
+    delete_pg
 }
 
 exit_status()
