@@ -18,6 +18,11 @@ if [ -f ${EXCLUDE} ]; then
 else
     EXCLUDE=""
 fi
+# .bashrc and .bash_profile are loaded differently depending on distro and
+# whether the shell is interactive or not, just do both to be safe.
 echo "export LD_LIBRARY_PATH=${LIBFABRIC_INSTALL_PATH}/lib/:\$LD_LIBRARY_PATH" >> ~/.bash_profile
+echo "export LD_LIBRARY_PATH=${LIBFABRIC_INSTALL_PATH}/lib/:\$LD_LIBRARY_PATH" >> ~/.bashrc
 echo "export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/" >> ~/.bash_profile
+echo "export BIN_PATH=${HOME}/libfabric/fabtests/install/bin/" >> ~/.bashrc
 echo "export PATH=${HOME}/libfabric/fabtests/install/bin:\$PATH" >> ~/.bash_profile
+echo "export PATH=${HOME}/libfabric/fabtests/install/bin:\$PATH" >> ~/.bashrc

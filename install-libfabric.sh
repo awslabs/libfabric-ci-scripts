@@ -17,4 +17,5 @@ make -j 4
 make install
 LIBFABRIC_INSTALL_PATH=${HOME}/libfabric/install
 # ld.so.conf.d files are preferred in alphabetical order
+# this doesn't seem to be working for non-interactive shells
 sudo bash -c "echo ${LIBFABRIC_INSTALL_PATH} > /etc/ld.so.conf.d/aaaa-libfabric-testing.sh"
