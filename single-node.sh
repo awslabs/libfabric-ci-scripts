@@ -7,6 +7,8 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 NODES=1
+# Placement group is not needed for single-node tests.
+export ENABLE_PLACEMENT_GROUP=0
 
 set +x
 create_instance || { echo "==>Unable to create instance"; exit 1; }
