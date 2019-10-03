@@ -20,11 +20,15 @@ function check_efa_impi {
 function ompi_setup {
     . /etc/profile.d/efa.sh
     export OMPI_MCA_mtl_base_verbose=100
+    # Pass LD_LIBRARY_PATH arg so that we use the right libfabric. Ubuntu
+    # doesn't load .bashrc/.bash_profile for non-interactive shells.
+    export MPI_ARGS="-x LD_LIBRARY_PATH"
 }
 
 function impi_setup {
     source $IMPI_ENV
     export I_MPI_DEBUG=1
+    export MPI_ARGS=""
 }
 
 function host_setup {
@@ -41,5 +45,5 @@ function host_setup {
     export ranks=$(( $cpus / $threads ))
     # Avoid non-interactive shell PATH issues on Ubuntu with MPI by using full
     # path, so it can find orted.
-    export mpirun_path=$(which mpirun)
+    export mpirun_cmd="$(which mpirun) $MPI_ARGS"
 }
