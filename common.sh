@@ -57,6 +57,15 @@ get_rhel76_ami_id() {
     return $?
 }
 
+get_rhel77_ami_id() {
+    region=$1
+    aws ec2 describe-images --owners 309956199498 \
+        --filters 'Name=name,Values=RHEL-7.7_HVM_GA*' \
+        'Name=state,Values=available' 'Name=ena-support,Values=true' \
+        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    return $?
+}
+
 create_pg()
 {
     if [ ${ENABLE_PLACEMENT_GROUP} -eq 0 ]; then
