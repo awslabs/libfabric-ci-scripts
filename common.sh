@@ -179,6 +179,14 @@ check_provider_os()
     if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
         ubuntu_kernel_upgrade "$1"
     fi
+
+    # Ensure we are on the latest CentOS version.
+    if [ ${label} == "centos" ]; then
+        test_ssh $1
+        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
+            "sudo yum -y upgrade && sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+        execution_seq=$((${execution_seq}+1))
+    fi
 }
 
 # Creates a script, the script includes installation commands for
@@ -243,9 +251,8 @@ EOF
 
 centos_update()
 {
-    cat <<-"EOF" >> ${tmp_script}
-    sudo yum -y update
-EOF
+    # Update and reboot already handled in check_provider_os()
+    return 0
 }
 
 centos_install_deps() {
