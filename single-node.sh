@@ -31,12 +31,27 @@ cat <<-"EOF" >> ${tmp_script}
 . ~/.bash_profile
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
-if [ ${PROVIDER} == "efa" ];then
+
+# Provider-specific handling of the options passed to runfabtests.sh
+FABTEST_OPTS="-vvv ${EXCLUDE} ${PROVIDER}"
+case "${PROVIDER}" in
+"efa")
+    # EFA provider supports a custom address format based on the GID of the
+    # device. Extract that from sysfs and pass it to the tests. Also have the
+    # client communicate with QP0 of the server.
     gid=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
-    ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vvv -t all -C "-P 0" -s $gid -c $gid ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
-else
-    ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vvv ${EXCLUDE} ${PROVIDER} 127.0.0.1 127.0.0.1
-fi
+    FABTEST_OPTS+="-t all -C \"-P 0\" -s $gid -c $gid"
+    ;;
+"shm")
+    # The shm provider does not support the negative tests with bad addresses,
+    # and there seems to be no easy way to add them to the exclude lists..
+    # See https://github.com/ofiwg/libfabric/issues/5182 for context.
+    FABTEST_OPTS+="-N"
+    ;;
+esac
+
+${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${FABTEST_OPTS} 127.0.0.1 127.0.0.1
+
 EOF
 
 # Test whether node is ready for SSH connection or not
