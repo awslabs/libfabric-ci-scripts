@@ -1,7 +1,18 @@
 echo "==> Building fabtests"
 cd ${HOME}
+fi_info_bin=${LIBFABRIC_INSTALL_PATH}/bin/fi_info
+if [ ! -x ${fi_info_bin} ]; then
+    echo "fi_info not detected, exiting"
+    exit 1
+fi
 if [ ! -d libfabric ]; then
+    # Checkout libfabric bugfix branch so that fabtests is compatible with the
+    # installed version of libfabric.
     git clone https://github.com/ofiwg/libfabric
+    ofi_ver=$(${fi_info_bin} --version | grep 'libfabric api' | awk '{print $3}')
+    pushd libfabric
+    git checkout "v${ofi_ver}.x"
+    popd
 fi
 cd ${HOME}/libfabric/fabtests
 ./autogen.sh
