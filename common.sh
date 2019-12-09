@@ -91,7 +91,15 @@ delete_pg()
 # Launches EC2 instances.
 create_instance()
 {
-    subnet_ids=$(aws ec2 describe-subnets --filter "Name=availability-zone,Values=[us-west-2a,us-west-2b,us-west-2c]" --query "Subnets[*].SubnetId" --output=text)
+    # Get a list of subnets within the VPC relevant to the Slave SG
+    vpc_id=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-security-groups \
+        --group-ids ${slave_security_group} \
+        --query SecurityGroups[0].VpcId --output=text)
+    subnet_ids=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-subnets \
+        --filters "Name=availability-zone,Values=[us-west-2a,us-west-2b,us-west-2c]" \
+                    "Name=vpc-id,Values=$vpc_id" \
+                    --query "Subnets[*].SubnetId" --output=text)
+
     INSTANCE_IDS=''
     SERVER_ERROR=(InsufficientInstanceCapacity RequestLimitExceeded ServiceUnavailable Unavailable)
     create_instance_count=0
