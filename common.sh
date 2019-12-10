@@ -91,14 +91,20 @@ delete_pg()
 # Launches EC2 instances.
 create_instance()
 {
-    # Get a list of subnets within the VPC relevant to the Slave SG
-    vpc_id=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-security-groups \
-        --group-ids ${slave_security_group} \
-        --query SecurityGroups[0].VpcId --output=text)
-    subnet_ids=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-subnets \
-        --filters "Name=availability-zone,Values=[us-west-2a,us-west-2b,us-west-2c]" \
-                    "Name=vpc-id,Values=$vpc_id" \
-                    --query "Subnets[*].SubnetId" --output=text)
+    # If a specific subnet ID is provided by the caller, use that instead of
+    # querying the VPC for all subnets.
+    if [ -n ${BUILD_SUBNET_ID} ]; then
+        subnet_ids=${BUILD_SUBNET_ID}
+    else
+        # Get a list of subnets within the VPC relevant to the Slave SG
+        vpc_id=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-security-groups \
+            --group-ids ${slave_security_group} \
+            --query SecurityGroups[0].VpcId --output=text)
+        subnet_ids=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-subnets \
+            --filters "Name=availability-zone,Values=[us-west-2a,us-west-2b,us-west-2c]" \
+                        "Name=vpc-id,Values=$vpc_id" \
+                        --query "Subnets[*].SubnetId" --output=text)
+    fi
 
     INSTANCE_IDS=''
     SERVER_ERROR=(InsufficientInstanceCapacity RequestLimitExceeded ServiceUnavailable Unavailable)
