@@ -93,7 +93,7 @@ create_instance()
 {
     # If a specific subnet ID is provided by the caller, use that instead of
     # querying the VPC for all subnets.
-    if [ -n ${BUILD_SUBNET_ID} ]; then
+    if [[ -n ${BUILD_SUBNET_ID} ]]; then
         subnet_ids=${BUILD_SUBNET_ID}
     else
         # Get a list of subnets within the VPC relevant to the Slave SG
