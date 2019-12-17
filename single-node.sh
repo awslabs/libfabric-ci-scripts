@@ -40,13 +40,13 @@ case "${PROVIDER}" in
     # device. Extract that from sysfs and pass it to the tests. Also have the
     # client communicate with QP0 of the server.
     gid=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
-    FABTEST_OPTS+="-t all -C \"-P 0\" -s $gid -c $gid"
+    FABTEST_OPTS+=" -t all -C \"-P 0\" -s $gid -c $gid"
     ;;
 "shm")
     # The shm provider does not support the negative tests with bad addresses,
     # and there seems to be no easy way to add them to the exclude lists..
     # See https://github.com/ofiwg/libfabric/issues/5182 for context.
-    FABTEST_OPTS+="-N"
+    FABTEST_OPTS+=" -N"
     ;;
 esac
 
