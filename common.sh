@@ -278,17 +278,17 @@ EOF
 ubuntu_update()
 {
     cat <<-"EOF" >> ${tmp_script}
-    sudo apt-get update
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update
 EOF
 }
 
 ubuntu_install_deps()
 {
     cat <<-"EOF" >> ${tmp_script}
-    sudo apt -y install python
-    sudo apt -y install autoconf
-    sudo apt -y install libltdl-dev
-    sudo apt -y install make
+    sudo DEBIAN_FRONTEND=noninteractive apt -y install python
+    sudo DEBIAN_FRONTEND=noninteractive apt -y install autoconf
+    sudo DEBIAN_FRONTEND=noninteractive apt -y install libltdl-dev
+    sudo DEBIAN_FRONTEND=noninteractive apt -y install make
 EOF
 }
 
