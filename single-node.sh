@@ -50,7 +50,7 @@ case "${PROVIDER}" in
     ;;
 esac
 
-${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${FABTEST_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1
+bash -c "${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${FABTEST_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1"
 
 EOF
 
