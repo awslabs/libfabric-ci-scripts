@@ -33,7 +33,7 @@ ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 
 # Provider-specific handling of the options passed to runfabtests.sh
-FABTEST_OPTS="-vvv ${EXCLUDE} ${PROVIDER}"
+FABTEST_OPTS="-vvv ${EXCLUDE}"
 case "${PROVIDER}" in
 "efa")
     # EFA provider supports a custom address format based on the GID of the
@@ -50,7 +50,7 @@ case "${PROVIDER}" in
     ;;
 esac
 
-${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${FABTEST_OPTS} 127.0.0.1 127.0.0.1
+${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${FABTEST_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1
 
 EOF
 
