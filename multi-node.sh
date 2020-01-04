@@ -46,7 +46,7 @@ runfabtests_script_builder()
     fi
     if [ ${PROVIDER} == "efa" ];then
         gid_c=$4
-        gid_s=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+        gid_s=$(ibv_devinfo -v | grep GID | awk '{print $3}')
         ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vvv -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
     else
         ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vvv ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
@@ -58,7 +58,7 @@ EOF
 execute_runfabtests()
 {
     if [ ${PROVIDER} == "efa" ];then
-        gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+        gid_c=$(ssh -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[$1]} ibv_devinfo -v | grep GID | awk '{print $3}')
     else
         gid_c=""
     fi
