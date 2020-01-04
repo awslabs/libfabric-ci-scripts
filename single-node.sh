@@ -39,7 +39,7 @@ case "${PROVIDER}" in
     # EFA provider supports a custom address format based on the GID of the
     # device. Extract that from sysfs and pass it to the tests. Also have the
     # client communicate with QP0 of the server.
-    gid=$(cat /sys/class/infiniband/efa_0/ports/1/gids/0)
+    gid=$(ibv_devinfo -v | grep GID | awk '{print $3}')
     FABTEST_OPTS+=" -t all -C \"-P 0\" -s $gid -c $gid"
     ;;
 "shm")
