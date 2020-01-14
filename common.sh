@@ -112,7 +112,7 @@ create_instance()
     error=1
     case "${PROVIDER}" in
         efa)
-            instance_type=c5n.18xlarge
+            instance_type=m5n.24xlarge
             network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
             ;;
         tcp|udp)
