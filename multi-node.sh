@@ -110,6 +110,17 @@ for IP in ${INSTANCE_IPS[@]}; do
 done
 wait
 
+if [ ${REBOOT_AFTER_INSTALL} -eq 1 ]; then
+    for IP in ${INSTANCE_IPS[@]}; do
+        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
+            "sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$IP' \1/'
+    done
+
+    for IP in ${INSTANCE_IPS[@]}; do
+        test_ssh ${IP}
+    done
+fi
+
 # Prepare runfabtests script to be run on the server (INSTANCE_IPS[0])
 runfabtests_script_builder
 
