@@ -47,9 +47,9 @@ runfabtests_script_builder()
     if [ ${PROVIDER} == "efa" ];then
         gid_c=$4
         gid_s=$(ibv_devinfo -v | grep GID | awk '{print $3}')
-        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vvv -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
+        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -E LD_LIBRARY_PATH="$LD_LIBRARY_PATH" -vvv -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
     else
-        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -vvv ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
+        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -E LD_LIBRARY_PATH="$LD_LIBRARY_PATH" -vvv ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
     fi
 EOF
 }
