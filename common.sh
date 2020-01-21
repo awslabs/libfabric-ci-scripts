@@ -115,7 +115,7 @@ create_instance()
             instance_type=m5n.24xlarge
             network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
             ;;
-        tcp|udp)
+        tcp|udp|shm)
             network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
             ;;
         *)
