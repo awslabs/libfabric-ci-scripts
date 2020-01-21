@@ -33,7 +33,7 @@ ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 
 # Provider-specific handling of the options passed to runfabtests.sh
-FABTEST_OPTS="-vvv ${EXCLUDE}"
+FABTEST_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
 case "${PROVIDER}" in
 "efa")
     # EFA provider supports a custom address format based on the GID of the
