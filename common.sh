@@ -418,7 +418,6 @@ parse_txt_junit_xml()
 {
     exit_code=$?
     set +x
-    pushd ${output_dir}
     get_rft_yaml_to_junit_xml
     # Read all .txt files
     for file in *.txt; do
@@ -457,7 +456,6 @@ parse_txt_junit_xml()
         done < ${file}
         junit_xml ${file_name}
     done
-    popd
     set -x
 }
 
@@ -483,8 +481,8 @@ parse_fabtests()
         fi
         line_no=$((${line_no}+1))
     done < $1
-    junit_xml ${file_name}
     popd
+    junit_xml ${file_name}
 }
 
 # It updates the filename in rft_yaml_to_junit_xml on the fly to the file_name
