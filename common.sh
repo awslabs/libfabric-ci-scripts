@@ -223,6 +223,8 @@ script_builder()
     ${label}_install_deps
     if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
         echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${tmp_script}
+    elif [ ${TARGET_BRANCH} == "v1.8.x" ]; then
+        cat install-libfabric-1.8.sh >> ${tmp_script}
     else
         cat install-libfabric.sh >> ${tmp_script}
     fi
@@ -337,7 +339,11 @@ test_ssh()
 efa_software_components()
 {
     if [ -z "$EFA_INSTALLER_URL" ]; then
-        EFA_INSTALLER_URL="https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz"
+        if [ ${TARGET_BRANCH} == "v1.8.x" ]; then
+            EFA_INSTALLER_URL="https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-1.7.1.tar.gz"
+        else
+            EFA_INSTALLER_URL="https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz"
+        fi
     fi
     echo "curl -o efa-installer.tar.gz $EFA_INSTALLER_URL" >> ${tmp_script}
     cat <<-"EOF" >> ${tmp_script}
