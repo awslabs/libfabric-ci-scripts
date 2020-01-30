@@ -11,8 +11,10 @@ source ~/.bash_profile
 cd ${HOME}
 git clone https://github.com/ofiwg/libfabric
 cd ${HOME}/libfabric
-git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-git checkout $PULL_REQUEST_REF -b PRBranch
+if [ ! "$PULL_REQUEST_ID" = "None" ]; then
+    git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
+    git checkout $PULL_REQUEST_REF -b PRBranch
+fi
 ./autogen.sh
 ./configure --prefix=${HOME}/libfabric/install/ \
     --enable-debug  \
