@@ -7,6 +7,8 @@ set -x
 set -o pipefail
 mpi=$1
 shift
+libfabric_job_type=$1
+shift
 hosts=$@
 hostfile=$(mktemp)
 out=$(mktemp)
@@ -16,7 +18,7 @@ curl -O https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring_c.c
 if [ "${mpi}" == "ompi" ]; then
     ompi_setup
 elif [ "${mpi}" == "impi" ]; then
-    impi_setup
+    impi_setup "${libfabric_job_type}"
 else
     echo "unknown mpi type"
     exit 1
