@@ -7,6 +7,8 @@ set -x
 set -o pipefail
 mpi=$1
 shift
+libfabric_job_type=$1
+shift
 hosts=$@
 hostfile=$(mktemp)
 out=$(mktemp)
@@ -18,7 +20,7 @@ if [ "${mpi}" == "ompi" ]; then
     ompi_setup
     one_rank_per_node="-N 1"
 elif [ "${mpi}" == "impi" ]; then
-    impi_setup
+    impi_setup "${libfabric_job_type}"
     one_rank_per_node="-ppn 1"
 else
     echo "unknown mpi type"

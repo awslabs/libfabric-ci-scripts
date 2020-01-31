@@ -7,6 +7,7 @@ slave_name=slave_$label
 slave_value=${!slave_name}
 ami=($slave_value)
 NODES=2
+libfabric_job_type=${libfabric_job_type:-"master"}
 # Current LibfabricCI IAM permissions do not allow placement group creation,
 # enable this after it is fixed.
 # export ENABLE_PLACEMENT_GROUP=1
@@ -152,7 +153,7 @@ if [ ${PROVIDER} == "efa" ]; then
     for mpi in $test_list; do
         execution_seq=$((${execution_seq}+1))
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-            bash mpi_ring_c_test.sh ${mpi} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_${mpi}.txt
+            bash mpi_ring_c_test.sh ${mpi} ${libfabric_job_type} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_${mpi}.txt
 
         set +e
         grep -q "Test Passed" ${output_dir}/temp_execute_ring_c_${mpi}.txt
@@ -163,7 +164,7 @@ if [ ${PROVIDER} == "efa" ]; then
         set -e
 
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-            bash mpi_osu_test.sh ${mpi} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_osu_${mpi}.txt
+            bash mpi_osu_test.sh ${mpi} ${libfabric_job_type} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_osu_${mpi}.txt
 
         set +e
         grep -q "Test Passed" ${output_dir}/temp_execute_osu_${mpi}.txt
