@@ -39,6 +39,7 @@ for host in $hosts; do
     scp -r ${osu_dir} $host:/tmp
 done
 
+echo "$mpirun_cmd --version"
 $mpirun_cmd --version
 
 # TODO: split this output so that it shows up as three separate tests in the xml output
