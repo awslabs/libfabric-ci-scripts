@@ -14,5 +14,6 @@ before_install:
 
 script:
 - bashate *.sh
+- bashate nccl/*/*.sh
 - # Commenting out shell-check till we fully resolve existing warnings
 - # shellcheck -S warning *.sh
