@@ -15,5 +15,4 @@ before_install:
 script:
 - bashate -i E006 *.sh
 - bashate nccl/*/*.sh
-- # Commenting out shell-check till we fully resolve existing warnings
-- # shellcheck -S warning *.sh
+- shellcheck -S error *.sh
