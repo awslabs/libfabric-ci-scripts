@@ -36,9 +36,9 @@ for region in ${aws_regions[@]}; do
         delete_sg ${SSHSG}
         delete_sg ${SGId}
         echo "==> Changing the region"
-        continue  
+        continue
     else
-        break 
+        break
     fi
 done
 
