@@ -129,7 +129,7 @@ create_instance()
     fi
     echo "==> Creating instances"
     while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]; do
-        for subnet in ${subnet_ids[@]}; do
+        for subnet in "${subnet_ids[@]}"; do
             error=1
             set +e
             INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
@@ -150,7 +150,7 @@ create_instance()
             if [ $create_instance_exit_code -ne 0 ]; then
                 # If the error was due to SERVER_ERROR, set error=1 else for
                 # some other error set error=0
-                for code in ${SERVER_ERROR[@]}; do
+                for code in "${SERVER_ERROR[@]}"; do
                     if [[ "${INSTANCE_IDS}" == *${code}* ]]; then
                         error=1
                         break
@@ -182,7 +182,7 @@ test_instance_status()
 get_instance_ip()
 {
     execution_seq=$((${execution_seq}+1))
-    INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} \
+    INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids "${INSTANCE_IDS[@]}" \
                         --query "Reservations[*].Instances[*].PrivateIpAddress" \
                         --output=text)
 }
@@ -526,9 +526,9 @@ EOF
 terminate_instances()
 {
     # Terminates slave node
-    if [[ ! -z ${INSTANCE_IDS[@]} ]]; then
-        AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
-        AWS_DEFAULT_REGION=us-west-2 aws ec2 wait instance-terminated --instance-ids ${INSTANCE_IDS[@]}
+    if [[ ! -z ${INSTANCE_IDS[*]} ]]; then
+        AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids "${INSTANCE_IDS[@]}"
+        AWS_DEFAULT_REGION=us-west-2 aws ec2 wait instance-terminated --instance-ids "${INSTANCE_IDS[@]}"
     fi
 }
 
