@@ -13,7 +13,7 @@ before_install:
     - sudo pip install bashate
 
 script:
-- bashate *.sh
+- bashate -i E006 *.sh
 - bashate nccl/*/*.sh
 - # Commenting out shell-check till we fully resolve existing warnings
 - # shellcheck -S warning *.sh
