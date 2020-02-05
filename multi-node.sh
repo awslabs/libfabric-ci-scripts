@@ -80,7 +80,7 @@ INSTANCE_IDS=($INSTANCE_IDS)
 
 execution_seq=$((${execution_seq}+1))
 # Wait until all instances have passed status check
-for ID in ${INSTANCE_IDS[@]}; do
+for ID in "${INSTANCE_IDS[@]}"; do
     test_instance_status "$ID" &
 done
 wait
@@ -106,18 +106,18 @@ set -x
 
 execution_seq=$((${execution_seq}+1))
 # SSH into nodes and install libfabric concurrently on all nodes
-for IP in ${INSTANCE_IPS[@]}; do
+for IP in "${INSTANCE_IPS[@]}"; do
     install_libfabric "$IP" &
 done
 wait
 
 if [ ${REBOOT_AFTER_INSTALL} -eq 1 ]; then
-    for IP in ${INSTANCE_IPS[@]}; do
+    for IP in "${INSTANCE_IPS[@]}"; do
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
             "sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$IP' \1/'
     done
 
-    for IP in ${INSTANCE_IPS[@]}; do
+    for IP in "${INSTANCE_IPS[@]}"; do
         test_ssh ${IP}
     done
 fi
@@ -153,7 +153,7 @@ if [ ${PROVIDER} == "efa" ]; then
     for mpi in $test_list; do
         execution_seq=$((${execution_seq}+1))
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-            bash mpi_ring_c_test.sh ${mpi} ${libfabric_job_type} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_${mpi}.txt
+            bash mpi_ring_c_test.sh ${mpi} ${libfabric_job_type} "${INSTANCE_IPS[@]}" | tee ${output_dir}/temp_execute_ring_c_${mpi}.txt
 
         set +e
         grep -q "Test Passed" ${output_dir}/temp_execute_ring_c_${mpi}.txt
@@ -164,7 +164,7 @@ if [ ${PROVIDER} == "efa" ]; then
         set -e
 
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-            bash mpi_osu_test.sh ${mpi} ${libfabric_job_type} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_osu_${mpi}.txt
+            bash mpi_osu_test.sh ${mpi} ${libfabric_job_type} "${INSTANCE_IPS[@]}" | tee ${output_dir}/temp_execute_osu_${mpi}.txt
 
         set +e
         grep -q "Test Passed" ${output_dir}/temp_execute_osu_${mpi}.txt
