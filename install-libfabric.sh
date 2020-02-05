@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "==> Building libfabric"
 # Build version 27 of rdma-core for EFA
 cd ${HOME}

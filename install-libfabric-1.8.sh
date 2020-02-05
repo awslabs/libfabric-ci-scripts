@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "==> Building libfabric 1.8.x"
 cd ${HOME}
 git clone https://github.com/ofiwg/libfabric
