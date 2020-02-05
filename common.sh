@@ -216,7 +216,7 @@ script_builder()
 
     # Ubuntu disallows non-child process ptrace by default, which is
     # required for the use of CMA in the shared-memory codepath.
-    if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
+    if [ ${label} == "ubuntu" ];then
         echo "sudo sysctl -w kernel.yama.ptrace_scope=0" >> ${tmp_script}
     fi
 
