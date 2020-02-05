@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # MPI helper shell functions
 function check_efa_ompi {
     out=$1

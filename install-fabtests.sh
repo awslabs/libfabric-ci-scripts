@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 echo "==> Building fabtests"
 cd ${HOME}
 fi_info_bin=${LIBFABRIC_INSTALL_PATH}/bin/fi_info
