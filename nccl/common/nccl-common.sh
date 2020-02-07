@@ -433,7 +433,7 @@ EOF
     echo "==>The number of GPUs is: $NUM_GPUS"
 
     set -xe
-    timeout 20m $HOME/anaconda3/bin/mpirun \
+    timeout 30m $HOME/anaconda3/bin/mpirun \
         -x FI_PROVIDER="$PROVIDER" \
         -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
         -x NCCL_ALGO=ring --hostfile $HOME/hosts \
