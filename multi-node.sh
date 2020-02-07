@@ -74,7 +74,7 @@ execute_runfabtests()
 }
 
 set +x
-create_instance || { echo "==>Unable to create instance"; exit 1; }
+create_instance || { echo "==>Unable to create instance"; exit 65; }
 set -x
 INSTANCE_IDS=($INSTANCE_IDS)
 
