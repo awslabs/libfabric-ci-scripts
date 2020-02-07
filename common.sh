@@ -164,7 +164,9 @@ create_instance()
             # If run-instances wasn't successful, and it was due to some other
             # error, exit and fail the test.
             if [ ${error} -eq 0 ]; then
-                exit ${create_instance_exit_code}
+                # Mark build as unstable, error code 65 has been used to
+                # identify unstable build
+                exit 65
             fi
         done
         sleep 2m
@@ -175,7 +177,7 @@ create_instance()
 # Holds testing every 15 seconds for 40 attempts until the instance status check is ok
 test_instance_status()
 {
-    aws ec2 wait instance-status-ok --instance-ids $1
+    aws ec2 wait instance-status-ok --instance-ids $1 || exit 65
 }
 
 # Get IP address for instances
@@ -536,6 +538,7 @@ terminate_instances()
 
 on_exit()
 {
+    return_code=$?
     set +e
     # Some of the commands run are background procs, wait for them.
     wait
@@ -547,6 +550,7 @@ on_exit()
     # group. Add a small delay as a workaround.
     sleep 1
     delete_pg
+    return $return_code
 }
 
 exit_status()

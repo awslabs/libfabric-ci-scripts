@@ -11,7 +11,7 @@ NODES=1
 export ENABLE_PLACEMENT_GROUP=0
 
 set +x
-create_instance || { echo "==>Unable to create instance"; exit 1; }
+create_instance || { echo "==>Unable to create instance"; exit 65; }
 set -x
 
 execution_seq=$((${execution_seq}+1))
