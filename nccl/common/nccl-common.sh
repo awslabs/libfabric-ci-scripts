@@ -68,6 +68,10 @@ define_parameters() {
 
     create_instance_retries=10
 
+    instance_check_retries=20
+
+    ami_check_retries=20
+
     ssh_check_retries=40
 
     #Size in (B) used to filter busbw test result
@@ -269,6 +273,23 @@ EOF
         -i "~/${slave_keypair}" ${ssh_user}@${PublicDNS} "bash -s" < ${tmp_script}
 }
 
+test_ami_status() {
+    ami_status="unavailable"
+    check_attempts=0
+
+    while [ ${ami_status} != "available" ] && [ ${check_attempts} -lt ${ami_check_retries} ] ; do
+        sleep 1m
+        ami_status=$(aws ec2 describe-images --image-ids $1 --query "Images[*].State" --output text)
+        check_attempts=$((check_attempts+1))
+        echo "$1 status: ${ami_status}"
+    done
+
+    if [ ${ami_status} != "available" ]; then
+        echo "There is a problem with ami $1 it still has ${ami_status} status after ${ami_check_retries} minutes"
+        exit 1
+    fi
+}
+
 # Create custom AMI
 create_ami() {
 
@@ -283,7 +304,7 @@ create_ami() {
         --description "EFA and NCCL-enabled AMI" --output=text --query 'ImageId')
 
     echo "==> Wait for image $custom_ami to become available"
-    aws ec2 wait image-available --image-ids ${custom_ami}
+    test_ami_status ${custom_ami}
 }
 
 # Deregister custom AMI
@@ -299,7 +320,20 @@ deregister_ami() {
 test_instance_status() {
 
     echo "==> Waiting for instance $1 to become available"
-    aws ec2 wait instance-status-ok --instance-ids $1
+    instance_status="unavailable"
+    check_attempts=0
+
+    while [ ${instance_status} != "running" ] && [ ${check_attempts} -lt ${instance_check_retries} ] ; do
+        sleep 1m
+        instance_status=$(aws ec2 describe-instances --instance-ids $1 --query "Reservations[*].Instances[*].State.Name" --output text)
+        check_attempts=$((check_attempts+1))
+        echo "$1 status: ${instance_status}"
+    done
+
+    if [ ${instance_status} != "running" ]; then
+        echo "There is a problem with instance $1 it still has  ${instance_status} status after ${instance_check_retries} minutes"
+        exit 1
+    fi
 }
 
 # Create placement group for cluster to run  NCCL test
