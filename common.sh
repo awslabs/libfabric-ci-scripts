@@ -75,6 +75,7 @@ create_pg()
     AWS_DEFAULT_REGION=us-west-2 aws ec2 create-placement-group \
         --group-name ${PLACEMENT_GROUP} \
         --strategy cluster
+    sleep 1
     return $?
 }
 
