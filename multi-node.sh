@@ -85,6 +85,10 @@ for ID in ${INSTANCE_IDS[@]}; do
 done
 wait
 
+for i in $WORKSPACE/libfabric-ci-scripts/*_instance_status.sh; do
+    [ -f "$i" ] && exit 65
+done
+
 get_instance_ip
 INSTANCE_IPS=($INSTANCE_IPS)
 

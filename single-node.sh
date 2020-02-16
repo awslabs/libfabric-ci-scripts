@@ -16,6 +16,7 @@ set -x
 
 execution_seq=$((${execution_seq}+1))
 test_instance_status ${INSTANCE_IDS}
+[ -f $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IDS}_instance_status.sh ] && exit 65
 
 get_instance_ip
 

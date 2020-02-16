@@ -177,7 +177,7 @@ create_instance()
 # Holds testing every 15 seconds for 40 attempts until the instance status check is ok
 test_instance_status()
 {
-    aws ec2 wait instance-status-ok --instance-ids $1 || exit 65
+    aws ec2 wait instance-status-ok --instance-ids $1 || echo "INSTANCE_STATUS_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/$1_instance_status.sh
 }
 
 # Get IP address for instances
