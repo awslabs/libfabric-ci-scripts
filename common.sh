@@ -75,7 +75,27 @@ create_pg()
     AWS_DEFAULT_REGION=us-west-2 aws ec2 create-placement-group \
         --group-name ${PLACEMENT_GROUP} \
         --strategy cluster
-    return $?
+    pg_status=$?
+    if [ $pg_status -ne 0 ]; then
+        return $pg_status
+    fi
+    # To avoid unknown placement group error, check whether placement group is
+    # available or not. Sleep for 5 sec before sending another query
+    set +e
+    pg_state=""
+    pg_check_tries=0
+    while [[ $pg_state != "available" ]] && [ $pg_check_tries -lt 30 ]; do
+        pg_state=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 describe-placement-groups \
+                                --group-names ${PLACEMENT_GROUP} \
+                                --query "PlacementGroups[*].State" \
+                                --output text)
+        pg_check_tries=$((pg_check_tries+1))
+        sleep 5
+    done
+    set -e
+    if [[ $pg_state != "available" ]]; then
+        return 1
+    fi
 }
 
 delete_pg()
