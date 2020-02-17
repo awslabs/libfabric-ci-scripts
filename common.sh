@@ -71,7 +71,7 @@ create_pg()
     if [ ${ENABLE_PLACEMENT_GROUP} -eq 0 ]; then
         return 0
     fi
-    PLACEMENT_GROUP="slave-pg-$RANDOM"
+    PLACEMENT_GROUP="slave-pg-$RANDOM-${ami[0]}"
     AWS_DEFAULT_REGION=us-west-2 aws ec2 create-placement-group \
         --group-name ${PLACEMENT_GROUP} \
         --strategy cluster
