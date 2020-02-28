@@ -54,6 +54,15 @@ bash -c "${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${FABTEST_OPTS} $
 
 EOF
 
+if [ ${label} == "ubuntu" ];then
+    echo "sudo sysctl -w kernel.yama.ptrace_scope=0" >> ${tmp_script}
+    cat <<-"EOF" >> ${tmp_script}
+# Turn off ptrace protection, run fabtest again to test CMA code path
+bash -c "${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${FABTEST_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1"
+
+EOF
+fi
+
 # Test whether node is ready for SSH connection or not
 test_ssh ${INSTANCE_IPS}
 
