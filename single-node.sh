@@ -32,15 +32,25 @@ cat <<-"EOF" >> ${tmp_script}
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 
+runfabtests_script="${HOME}/libfabric/fabtests/install/bin/runfabtests.sh"
+
 # Provider-specific handling of the options passed to runfabtests.sh
 FABTEST_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
 case "${PROVIDER}" in
 "efa")
     # EFA provider supports a custom address format based on the GID of the
     # device. Extract that from sysfs and pass it to the tests. Also have the
-    # client communicate with QP0 of the server.
-    gid=$(ibv_devinfo -v | grep GID | awk '{print $3}')
-    FABTEST_OPTS+=" -t all -C \"-P 0\" -s $gid -c $gid"
+    # client communicate with QP0 of the server. This is only for older
+    # versions of fabtests, newer versions can use the -b option to exchange
+    # out of band.
+    b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b')"
+    FABTESTS_OPTS+=" -t all"
+    if [ -n "$b_option_available" ]; then
+        FABTESTS_OPTS+=" -b"
+    else
+        gid=$(ibv_devinfo -v | grep GID | awk '{print $3}')
+        FABTEST_OPTS+=" -C \"-P 0\" -s $gid -c $gid"
+    fi
     ;;
 "shm")
     # The shm provider does not support the negative tests with bad addresses,
@@ -50,7 +60,7 @@ case "${PROVIDER}" in
     ;;
 esac
 
-bash -c "${HOME}/libfabric/fabtests/install/bin/runfabtests.sh ${FABTEST_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1"
+bash -c "$runfabtests_script ${FABTEST_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1"
 
 EOF
 

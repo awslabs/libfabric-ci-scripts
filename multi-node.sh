@@ -45,13 +45,19 @@ runfabtests_script_builder()
     else
         EXCLUDE=""
     fi
-    if [ ${PROVIDER} == "efa" ];then
-        gid_c=$4
-        gid_s=$(ibv_devinfo -v | grep GID | awk '{print $3}')
-        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -E LD_LIBRARY_PATH="$LD_LIBRARY_PATH" -vvv -t all -C "-P 0" -s $gid_s -c $gid_c ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
-    else
-        ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh -E LD_LIBRARY_PATH="$LD_LIBRARY_PATH" -vvv ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
+    runfabtests_script="${HOME}/libfabric/fabtests/install/bin/runfabtests.sh"
+    b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b')"
+    FABTESTS_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
+    if [ ${PROVIDER} == "efa" ]; then
+        if [ -n "$b_option_available" ]; then
+            FABTESTS_OPTS+=" -b -t all"
+        else
+            gid_c=$4
+            gid_s=$(ibv_devinfo -v | grep GID | awk '{print $3}')
+            FABTESTS_OPTS+=" -C \"-P 0\" -s $gid_s -c $gid_c -t all"
+        fi
     fi
+    $runfabtests_script ${FABTESTS_OPTS} ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
 EOF
 }
 
