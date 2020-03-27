@@ -29,6 +29,9 @@ if [[ ${TARGET_REPO} == 'ofiwg/libfabric' ]];then
     fi
 fi
 
+# Locking NCCL version to 2.5.7-1
+NCCL_2_5_7='3701130b3c1bcdb01c14b3cb70fe52498c1e82b7'
+
 # Identify latest CUDA on server
 latest_cuda=$(find /usr/local -maxdepth 1 -type d -iname "cuda*" | sort -V -r | head -1)
 echo "==> Latest CUDA: ${latest_cuda}"
@@ -125,6 +128,7 @@ install_nccl() {
     cd $HOME
     sudo rm -rf nccl
     sudo git clone https://github.com/NVIDIA/nccl.git && cd nccl
+    sudo git checkout ${NCCL_2_5_7}
     sudo make -j src.build CUDA_HOME=${latest_cuda}
 }
 
