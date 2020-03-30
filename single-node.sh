@@ -43,7 +43,7 @@ case "${PROVIDER}" in
     # client communicate with QP0 of the server. This is only for older
     # versions of fabtests, newer versions can use the -b option to exchange
     # out of band.
-    b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b')"
+    b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b' || true)"
     FABTESTS_OPTS+=" -t all"
     if [ -n "$b_option_available" ]; then
         FABTESTS_OPTS+=" -b"

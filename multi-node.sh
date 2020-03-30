@@ -46,7 +46,7 @@ runfabtests_script_builder()
         EXCLUDE=""
     fi
     runfabtests_script="${HOME}/libfabric/fabtests/install/bin/runfabtests.sh"
-    b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b')"
+    b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b' || true)"
     FABTESTS_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
     if [ ${PROVIDER} == "efa" ]; then
         if [ -n "$b_option_available" ]; then
@@ -57,7 +57,7 @@ runfabtests_script_builder()
             FABTESTS_OPTS+=" -C \"-P 0\" -s $gid_s -c $gid_c -t all"
         fi
     fi
-    $runfabtests_script ${FABTESTS_OPTS} ${EXCLUDE} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}
+    bash -c "$runfabtests_script ${FABTESTS_OPTS} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}"
 EOF
 }
 
