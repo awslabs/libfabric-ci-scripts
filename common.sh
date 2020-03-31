@@ -251,7 +251,7 @@ EOF
 alinux_install_deps() {
     cat <<-"EOF" >> ${tmp_script}
     sudo yum -y groupinstall 'Development Tools'
-    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig valgrind-devel
+    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig
 EOF
 }
 
@@ -270,7 +270,7 @@ rhel_install_deps() {
     # An update after enabling the rhui optional repository seems to be needed
     # to refresh the CA certs.
     sudo yum update -y
-    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig valgrind-devel
+    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig
 EOF
 }
 
@@ -283,7 +283,7 @@ centos_update()
 centos_install_deps() {
     cat <<-"EOF" >> ${tmp_script}
     sudo yum -y groupinstall 'Development Tools'
-    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig valgrind-devel
+    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig
 EOF
 }
 
