@@ -35,7 +35,7 @@ cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 runfabtests_script="${HOME}/libfabric/fabtests/install/bin/runfabtests.sh"
 
 # Provider-specific handling of the options passed to runfabtests.sh
-FABTEST_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
+FABTESTS_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
 case "${PROVIDER}" in
 "efa")
     # EFA provider supports a custom address format based on the GID of the
@@ -49,18 +49,18 @@ case "${PROVIDER}" in
         FABTESTS_OPTS+=" -b"
     else
         gid=$(ibv_devinfo -v | grep GID | awk '{print $3}')
-        FABTEST_OPTS+=" -C \"-P 0\" -s $gid -c $gid"
+        FABTESTS_OPTS+=" -C \"-P 0\" -s $gid -c $gid"
     fi
     ;;
 "shm")
     # The shm provider does not support the negative tests with bad addresses,
     # and there seems to be no easy way to add them to the exclude lists..
     # See https://github.com/ofiwg/libfabric/issues/5182 for context.
-    FABTEST_OPTS+=" -N"
+    FABTESTS_OPTS+=" -N"
     ;;
 esac
 
-bash -c "$runfabtests_script ${FABTEST_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1"
+bash -c "$runfabtests_script ${FABTESTS_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1"
 
 EOF
 
