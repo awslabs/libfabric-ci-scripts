@@ -35,7 +35,6 @@ efa_software_components_minimal()
     echo "tar -xf efa-installer.tar.gz" >> ${tmp_script}
     echo "cd \${HOME}/aws-efa-installer" >> ${tmp_script}
     echo "sudo ./efa_installer.sh -m -y" >> ${tmp_script}
-    echo ". /etc/profile.d/efa.sh" >> ${tmp_script}
 }
 
 multi_node_efa_minimal_script_builder()
