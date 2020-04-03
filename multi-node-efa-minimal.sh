@@ -18,7 +18,7 @@ ami=($slave_value)
 NODES=2
 export MINIMAL=1
 export RUN_IMPI_TESTS=1
-export LIBFABRIC_INSTALL_PATH=/opt/intel/impi/2019.6.166/intel64/libfabric/
+export LIBFABRIC_INSTALL_PATH=/opt/intel/impi/latest/libfabric/
 
 
 # Current LibfabricCI IAM permissions do not allow placement group creation,
