@@ -6,6 +6,9 @@
 
 set -e
 
+if [[ "${label}" == 'ubuntu' ]]; then
+    exit 0
+fi
 # Unique id for groups and ami creation
 UUID=$(uuidgen)
 
