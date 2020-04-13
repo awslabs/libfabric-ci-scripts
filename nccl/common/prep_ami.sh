@@ -35,7 +35,6 @@ NCCL_2_5_7='3701130b3c1bcdb01c14b3cb70fe52498c1e82b7'
 # Identify latest CUDA on server
 latest_cuda=$(find /usr/local -maxdepth 1 -type d -iname "cuda*" | sort -V -r | head -1)
 echo "==> Latest CUDA: ${latest_cuda}"
-
 echo "==> Installing packages"
 
 generate_key() {
@@ -48,17 +47,17 @@ generate_key() {
 
 generate_config() {
 
-        ssh_config=$(
-        cat <<-"EOF"
+    ssh_config=$(
+    cat <<-"EOF"
 Host *
     ForwardAgent yes
 Host *
     StrictHostKeyChecking no
 EOF
-        )
+    )
 
-        echo "${ssh_config}"  > ~/.ssh/config
-        chmod 600 ~/.ssh/config
+    echo "${ssh_config}"  > ~/.ssh/config
+    chmod 600 ~/.ssh/config
 }
 
 # Install rdma-core, required for libfabric
@@ -127,9 +126,9 @@ install_nccl() {
     echo "==> Install NCCL"
     cd $HOME
     sudo rm -rf nccl
-    sudo git clone https://github.com/NVIDIA/nccl.git && cd nccl
-    sudo git checkout ${NCCL_2_5_7}
-    sudo make -j src.build CUDA_HOME=${latest_cuda}
+    git clone https://github.com/NVIDIA/nccl.git && cd nccl
+    git checkout ${NCCL_2_5_7}
+    make -j src.build CUDA_HOME=${latest_cuda}
 }
 
 install_nccl_tests() {
@@ -142,7 +141,6 @@ install_nccl_tests() {
 }
 
 install_aws_ofi_nccl_plugin() {
-
     cd $HOME/aws-ofi-nccl
     ./autogen.sh
     ./configure --prefix=$HOME/aws-ofi-nccl/install \
@@ -209,6 +207,8 @@ install_software() {
         install_aws_ofi_nccl_plugin
         install_nccl_tests
     fi
+
+
 }
 
 case $PLATFORM_ID in

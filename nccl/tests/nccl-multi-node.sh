@@ -86,6 +86,10 @@ for pub_dns in ${nodes_pub_dns[@]}; do
     scp -i "~/${slave_keypair}" ${tmp_script} ${ssh_user}@${pub_dns}:/home/${ssh_user}/hosts
 done
 
+for pub_dns in ${nodes_pub_dns[@]}; do
+    install_nvidia_driver ${pub_dns}
+done
+
 echo "==> Running unit tests"
 
 generate_unit_tests_script_multi_node
