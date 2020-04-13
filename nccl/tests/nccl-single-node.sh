@@ -58,7 +58,7 @@ terminate_instances
 # We need placement group for NCCL testing
 ENABLE_PLACEMENT_GROUP=1
 
-# Create instance to run tests 
+# Create instance to run tests
 create_instance ${SGId} ${NUM_NODES} ${custom_ami} ${instance_test_type}
 
 InstancesList=(`echo ${INSTANCE_IDS}`)
@@ -70,6 +70,8 @@ test_ssh ${InstancesList[0]}
 PublicDNSLeader=$(get_public_dns ${InstancesList[0]})
 
 LeaderIp=$(get_instance_ip ${InstancesList[0]})
+
+install_nvidia_driver ${PublicDNSLeader}
 
 hosts=$(
 cat <<-EOF

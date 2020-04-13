@@ -15,6 +15,8 @@ aws_regions=('us-east-1' 'us-west-2')
 # Latest CUDA available
 latest_cuda='$(find /usr/local -maxdepth 1 -type d -iname "cuda*" | sort -V -r | head -1)'
 
+nvidia_driver_path='http://us.download.nvidia.com/tesla/440.33.01/NVIDIA-Linux-x86_64-440.33.01.run'
+
 # LD_LIBRARY_PATH for nccl tests
 custom_ld_library_path='$HOME/anaconda3/lib/:$HOME/aws-ofi-nccl/install/lib/:`
                         `$HOME/nccl/build/lib:${latest_cuda}:`
@@ -95,7 +97,6 @@ create_efa_sg() {
     aws ec2 authorize-security-group-egress --group-id ${SGId} --protocol all --source-group ${SGId}
     aws ec2 authorize-security-group-ingress --group-id ${SGId} --protocol all --source-group ${SGId}
     aws ec2 authorize-security-group-ingress --port 22 --cidr 0.0.0.0/0 --protocol tcp --group-id ${SGId}
-    aws ec2 revoke-security-group-egress --group-id ${SGId} --protocol all --cidr 0.0.0.0/0
 }
 
 # Create security group for custom AMI preparation unrestricted egress
@@ -212,8 +213,8 @@ create_instance() {
 get_instance_ip() {
 
     instance_ip=$(aws ec2 describe-instances --instance-ids $1 \
-                        --query "Reservations[*].Instances[*].PrivateIpAddress" \
-                        --output=text)
+                    --query "Reservations[*].Instances[*].PrivateIpAddress" \
+                    --output=text)
     echo ${instance_ip}
 }
 
@@ -260,11 +261,11 @@ prepare_ami() {
     echo "==> Starting AMI preparation..."
 
     cat <<-EOF > ${tmp_script}
-    export PULL_REQUEST_REF="$1"
-    export PULL_REQUEST_ID="$2"
-    export TARGET_BRANCH="$3"
-    export TARGET_REPO="$4"
-    export PROVIDER="$5"
+export PULL_REQUEST_REF="$1"
+export PULL_REQUEST_ID="$2"
+export TARGET_BRANCH="$3"
+export TARGET_REPO="$4"
+export PROVIDER="$5"
 EOF
 
     cat $WORKSPACE/libfabric-ci-scripts/nccl/common/prep_ami.sh >> ${tmp_script}
@@ -293,12 +294,6 @@ test_ami_status() {
 # Create custom AMI
 create_ami() {
 
-    echo "==> Stop instance $1 before AMI creation"
-    aws ec2 stop-instances --instance-ids $1
-
-    echo "==> Wait until an instance is stopped"
-    aws ec2 wait instance-stopped --instance-ids $1
-
     echo "==> Create custom AMI"
     custom_ami=$(aws ec2 create-image --instance-id $1 --name "nccl-enabled-ami-$UUID" \
         --description "EFA and NCCL-enabled AMI" --output=text --query 'ImageId')
@@ -311,7 +306,7 @@ create_ami() {
 deregister_ami() {
 
     if [ -z ${custom_ami} ]; then
-            return 0
+        return 0
     fi
     echo "==> Deregistering custom AMI"
     aws ec2 deregister-image --image-id ${custom_ami}
@@ -370,6 +365,33 @@ generate_key() {
     chmod 600 ~/.ssh/id_rsa
 EOF
 }
+
+install_nvidia_driver() {
+
+    # Install nvidia driver if it is missing
+    cat <<-EOF > ${tmp_script}
+    #!/bin/bash
+    nvidia_driver_path="${nvidia_driver_path}"
+EOF
+    cat <<-"EOF" >> ${tmp_script}
+    echo "==> Checking if nvidia module is loaded"
+    /sbin/lsmod | grep nvidia > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        echo "==> nvidia module is loaded"
+        exit 0
+    fi
+    echo "==> nvidia module is missing, installing..."
+    cd $HOME
+    curl -L -o ./nvidia_driver.run "${nvidia_driver_path}"
+    sudo sh ./nvidia_driver.run --no-drm --disable-nouveau --dkms --silent --no-cc-version-check --install-libglvnd
+    echo "==> Verify that nvidia driver is functional after installation"
+    set -e
+    nvidia-smi -q | head
+EOF
+    ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
+        -i "~/${slave_keypair}" ${ssh_user}@$1 "bash -s" < ${tmp_script}
+}
+
 
 generate_unit_tests_script_single_node() {
 
