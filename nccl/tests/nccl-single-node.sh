@@ -20,56 +20,19 @@ set_jenkins_variables
 
 trap 'on_exit'  EXIT
 
-for region in ${aws_regions[@]}; do
+ENABLE_PLACEMENT_GROUP=0
 
-    # Set the default region
-    set_aws_defaults ${region}
+ami_instance_preparation
 
-    custom_instance_preparation
+ENABLE_PLACEMENT_GROUP=1
 
-    # Create instance for custom AMI preparation
-    echo "==> Launching instance in region ${AWS_DEFAULT_REGION}"
-    create_instance ${SSHSG} 1 ${prep_ami} ${instance_ami_type}
-
-    # In case of low capacity switch to another region
-    if [ ${create_instance_exit_code} -ne 0 ]; then
-        delete_sg ${SSHSG}
-        delete_sg ${SGId}
-        echo "==> Changing the region"
-        continue
-    else
-        break
-    fi
-done
-
-test_instance_status ${INSTANCE_IDS}
+prepare_instance 'test_instance' ${NUM_NODES}
 
 test_ssh ${INSTANCE_IDS}
 
-# Install software and prepare custom AMI
-prepare_ami "${PULL_REQUEST_REF}" "${PULL_REQUEST_ID}" "${TARGET_BRANCH}" "${TARGET_REPO}" "${PROVIDER}"
+PublicDNSLeader=$(get_public_dns ${INSTANCE_IDS})
 
-# Upload AMI to marketplace
-create_ami ${INSTANCE_IDS}
-
-# Terminate instance used for AMI preparation
-terminate_instances
-
-# We need placement group for NCCL testing
-ENABLE_PLACEMENT_GROUP=1
-
-# Create instance to run tests
-create_instance ${SGId} ${NUM_NODES} ${custom_ami} ${instance_test_type}
-
-InstancesList=(`echo ${INSTANCE_IDS}`)
-
-test_instance_status ${InstancesList[0]}
-
-test_ssh ${InstancesList[0]}
-
-PublicDNSLeader=$(get_public_dns ${InstancesList[0]})
-
-LeaderIp=$(get_instance_ip ${InstancesList[0]})
+LeaderIp=$(get_instance_ip ${INSTANCE_IDS})
 
 install_nvidia_driver ${PublicDNSLeader}
 

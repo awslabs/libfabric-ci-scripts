@@ -6,8 +6,16 @@
 
 set -e
 
-# Unique id for groups and ami creation
-UUID=$(uuidgen)
+# Generate universally unique identifier
+get_uniq_num() {
+    echo $(uuidgen)
+}
+
+# AMIs dict
+declare -A AMIS
+
+# Placement groups dict
+declare -A PGS
 
 # List of aws regions where tests can be executed
 aws_regions=('us-east-1' 'us-west-2')
@@ -59,23 +67,14 @@ set_aws_defaults() {
 
 define_parameters() {
 
-    # We dont need placement group for the custom AMI preparation
-    ENABLE_PLACEMENT_GROUP=0
-
     # Instance type for AMI preparation
     instance_ami_type='c5n.18xlarge'
-
     # Instance type for running NCCL tests
     instance_test_type='p3dn.24xlarge'
-
     create_instance_retries=10
-
-    instance_check_retries=20
-
+    instance_check_retries=10
     ami_check_retries=20
-
     ssh_check_retries=40
-
     #Size in (B) used to filter busbw test result
     test_b_size='1073741824'
 
@@ -91,22 +90,26 @@ define_parameters() {
 # Create security group for NCCL testing restricted egress
 create_efa_sg() {
 
-    SGId=$(aws ec2 create-security-group --group-name "EFA-enabled-sg-$UUID" \
+    SGId=$(aws ec2 create-security-group --group-name "EFA-enabled-sg-$(get_uniq_num)" \
         --description "EFA-enabled security group" --vpc-id ${vpc_id_reg} --query "GroupId" --output=text)
     echo "==> Setting rules for efa sg ${SGId}"
     aws ec2 authorize-security-group-egress --group-id ${SGId} --protocol all --source-group ${SGId}
     aws ec2 authorize-security-group-ingress --group-id ${SGId} --protocol all --source-group ${SGId}
     aws ec2 authorize-security-group-ingress --port 22 --cidr 0.0.0.0/0 --protocol tcp --group-id ${SGId}
+    aws ec2 create-tags --resources ${SGId} \
+        --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
 }
 
 # Create security group for custom AMI preparation unrestricted egress
 create_ssh_sg() {
 
-    SSHSG=$(aws ec2 create-security-group --group-name "ssh-group-$UUID" \
+    SSHSG=$(aws ec2 create-security-group --group-name "ssh-group-$(get_uniq_num)" \
         --description "allow ssh to host" --vpc-id ${vpc_id_reg} --query "GroupId" --output=text)
     echo "==> Setting rules for ssh sg ${SSHSG}"
     aws ec2 authorize-security-group-ingress --port 22 --cidr 0.0.0.0/0 \
         --protocol tcp --group-id ${SSHSG}
+    aws ec2 create-tags --resources ${SSHSG} \
+        --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
 }
 
 define_subnets() {
@@ -118,17 +121,17 @@ define_subnets() {
     if [[ "${AWS_DEFAULT_REGION}" == 'us-west-2' ]]; then
         subnet_ids=$(aws ec2 describe-subnets \
             --filters "Name=availability-zone,Values=[us-west-2a,us-west-2b,us-west-2c]" \
-                        "Name=vpc-id,Values=$vpc_id" \
-                        --query "Subnets[*].SubnetId" --output=text)
+            "Name=vpc-id,Values=$vpc_id" \
+            --query "Subnets[*].SubnetId" --output=text)
     elif [[ "${AWS_DEFAULT_REGION}" == 'us-east-1' ]]; then
         subnet_ids=$(aws ec2 describe-subnets \
-            --filters "Name=availability-zone,Values=[us-east-1a,us-east-1b,us-east-1c,us-east-1d,us-east-1f]" \
-                        "Name=vpc-id,Values=$vpc_id" \
-                        --query "Subnets[*].SubnetId" --output=text)
+            --filters "Name=availability-zone,Values=[us-east-1a,us-east-1d]" \
+            "Name=vpc-id,Values=$vpc_id" \
+            --query "Subnets[*].SubnetId" --output=text)
     else
         subnet_ids=$(aws ec2 describe-subnets \
-                        --filters "Name=vpc-id,Values=$vpc_id" \
-                        --query "Subnets[*].SubnetId" --output=text)
+                    --filters "Name=vpc-id,Values=$vpc_id" \
+                    --query "Subnets[*].SubnetId" --output=text)
     fi
 
 }
@@ -159,14 +162,12 @@ create_instance() {
     error=1
     network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"$1\"]"
     addl_args=""
-    if [ ${ENABLE_PLACEMENT_GROUP} -eq 1 ]; then
-        echo "==> Creating placement group"
-        create_pg || return 1
-        addl_args="--placement GroupName=${PLACEMENT_GROUP}"
-    fi
     echo "==> Creating instances"
     while [ ${error} -ne 0 ] && [ ${creation_attempts_count} -lt ${create_instance_retries} ]; do
         for subnet in ${subnet_ids[@]}; do
+            if [ ${ENABLE_PLACEMENT_GROUP} -eq 1 ]; then
+                addl_args="--placement GroupName="${PGS["${subnet}"]}
+            fi
             error=1
             set +e
             INSTANCE_IDS=$(aws ec2 run-instances \
@@ -210,11 +211,62 @@ create_instance() {
     done
 }
 
+prepare_instance() {
+
+    for region in ${aws_regions[@]}; do
+        # Set the default region
+        set_aws_defaults ${region}
+        custom_instance_preparation
+        echo "==> Launching instance in region ${AWS_DEFAULT_REGION}"
+        num_instances=$2
+        INSTANCES=()
+        create_pg
+        while [ ${num_instances} -gt 0 ] ; do
+            create_instance_attempts=0
+            INSTANCE_STATE="unavailable"
+            while [ ${INSTANCE_STATE} != 'running' ] && [ ${create_instance_attempts} -lt ${create_instance_retries} ] ; do
+                if [ $1 == 'ami_instance' ] ; then
+                    create_instance ${SSHSG} 1 ${prep_ami} ${instance_ami_type}
+                else
+                    create_instance ${SGId} 1 ${AMIS["${AWS_DEFAULT_REGION}"]} ${instance_test_type}
+                fi
+                if [ ${create_instance_exit_code} -ne 0 ]; then
+                    echo "==> Changing the region"
+                    # Start over with new region
+                    continue 3
+                else
+                    test_instance_status ${INSTANCE_IDS}
+                fi
+                create_instance_attempts=$((create_instance_attempts+1))
+            done
+            if [ ${INSTANCE_STATE} != 'running' ] ; then
+                echo "All attempts to create instance failed."
+                exit 1
+            fi
+            INSTANCES+=(${INSTANCE_IDS})
+            num_instances=$((num_instances-1))
+        done
+        break
+    done
+}
+
+ami_instance_preparation() {
+
+    prepare_instance 'ami_instance' 1
+    test_ssh ${INSTANCE_IDS}
+    # Install software and prepare custom AMI
+    prepare_ami "${PULL_REQUEST_REF}" "${PULL_REQUEST_ID}" "${TARGET_BRANCH}" "${TARGET_REPO}" "${PROVIDER}"
+    # Upload AMI to marketplace
+    create_ami ${INSTANCE_IDS}
+    # Copy ami to different region, required for region switch
+    copy_ami ${CUSTOM_AMI} ${AWS_DEFAULT_REGION}
+}
+
 get_instance_ip() {
 
     instance_ip=$(aws ec2 describe-instances --instance-ids $1 \
-                    --query "Reservations[*].Instances[*].PrivateIpAddress" \
-                    --output=text)
+                --query "Reservations[*].Instances[*].PrivateIpAddress" \
+                --output=text)
     echo ${instance_ip}
 }
 
@@ -237,6 +289,7 @@ test_ssh() {
         sleep 5
         ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
             -i "~/${slave_keypair}" ${ssh_user}@${PublicDNS}  hostname
+
         if [ $? -eq 0 ]; then
             host_ready=0
         fi
@@ -259,17 +312,15 @@ terminate_instances() {
 prepare_ami() {
 
     echo "==> Starting AMI preparation..."
-
     cat <<-EOF > ${tmp_script}
-export PULL_REQUEST_REF="$1"
-export PULL_REQUEST_ID="$2"
-export TARGET_BRANCH="$3"
-export TARGET_REPO="$4"
-export PROVIDER="$5"
+    export PULL_REQUEST_REF="$1"
+    export PULL_REQUEST_ID="$2"
+    export TARGET_BRANCH="$3"
+    export TARGET_REPO="$4"
+    export PROVIDER="$5"
 EOF
 
     cat $WORKSPACE/libfabric-ci-scripts/nccl/common/prep_ami.sh >> ${tmp_script}
-
     ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
         -i "~/${slave_keypair}" ${ssh_user}@${PublicDNS} "bash -s" < ${tmp_script}
 }
@@ -280,36 +331,57 @@ test_ami_status() {
 
     while [ ${ami_status} != "available" ] && [ ${check_attempts} -lt ${ami_check_retries} ] ; do
         sleep 1m
-        ami_status=$(aws ec2 describe-images --image-ids $1 --query "Images[*].State" --output text)
+        ami_status=$(aws ec2 describe-images --image-ids $1 --region $2 \
+                    --query "Images[*].State" --output text)
         check_attempts=$((check_attempts+1))
         echo "$1 status: ${ami_status}"
+        echo "AMI status check attempts: ${check_attempts}"
     done
-
     if [ ${ami_status} != "available" ]; then
         echo "There is a problem with ami $1 it still has ${ami_status} status after ${ami_check_retries} minutes"
         exit 1
     fi
 }
 
+# Copy custom AMI to different region
+copy_ami() {
+
+    if [ $2 == 'us-east-1' ]; then
+        destination_region='us-west-2'
+    else
+        destination_region='us-east-1'
+    fi
+    COPIED_AMI=$(aws ec2 copy-image --source-image-id $1 --source-region $2 \
+                --region ${destination_region} --name "nccl-enabled-ami-$(get_uniq_num)" \
+                --output=text --query 'ImageId')
+    echo "==> Wait for image ${COPIED_AMI} to become available"
+    test_ami_status ${COPIED_AMI} ${destination_region}
+    AMIS["${destination_region}"]=${COPIED_AMI}
+}
+
 # Create custom AMI
 create_ami() {
 
     echo "==> Create custom AMI"
-    custom_ami=$(aws ec2 create-image --instance-id $1 --name "nccl-enabled-ami-$UUID" \
+    CUSTOM_AMI=$(aws ec2 create-image --instance-id $1 --name "nccl-enabled-ami-$(get_uniq_num)" \
         --description "EFA and NCCL-enabled AMI" --output=text --query 'ImageId')
 
-    echo "==> Wait for image $custom_ami to become available"
-    test_ami_status ${custom_ami}
+    echo "==> Wait for image ${CUSTOM_AMI} to become available"
+    test_ami_status ${CUSTOM_AMI} ${AWS_DEFAULT_REGION}
+    AMIS["${AWS_DEFAULT_REGION}"]=${CUSTOM_AMI}
 }
 
-# Deregister custom AMI
+# Deregister custom AMIs
 deregister_ami() {
 
-    if [ -z ${custom_ami} ]; then
+    if [[ -z ${AMIS[@]} ]]; then
         return 0
     fi
-    echo "==> Deregistering custom AMI"
-    aws ec2 deregister-image --image-id ${custom_ami}
+
+    echo "==> Deregistering AMIs"
+    for region in ${!AMIS[@]}; do
+        aws ec2 deregister-image --image-id ${AMIS[${region}]} --region ${region}
+    done
 }
 
 test_instance_status() {
@@ -317,32 +389,45 @@ test_instance_status() {
     echo "==> Waiting for instance $1 to become available"
     instance_status="unavailable"
     check_attempts=0
-
-    while [ ${instance_status} != "running" ] && [ ${check_attempts} -lt ${instance_check_retries} ] ; do
+    while [[ ${instance_status} != "running"  &&  ${instance_status} != "terminated"  &&  ${instance_status} != "shutting-down"  &&  ${check_attempts} -lt ${instance_check_retries} ]]; do
         sleep 1m
         instance_status=$(aws ec2 describe-instances --instance-ids $1 --query "Reservations[*].Instances[*].State.Name" --output text)
         check_attempts=$((check_attempts+1))
         echo "$1 status: ${instance_status}"
     done
 
-    if [ ${instance_status} != "running" ]; then
-        echo "There is a problem with instance $1 it still has  ${instance_status} status after ${instance_check_retries} minutes"
-        exit 1
+    if [ ${instance_status} != "running" ] && [ ${instance_status} != "terminated" ] && [ ${instance_status} != "shutting-down" ]; then
+        echo "There is a problem with instance $1 it still has  ${instance_status} status after ${check_attempts} minutes, terminating"
+        terminate_instances
+        instance_status='terminated'
     fi
+    INSTANCE_STATE=${instance_status}
 }
 
-# Create placement group for cluster to run  NCCL test
+# Create placement groups for cluster to run  NCCL test
 create_pg() {
 
     if [ ${ENABLE_PLACEMENT_GROUP} -eq 0 ]; then
         return 0
     fi
-    PLACEMENT_GROUP="placement-group-$UUID"
-    aws ec2 create-placement-group \
-        --group-name ${PLACEMENT_GROUP} \
-        --strategy cluster
-    echo "Placement group: ${PLACEMENT_GROUP} created."
-    return $?
+    echo "==> Creating placement group"
+    # We should have placement group for each subnet
+    # Once we tr to create instance in particular subnet/AZ
+    # PG is tied to it and cannot be used in different AZs
+    for subnet in ${subnet_ids[@]}; do
+        PLACEMENT_GROUP="placement-group-$(get_uniq_num)"
+            aws ec2 create-placement-group \
+                --group-name ${PLACEMENT_GROUP} \
+                --strategy cluster
+            if [ $? -eq 0 ]; then
+                PLACEMENT_GROUP_ID=$(aws ec2 describe-placement-groups \
+                    --group-names ${PLACEMENT_GROUP} --query "PlacementGroups[0].GroupId" --output text)
+                aws ec2 create-tags --resources ${PLACEMENT_GROUP_ID} \
+                    --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
+                echo "Placement group: ${PLACEMENT_GROUP} created."
+            fi
+        PGS["${subnet}"]=${PLACEMENT_GROUP}
+    done
 }
 
 delete_pg() {
@@ -392,7 +477,6 @@ EOF
         -i "~/${slave_keypair}" ${ssh_user}@$1 "bash -s" < ${tmp_script}
 }
 
-
 generate_unit_tests_script_single_node() {
 
     cat <<-EOF > ${tmp_script}
@@ -403,7 +487,6 @@ generate_unit_tests_script_single_node() {
 EOF
 
     cat <<-"EOF" >> ${tmp_script}
-
     while true; do
         echo "==> Executing Unit Tests for provider: "$PROVIDER""
 
@@ -504,15 +587,28 @@ EOF
 }
 
 on_exit() {
-    if [ ${create_instance_exit_code} -ne 0 ];then
-        echo "==> Deleting security groups"
-        delete_sg ${SSHSG}
-        delete_sg ${SGId}
-        exit 1
-    fi
-    terminate_instances
+    # Cleanup instances, SGs, PGs after test
+    for reg in ${aws_regions[@]}; do
+        INSTANCE_IDS=($(aws --region ${reg} ec2 describe-instances --filters "[{\"Name\":\"instance-state-name\",\"Values\":[\"pending\",\"running\",\"stopped\"]},{\"Name\":\"tag:Workspace\",\"Values\":[\"${WORKSPACE}\"]},{\"Name\":\"tag:Build_Number\",\"Values\":[\"${BUILD_NUMBER}\"]}]" --query "Reservations[*].Instances[*].InstanceId" --output text))
+        INSTANCE_IDS_SIZE=${#INSTANCE_IDS[@]}
+        SG_IDS=($(aws --region ${reg} ec2 describe-security-groups --filters "[{\"Name\":\"tag:Workspace\",\"Values\":[\"${WORKSPACE}\"]},{\"Name\":\"tag:Build_Number\",\"Values\":[\"${BUILD_NUMBER}\"]}]" --query "SecurityGroups[*].{Name:GroupId}" --output text))
+        SG_IDS_SIZE=${#SG_IDS[@]}
+        PG_IDS=($(aws --region ${reg} ec2 describe-placement-groups --filters "[{\"Name\":\"tag:Workspace\",\"Values\":[\"${WORKSPACE}\"]},{\"Name\":\"tag:Build_Number\",\"Values\":[\"${BUILD_NUMBER}\"]}]" --query "PlacementGroups[*].{Name:GroupName}" --output text))
+        PG_IDS_SIZE=${#PG_IDS[@]}
+        if [ ${INSTANCE_IDS_SIZE} -ne 0 ]; then
+            aws --region ${reg} ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
+            aws --region ${reg} ec2 wait instance-terminated --instance-ids ${INSTANCE_IDS[@]}
+        fi
+        if [ ${SG_IDS_SIZE} -ne 0 ]; then
+            for sg in ${SG_IDS[@]}; do
+                aws --region ${reg} ec2 delete-security-group --group-id ${sg}
+            done
+        fi
+        if [ ${PG_IDS_SIZE} -ne 0 ]; then
+            for pg in ${PG_IDS[@]}; do
+                aws --region ${reg} ec2 delete-placement-group --group-name ${pg}
+            done
+        fi
+    done
     deregister_ami
-    delete_pg
-    delete_sg ${SSHSG}
-    delete_sg ${SGId}
 }

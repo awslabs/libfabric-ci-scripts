@@ -20,50 +20,18 @@ set_jenkins_variables
 
 trap 'on_exit'  EXIT
 
-for region in ${aws_regions[@]}; do
+ENABLE_PLACEMENT_GROUP=0
 
-    # Set the default region
-    set_aws_defaults ${region}
-
-    custom_instance_preparation
-
-    # Create instance for custom AMI preparation
-    echo "==> Launching instance in region ${AWS_DEFAULT_REGION}"
-    create_instance ${SSHSG} 1 ${prep_ami} ${instance_ami_type}
-
-    # In case of low capacity switch to another region
-    if [ ${create_instance_exit_code} -ne 0 ]; then
-        delete_sg ${SSHSG}
-        delete_sg ${SGId}
-        echo "==> Changing the region"
-        continue
-    else
-        break
-    fi
-done
-
-test_instance_status ${INSTANCE_IDS}
-
-test_ssh ${INSTANCE_IDS}
-
-# Install software and prepare custom AMI
-prepare_ami "${PULL_REQUEST_REF}" "${PULL_REQUEST_ID}" "${TARGET_BRANCH}" "${TARGET_REPO}" "${PROVIDER}"
-
-# Upload AMI to marketplace
-create_ami ${INSTANCE_IDS}
-
-# Terminate instance used for AMI preparation
-terminate_instances
+ami_instance_preparation
 
 # Create Nodes
 echo "==> Creating Nodes"
 
 ENABLE_PLACEMENT_GROUP=1
 
-create_instance ${SGId} ${NUM_NODES} ${custom_ami} ${instance_test_type}
+prepare_instance 'test_instance' ${NUM_NODES}
 
-for instance in ${INSTANCE_IDS}; do
-    test_instance_status ${instance}
+for instance in ${INSTANCES[@]}; do
     test_ssh ${instance}
 done
 
@@ -71,7 +39,7 @@ nodes_ips=()
 
 nodes_pub_dns=()
 
-for instance in ${INSTANCE_IDS}; do
+for instance in ${INSTANCES[@]}; do
     nodes_pub_dns+=($(get_public_dns ${instance}))
     nodes_ips+=($(get_instance_ip ${instance}))
 done
