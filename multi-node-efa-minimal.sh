@@ -112,6 +112,20 @@ for IP in ${INSTANCE_IPS[@]}; do
 done
 wait
 
+# Run the efa-check.sh script now that the installer has completed. We need to
+# use a login shell so that $PATH is setup correctly for Debian variants.
+for IP in ${INSTANCE_IPS[@]}; do
+    echo "Running efa-check.sh on ${IP}"
+    scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
+        $WORKSPACE/libfabric-ci-scripts/efa-check.sh ${ami[1]}@${IP}:
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
+        "bash --login efa-check.sh --skip-libfabric --skip-mpi" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$IP' \1/'
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        "EFA check after reboot failed on ${IP}"
+        exit 1
+    fi
+done
+
 if [ ${REBOOT_AFTER_INSTALL} -eq 1 ]; then
     for IP in ${INSTANCE_IPS[@]}; do
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
@@ -120,6 +134,17 @@ if [ ${REBOOT_AFTER_INSTALL} -eq 1 ]; then
 
     for IP in ${INSTANCE_IPS[@]}; do
         test_ssh ${IP}
+    done
+
+    # And run the efa-check.sh script again if we rebooted.
+    for IP in ${INSTANCE_IPS[@]}; do
+        echo "Running efa-check.sh on ${IP} after reboot"
+        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
+            "bash --login efa-check.sh --skip-libfabric --skip-mpi" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$IP' \1/'
+        if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            "EFA check after reboot failed on ${IP}"
+            exit 1
+        fi
     done
 fi
 

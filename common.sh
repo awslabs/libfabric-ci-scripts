@@ -347,7 +347,6 @@ efa_software_components()
     cd ${HOME}/aws-efa-installer
     sudo ./efa_installer.sh -y
     . /etc/profile.d/efa.sh
-    echo "huge pages: $(cat /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages)"
 EOF
 }
 
