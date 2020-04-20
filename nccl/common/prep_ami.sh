@@ -207,8 +207,6 @@ install_software() {
         install_aws_ofi_nccl_plugin
         install_nccl_tests
     fi
-
-
 }
 
 case $PLATFORM_ID in
