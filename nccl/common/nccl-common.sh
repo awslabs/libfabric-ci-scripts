@@ -420,10 +420,6 @@ create_pg() {
                 --group-name ${PLACEMENT_GROUP} \
                 --strategy cluster
             if [ $? -eq 0 ]; then
-                PLACEMENT_GROUP_ID=$(aws ec2 describe-placement-groups \
-                    --group-names ${PLACEMENT_GROUP} --query "PlacementGroups[0].GroupId" --output text)
-                aws ec2 create-tags --resources ${PLACEMENT_GROUP_ID} \
-                    --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
                 echo "Placement group: ${PLACEMENT_GROUP} created."
             fi
         PGS["${subnet}"]=${PLACEMENT_GROUP}
@@ -432,13 +428,14 @@ create_pg() {
 
 delete_pg() {
 
-    echo "==> Removing placement group: ${PLACEMENT_GROUP}"
-    if [ -z $PLACEMENT_GROUP ]; then
-        echo "Placement group: ${PLACEMENT_GROUP} does not exist."
-        return 0
-    fi
-    aws ec2 delete-placement-group \
-        --group-name ${PLACEMENT_GROUP}
+    for placement_group in ${PGS[@]}; do
+        if [ -z ${placement_group} ]; then
+            echo "Placement group: ${placement_group} does not exist."
+            return 0
+        fi
+        echo "==> Removing placement group: ${placement_group}"
+        aws ec2 delete-placement-group --group-name ${placement_group}
+    done
 }
 
 generate_key() {
@@ -593,8 +590,6 @@ on_exit() {
         INSTANCE_IDS_SIZE=${#INSTANCE_IDS[@]}
         SG_IDS=($(aws --region ${reg} ec2 describe-security-groups --filters "[{\"Name\":\"tag:Workspace\",\"Values\":[\"${WORKSPACE}\"]},{\"Name\":\"tag:Build_Number\",\"Values\":[\"${BUILD_NUMBER}\"]}]" --query "SecurityGroups[*].{Name:GroupId}" --output text))
         SG_IDS_SIZE=${#SG_IDS[@]}
-        PG_IDS=($(aws --region ${reg} ec2 describe-placement-groups --filters "[{\"Name\":\"tag:Workspace\",\"Values\":[\"${WORKSPACE}\"]},{\"Name\":\"tag:Build_Number\",\"Values\":[\"${BUILD_NUMBER}\"]}]" --query "PlacementGroups[*].{Name:GroupName}" --output text))
-        PG_IDS_SIZE=${#PG_IDS[@]}
         if [ ${INSTANCE_IDS_SIZE} -ne 0 ]; then
             aws --region ${reg} ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
             aws --region ${reg} ec2 wait instance-terminated --instance-ids ${INSTANCE_IDS[@]}
@@ -604,11 +599,7 @@ on_exit() {
                 aws --region ${reg} ec2 delete-security-group --group-id ${sg}
             done
         fi
-        if [ ${PG_IDS_SIZE} -ne 0 ]; then
-            for pg in ${PG_IDS[@]}; do
-                aws --region ${reg} ec2 delete-placement-group --group-name ${pg}
-            done
-        fi
     done
     deregister_ami
+    delete_pg
 }
