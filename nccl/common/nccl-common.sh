@@ -11,6 +11,14 @@ get_uniq_num() {
     echo $(uuidgen)
 }
 
+#Latest stable AMIs
+# Hardcode values to mitigate issue with new unstable DL images
+alinux_us_west_2_ami='ami-0ea3e3316596177cc'
+alinux_us_east_1_ami='ami-03d7bb62671766e1e'
+
+ubuntu_us_west_2_ami='ami-0c3149c4893aec222'
+ubuntu_us_east_1_ami='ami-0dbb717f493016a1a'
+
 # AMIs dict
 declare -A AMIS
 
@@ -80,11 +88,20 @@ define_parameters() {
 
     if [[ "${label}" == 'alinux' ]]; then
         ssh_user='ec2-user'
-        prep_ami=${ami_amzn}
+        if [[ "${AWS_DEFAULT_REGION}" == 'us-west-2' ]]; then
+            prep_ami="${alinux_us_west_2_ami}"
+        else
+            prep_ami="${alinux_us_east_1_ami}"
+        fi
     else
         ssh_user='ubuntu'
-        prep_ami=${ami_ubuntu}
+        if [[ "${AWS_DEFAULT_REGION}" == 'us-west-2' ]]; then
+            prep_ami="${ubuntu_us_west_2_ami}"
+        else
+            prep_ami="${ubuntu_us_east_1_ami}"
+        fi
     fi
+    echo "==> ami for prep instance: ${prep_ami}"
 }
 
 # Create security group for NCCL testing restricted egress
