@@ -7,7 +7,7 @@ tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
 # Disable IMPI tests for now until apt/yum repo issues are addressed.
 RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-0}
 ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
-
+TEST_SKIP_KMOD=${TEST_SKIP_KMOD:-0}
 get_alinux_ami_id() {
     region=$1
     aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2 \
@@ -354,9 +354,13 @@ efa_software_components()
     cat <<-"EOF" >> ${tmp_script}
     tar -xf efa-installer.tar.gz
     cd ${HOME}/aws-efa-installer
-    sudo ./efa_installer.sh -y
-    . /etc/profile.d/efa.sh
 EOF
+    if [ $TEST_SKIP_KMOD -eq 1 ]; then
+        echo "sudo ./efa_installer.sh -y -k" >> ${tmp_script}
+    else
+        echo "sudo ./efa_installer.sh -y" >> ${tmp_script}
+    fi
+    echo ". /etc/profile.d/efa.sh" >> ${tmp_script}
 }
 
 ubuntu_kernel_upgrade()
