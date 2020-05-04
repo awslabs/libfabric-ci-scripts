@@ -13,7 +13,7 @@ hosts=$@
 hostfile=$(mktemp)
 out=$(mktemp)
 
-curl -O https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring_c.c
+curl --retry 5 -O https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring_c.c
 
 if [ "${mpi}" == "ompi" ]; then
     ompi_setup
