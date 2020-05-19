@@ -125,7 +125,7 @@ define_subnets() {
             --query "Subnets[*].SubnetId" --output=text)
     elif [[ "${AWS_DEFAULT_REGION}" == 'us-east-1' ]]; then
         subnet_ids=$(aws ec2 describe-subnets \
-            --filters "Name=availability-zone,Values=[us-east-1a,us-east-1d]" \
+            --filters "Name=availability-zone,Values=[us-east-1a,us-east-1b]" \
             "Name=vpc-id,Values=$vpc_id" \
             --query "Subnets[*].SubnetId" --output=text)
     else
