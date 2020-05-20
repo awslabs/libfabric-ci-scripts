@@ -181,7 +181,7 @@ create_instance() {
                     --query "Instances[*].InstanceId" \
                     --output=text ${addl_args} 2>&1)
             create_instance_exit_code=$?
-            echo ${INSTANCE_IDS}
+            echo "${INSTANCE_IDS}"
             set -e
             # If run-instances is successful break from both the loops, else
             # find out whether the error was due to SERVER_ERROR or some other error
@@ -221,31 +221,34 @@ prepare_instance() {
         num_instances=$2
         INSTANCES=()
         create_pg
-        while [ ${num_instances} -gt 0 ] ; do
-            create_instance_attempts=0
-            INSTANCE_STATE="unavailable"
-            while [ ${INSTANCE_STATE} != 'running' ] && [ ${create_instance_attempts} -lt ${create_instance_retries} ] ; do
-                if [ $1 == 'ami_instance' ] ; then
-                    create_instance ${SSHSG} 1 ${prep_ami} ${instance_ami_type}
-                else
-                    create_instance ${SGId} 1 ${AMIS["${AWS_DEFAULT_REGION}"]} ${instance_test_type}
-                fi
-                if [ ${create_instance_exit_code} -ne 0 ]; then
-                    echo "==> Changing the region"
-                    # Start over with new region
-                    continue 3
-                else
-                    test_instance_status ${INSTANCE_IDS}
-                fi
+        create_instance_attempts=0
+        INSTANCE_STATE="unavailable"
+        while [ ${INSTANCE_STATE} != 'running' ] && [ ${create_instance_attempts} -lt ${create_instance_retries} ] ; do
+            if [ $1 == 'ami_instance' ] ; then
+                create_instance ${SSHSG} 1 ${prep_ami} ${instance_ami_type}
+            else
+                create_instance ${SGId} ${num_instances} ${AMIS["${AWS_DEFAULT_REGION}"]} ${instance_test_type}
+            fi
+            if [ ${create_instance_exit_code} -ne 0 ]; then
+                echo "==> Changing the region"
+                # Start over with new region
+                continue 3
+            else
+                INSTANCES=(${INSTANCE_IDS})
+                for INSTANCE_ID in ${INSTANCES[@]};do
+                    test_instance_status $INSTANCE_ID
+                    if [ ${INSTANCE_STATE} != "running" ]; then
+                        terminate_instances
+                        break
+                    fi
+                done
+            fi
                 create_instance_attempts=$((create_instance_attempts+1))
-            done
+        done
             if [ ${INSTANCE_STATE} != 'running' ] ; then
                 echo "All attempts to create instance failed."
                 exit 1
             fi
-            INSTANCES+=(${INSTANCE_IDS})
-            num_instances=$((num_instances-1))
-        done
         break
     done
 }
