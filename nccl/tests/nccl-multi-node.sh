@@ -51,7 +51,7 @@ for ip in ${nodes_ips[@]}; do
 done
 
 for pub_dns in ${nodes_pub_dns[@]}; do
-    scp -i "~/${slave_keypair}" ${tmp_script} ${ssh_user}@${pub_dns}:/home/${ssh_user}/hosts
+    scp -i "~/${slave_keypair}" -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${tmp_script} ${ssh_user}@${pub_dns}:/home/${ssh_user}/hosts
 done
 
 for pub_dns in ${nodes_pub_dns[@]}; do
@@ -62,14 +62,14 @@ echo "==> Running unit tests"
 
 generate_unit_tests_script_multi_node
 
-ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
+ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
     -i "~/${slave_keypair}" ${ssh_user}@${nodes_pub_dns[0]} "bash -s" < ${tmp_script}
 
 echo "==> Running NCCL test on ${NUM_NODES} nodes with ${NUM_GPUS} GPUs"
 
 generate_nccl_test_script ${NUM_GPUS}
 
-ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
+ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
     -i "~/${slave_keypair}" ${ssh_user}@${nodes_pub_dns[0]} "bash -s" < ${tmp_script} >> ${tmp_out}
 
 # Show full test results

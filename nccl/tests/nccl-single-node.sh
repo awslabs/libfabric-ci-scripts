@@ -44,18 +44,18 @@ EOF
 
 echo "${hosts}" > ${tmp_script}
 
-scp -i "~/${slave_keypair}" ${tmp_script} ${ssh_user}@${PublicDNSLeader}:/home/${ssh_user}/hosts
+scp -i "~/${slave_keypair}" -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ${tmp_script} ${ssh_user}@${PublicDNSLeader}:/home/${ssh_user}/hosts
 
 echo "==> Running unit tests"
 generate_unit_tests_script_single_node
 
-ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
+ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
     -i "~/${slave_keypair}" ${ssh_user}@${PublicDNSLeader} "bash -s" < ${tmp_script}
 
 echo "==> Running NCCL test with ${NUM_GPUS} GPUs"
 generate_nccl_test_script ${NUM_GPUS}
 
-ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
+ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
     -i "~/${slave_keypair}" ${ssh_user}@${PublicDNSLeader} "bash -s" < ${tmp_script} >> ${tmp_out}
 
 # Show full test results
