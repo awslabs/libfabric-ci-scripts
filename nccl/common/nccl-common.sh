@@ -290,7 +290,7 @@ test_ssh() {
     while [ $host_ready -ne 0 ] && [ $host_poll_count -lt ${ssh_check_retries} ] ; do
         echo "Waiting for host instance to become ready"
         sleep 5
-        ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
+        ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
             -i "~/${slave_keypair}" ${ssh_user}@${PublicDNS}  hostname
 
         if [ $? -eq 0 ]; then
@@ -324,7 +324,7 @@ prepare_ami() {
 EOF
 
     cat $WORKSPACE/libfabric-ci-scripts/nccl/common/prep_ami.sh >> ${tmp_script}
-    ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
+    ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
         -i "~/${slave_keypair}" ${ssh_user}@${PublicDNS} "bash -s" < ${tmp_script}
 }
 
@@ -473,7 +473,7 @@ EOF
     set -e
     nvidia-smi -q | head
 EOF
-    ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes \
+    ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
         -i "~/${slave_keypair}" ${ssh_user}@$1 "bash -s" < ${tmp_script}
 }
 
