@@ -211,7 +211,6 @@ install_software() {
 
 case $PLATFORM_ID in
     amzn)
-        sudo yum -y update
         sudo yum -y groupinstall 'Development Tools'
         sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig valgrind-devel
         install_software
