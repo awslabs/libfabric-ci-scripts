@@ -2,6 +2,8 @@
 
 execution_seq=1
 BUILD_CODE=0
+CURL_OPT="--retry-connrefused --retry 5"
+WGET_OPT="--retry-connrefused --tries=5"
 output_dir=${output_dir:-$(mktemp -d -p $WORKSPACE)}
 tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
 # Disable IMPI tests for now until apt/yum repo issues are addressed.
@@ -328,6 +330,8 @@ set_var()
     PULL_REQUEST_ID=$1
     PULL_REQUEST_REF=$2
     PROVIDER=$3
+    export CURL_OPT="--retry-connrefused --retry 5"
+    export WGET_OPT="--retry-connrefused --tries=5"
     echo "==>Installing OS specific packages"
 EOF
 }
@@ -361,7 +365,7 @@ efa_software_components()
             EFA_INSTALLER_URL="https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz"
         fi
     fi
-    echo "curl -o efa-installer.tar.gz $EFA_INSTALLER_URL" >> ${tmp_script}
+    echo "curl ${CURL_OPT} -o efa-installer.tar.gz $EFA_INSTALLER_URL" >> ${tmp_script}
     cat <<-"EOF" >> ${tmp_script}
     tar -xf efa-installer.tar.gz
     cd ${HOME}/aws-efa-installer
@@ -399,7 +403,7 @@ get_rft_yaml_to_junit_xml()
 {
     pushd ${output_dir}
     # fabtests junit parser script
-    wget https://raw.githubusercontent.com/ofiwg/libfabric/master/fabtests/scripts/rft_yaml_to_junit_xml
+    wget ${WGET_OPT} https://raw.githubusercontent.com/ofiwg/libfabric/master/fabtests/scripts/rft_yaml_to_junit_xml
     # Add Excluded tag
     sed -i "s,<skipped />,<skipped />\n    EOT\n  when 'Excluded'\n    puts <<-EOT\n    <skipped />,g" rft_yaml_to_junit_xml
     sed -i "s,skipped += 1,skipped += 1\n  when 'Excluded'\n    skipped += 1,g" rft_yaml_to_junit_xml

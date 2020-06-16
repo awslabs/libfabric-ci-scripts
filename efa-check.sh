@@ -5,7 +5,7 @@
 
 VENDOR_ID="0x1d0f"
 DEV_ID="0xefa0"
-
+CURL_OPT="--retry-connrefused --retry 5"
 usage() {
 cat << EOF
 usage: $(basename "$0") [options]
@@ -77,7 +77,7 @@ echo "======== Instance / Device check ========"
 # Get instance type
 if command -v curl >/dev/null 2>&1; then
     metadata_url="http://169.254.169.254/latest/meta-data/instance-type"
-    echo "Instance type: $(curl -m 1 --retry 3 $metadata_url 2>/dev/null)"
+    echo "Instance type: $(curl -m 1 ${CURL_OPT} $metadata_url 2>/dev/null)"
 fi
 
 # Determine if an EFA device is present and print device list.
