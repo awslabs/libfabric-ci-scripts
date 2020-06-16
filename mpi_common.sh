@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # MPI helper shell functions
+CURL_OPT="--retry-connrefused --retry 5"
 function check_efa_ompi {
     out=$1
     grep -q "mtl:ofi:prov: efa" $out

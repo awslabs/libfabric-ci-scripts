@@ -13,7 +13,7 @@ hosts=$@
 hostfile=$(mktemp)
 out=$(mktemp)
 
-curl --retry 5 -O http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz
+curl ${CURL_OPT} -O http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz
 osu_dir="osu-micro-benchmarks-5.6.2"
 one_rank_per_node=""
 if [ "${mpi}" == "ompi" ]; then
