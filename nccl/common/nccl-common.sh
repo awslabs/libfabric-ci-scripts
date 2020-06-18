@@ -578,6 +578,7 @@ EOF
         -x NCCL_ALGO=ring --hostfile $HOME/hosts \
         -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
         -x FI_EFA_TX_MIN_CREDITS=64 \
+        -x RDMAV_FORK_SAFE=1 \
         -x NCCL_DEBUG=INFO \
         -n $NUM_GPUS -N 8 \
         --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
