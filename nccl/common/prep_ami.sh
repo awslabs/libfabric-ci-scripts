@@ -141,14 +141,14 @@ install_nccl_tests() {
     sudo rm -rf nccl-tests
     git clone https://github.com/NVIDIA/nccl-tests.git && cd nccl-tests
     git checkout ${NCCL_TEST_COMMIT}
-    make MPI=1 MPI_HOME=$HOME/anaconda3 NCCL_HOME=$HOME/nccl/build CUDA_HOME=${latest_cuda}
+    make MPI=1 MPI_HOME=/opt/amazon/openmpi NCCL_HOME=$HOME/nccl/build CUDA_HOME=${latest_cuda}
 }
 
 install_aws_ofi_nccl_plugin() {
     cd $HOME/aws-ofi-nccl
     ./autogen.sh
     ./configure --prefix=$HOME/aws-ofi-nccl/install \
-                --with-mpi=$HOME/anaconda3 \
+                --with-mpi=/opt/amazon/openmpi \
                 --with-libfabric=$HOME/libfabric/install \
                 --with-nccl=$HOME/nccl/build \
                 --with-cuda=${latest_cuda}
