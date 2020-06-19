@@ -2,8 +2,8 @@
 
 execution_seq=1
 BUILD_CODE=0
-CURL_OPT="--retry-connrefused --retry 5"
-WGET_OPT="--retry-connrefused --tries=5"
+CURL_OPT="--retry 5"
+WGET_OPT="--tries=5"
 output_dir=${output_dir:-$(mktemp -d -p $WORKSPACE)}
 tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
 # Disable IMPI tests for now until apt/yum repo issues are addressed.
@@ -330,8 +330,8 @@ set_var()
     PULL_REQUEST_ID=$1
     PULL_REQUEST_REF=$2
     PROVIDER=$3
-    export CURL_OPT="--retry-connrefused --retry 5"
-    export WGET_OPT="--retry-connrefused --tries=5"
+    export CURL_OPT="--retry 5"
+    export WGET_OPT="--tries=5"
     echo "==>Installing OS specific packages"
 EOF
 }

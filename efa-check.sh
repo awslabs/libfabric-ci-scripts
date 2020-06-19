@@ -5,7 +5,7 @@
 
 VENDOR_ID="0x1d0f"
 DEV_ID="0xefa0"
-CURL_OPT="--retry-connrefused --retry 5"
+CURL_OPT="--retry 5"
 usage() {
 cat << EOF
 usage: $(basename "$0") [options]
