@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
 
 echo "==> Building libfabric"
-# Build version 27 of rdma-core for EFA
-cd ${HOME}
-git clone -b v27.0 https://github.com/linux-rdma/rdma-core.git
-cd ${HOME}/rdma-core
-./build.sh
-echo "export LD_LIBRARY_PATH=${HOME}/rdma-core/build/lib/:\$LD_LIBRARY_PATH" >> ~/.bash_profile
-echo "export LD_LIBRARY_PATH=${HOME}/rdma-core/build/lib/:\$LD_LIBRARY_PATH" >> ~/.bashrc
-source ~/.bash_profile
 # Pulls the libfabric repository and checks out the pull request commit
 cd ${HOME}
 git clone https://github.com/ofiwg/libfabric
@@ -25,7 +17,7 @@ fi
     --enable-rxm    \
     --disable-rxd   \
     --disable-verbs \
-    --enable-efa=${HOME}/rdma-core/build
+    --enable-efa
 make -j 4
 make install
 LIBFABRIC_INSTALL_PATH=${HOME}/libfabric/install
