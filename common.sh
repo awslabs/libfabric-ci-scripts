@@ -360,9 +360,9 @@ efa_software_components()
 {
     if [ -z "$EFA_INSTALLER_URL" ]; then
         if [ ${TARGET_BRANCH} == "v1.8.x" ]; then
-            EFA_INSTALLER_URL="https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-1.7.1.tar.gz"
+            EFA_INSTALLER_URL="https://efa-installer.amazonaws.com/aws-efa-installer-1.7.1.tar.gz"
         else
-            EFA_INSTALLER_URL="https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz"
+            EFA_INSTALLER_URL="https://efa-installer.amazonaws.com/aws-efa-installer-latest.tar.gz"
         fi
     fi
     echo "curl ${CURL_OPT} -o efa-installer.tar.gz $EFA_INSTALLER_URL" >> ${tmp_script}
