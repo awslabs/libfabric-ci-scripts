@@ -223,9 +223,7 @@ script_builder()
     type=$1
     set_var
     ${label}_update
-    if [ ${PROVIDER} == "efa" ]; then
-        efa_software_components
-    fi
+    efa_software_components
 
     # The libfabric shm provider use CMA for communication. By default ubuntu
     # disallows non-child process ptrace by, which disable CMA.
