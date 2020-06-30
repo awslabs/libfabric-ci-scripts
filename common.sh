@@ -102,6 +102,23 @@ delete_pg()
 # Launches EC2 instances.
 create_instance()
 {
+    # TODO: the labels need to be fixed in LibfabricCI and the stack
+    # redeployed for PR testing
+    if [[ $PULL_REQUEST_REF == *pr* ]]; then
+        case "${label}" in
+            rhel)
+                ami[0]=$(get_rhel76_ami_id $AWS_DEFAULT_REGION)
+                ;;
+            ubuntu)
+                ami[0]=$(get_ubuntu_1804_ami_id $AWS_DEFAULT_REGION)
+                ;;
+            alinux)
+                ami[0]=$(get_alinux2_ami_id $AWS_DEFAULT_REGION)
+                ;;
+            *)
+                exit 1
+        esac
+    fi
     # If a specific subnet ID is provided by the caller, use that instead of
     # querying the VPC for all subnets.
     if [[ -n ${BUILD_SUBNET_ID} ]]; then
