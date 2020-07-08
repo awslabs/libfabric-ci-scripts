@@ -6,28 +6,46 @@ CURL_OPT="--retry 5"
 WGET_OPT="--tries=5"
 output_dir=${output_dir:-$(mktemp -d -p $WORKSPACE)}
 tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
+# set default architecture of ami as x86_64
+ami_arch=${ami_arch:-"x86_64"}
+if [ ! "$ami_arch" = "x86_64" ] && [ ! "$ami_arch" = "aarch64" ]; then
+    echo "Unknown architecture, ami_arch must be x86_64 or aarch64"
+    exit 1
+fi
 # Disable IMPI tests for now until apt/yum repo issues are addressed.
 RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-0}
 ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
 TEST_SKIP_KMOD=${TEST_SKIP_KMOD:-0}
 get_alinux_ami_id() {
     region=$1
-    aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2 \
-        --region $region | jq -r ".Parameters[0].Value"
+    if [ "$ami_arch" = "x86_64" ]; then
+        aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2 \
+            --region $region | jq -r ".Parameters[0].Value"
+    fi
     return $?
 }
 
 get_alinux2_ami_id() {
     region=$1
-    aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2 \
+    if [ "$ami_arch" = "x86_64" ]; then
+        ami_arch_label="x86_64"
+    elif [ "$ami_arch" = "aarch64" ]; then
+        ami_arch_label="arm64"
+    fi
+    aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-${ami_arch_label}-gp2 \
         --region $region | jq -r ".Parameters[0].Value"
     return $?
 }
 
 get_ubuntu_1604_ami_id() {
     region=$1
+    if [ "$ami_arch" = "x86_64" ]; then
+        ami_arch_label="amd64"
+    elif [ "$ami_arch" = "aarch64" ]; then
+        ami_arch_label="arm64"
+    fi
     aws ec2 describe-images --owners 099720109477 \
-        --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-????????' \
+        --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-${ami_arch_label}-server-????????" \
         'Name=state,Values=available' 'Name=ena-support,Values=true' \
         --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
     return $?
@@ -35,8 +53,13 @@ get_ubuntu_1604_ami_id() {
 
 get_ubuntu_1804_ami_id() {
     region=$1
+    if [ "$ami_arch" = "x86_64" ]; then
+        ami_arch_label="amd64"
+    elif [ "$ami_arch" = "aarch64" ]; then
+        ami_arch_label="arm64"
+    fi
     aws ec2 describe-images --owners 099720109477 \
-        --filters 'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-????????' \
+        --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-${ami_arch_label}-server-????????" \
         'Name=state,Values=available' 'Name=ena-support,Values=true' \
         --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
     return $?
@@ -44,16 +67,26 @@ get_ubuntu_1804_ami_id() {
 
 get_centos7_ami_id() {
     region=$1
-    aws ec2 describe-images --owners aws-marketplace \
-        --filters 'Name=product-code,Values=aw0evgkw8e5c1q413zgy5pjce' 'Name=ena-support,Values=true' \
+    if [ "$ami_arch" = "x86_64" ]; then
+        ami_arch_label="x86_64"
+    elif [ "$ami_arch" = "aarch64" ]; then
+        ami_arch_label="aarch64"
+    fi
+    aws ec2 describe-images --owners 125523088429 \
+        --filters "Name=name,Values=CentOS 7*${ami_arch_label}*" 'Name=ena-support,Values=true' \
         --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
     return $?
 }
 
 get_rhel76_ami_id() {
     region=$1
+    if [ "$ami_arch" = "x86_64" ]; then
+        ami_arch_label="x86_64"
+    elif [ "$ami_arch" = "aarch64" ]; then
+        ami_arch_label="arm64"
+    fi
     aws ec2 describe-images --owners 309956199498 \
-        --filters 'Name=name,Values=RHEL-7.6_HVM_GA*' \
+        --filters "Name=name,Values=RHEL-7.6_HVM_GA*${ami_arch_label}*" \
         'Name=state,Values=available' 'Name=ena-support,Values=true' \
         --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
     return $?
@@ -61,19 +94,25 @@ get_rhel76_ami_id() {
 
 get_rhel77_ami_id() {
     region=$1
-    aws ec2 describe-images --owners 309956199498 \
-        --filters 'Name=name,Values=RHEL-7.7_HVM_GA*' \
-        'Name=state,Values=available' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    # Currently rhel77 does not have arm version.
+    if [ "$ami_arch" = "x86_64" ]; then
+        aws ec2 describe-images --owners 309956199498 \
+            --filters 'Name=name,Values=RHEL-7.7_HVM_GA*x86_64*' \
+            'Name=state,Values=available' 'Name=ena-support,Values=true' \
+            --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    fi
     return $?
 }
 
 get_rhel78_ami_id() {
     region=$1
-    aws ec2 describe-images --owners 309956199498 \
-        --filters 'Name=name,Values=RHEL-7.8_HVM_GA*' \
-        'Name=state,Values=available' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    # Currently rhel78 does not have arm version.
+    if [ "$ami_arch" = "x86_64" ]; then
+        aws ec2 describe-images --owners 309956199498 \
+            --filters 'Name=name,Values=RHEL-7.8_HVM_GA*x86_64*' \
+            'Name=state,Values=available' 'Name=ena-support,Values=true' \
+            --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    fi
     return $?
 }
 
@@ -138,17 +177,22 @@ create_instance()
     SERVER_ERROR=(InsufficientInstanceCapacity RequestLimitExceeded ServiceUnavailable Unavailable)
     create_instance_count=0
     error=1
-    case "${PROVIDER}" in
-        efa)
-            instance_type=m5n.24xlarge
-            network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
-            ;;
-        tcp|udp|shm)
-            network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
-            ;;
-        *)
-            exit 1
-    esac
+    if [ $ami_arch = "x86_64" ]; then
+        case "${PROVIDER}" in
+            efa)
+                instance_type=m5n.24xlarge
+                network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
+                ;;
+            tcp|udp|shm)
+                network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
+                ;;
+            *)
+                exit 1
+        esac
+    else
+        instance_type=a1.4xlarge
+        network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
+    fi
     addl_args=""
     if [ ${ENABLE_PLACEMENT_GROUP} -eq 1 ]; then
         echo "==> Creating placement group"
