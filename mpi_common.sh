@@ -2,10 +2,17 @@
 
 # MPI helper shell functions
 CURL_OPT="--retry 5"
+# Detect architecture
+ARCH=$(uname -m)
+if [ ! "$ARCH" = "x86_64" ] && [ ! "$ARCH" = "aarch64" ]; then
+    echo "Unknown architecture, ARCH must be x86_64 or aarch64"
+    exit 1
+fi
 function check_efa_ompi {
     out=$1
     grep -q "mtl:ofi:prov: efa" $out
-    if [ $? -ne 0 ]; then
+    # TODO: Remove the conditional of [ "$ARCH" = "x86_64" ] when we start testing openmpi with EFA on ARM instances.
+    if [ "$ARCH" = "x86_64" ] && [ $? -ne 0 ]; then
         echo "efa provider not used with Open MPI"
         exit 1
     fi
@@ -14,7 +21,8 @@ function check_efa_ompi {
 function check_efa_impi {
     out=$1
     grep -q "libfabric provider: efa" $out
-    if [ $? -ne 0 ]; then
+    # TODO: Remove the conditional of [ "$ARCH" = "x86_64" ] when we start testing openmpi with EFA on ARM instances.
+    if [ "$ARCH" = "x86_64" ] && [ $? -ne 0 ]; then
         echo "efa provider not used with Intel MPI"
         exit 1
     fi
@@ -22,11 +30,24 @@ function check_efa_impi {
 
 function ompi_setup {
     . /etc/profile.d/efa.sh
-    export OMPI_MCA_mtl_base_verbose=100
+    # TODO: Remove the conditionals for architectures when we start testing EFA on ARM instances.
+    # There is no EFA enabled ARM instance right now.
+    # Open MPI will pick btl/tcp itself.
+    if [ $ARCH = "x86_64" ]; then
+        export OMPI_MCA_mtl_base_verbose=100
+    else
+        export OMPI_MCA_btl_base_verbose=100
+    fi
     # Pass LD_LIBRARY_PATH arg so that we use the right libfabric. Ubuntu
     # doesn't load .bashrc/.bash_profile for non-interactive shells.
-    # Only load the OFI component so MPI will fail if it cannot be used.
-    export MPI_ARGS="-x LD_LIBRARY_PATH --mca mtl ofi"
+    export MPI_ARGS="-x LD_LIBRARY_PATH"
+    if [ $ARCH = "x86_64" ]; then
+        # Only load the OFI component in MTL so MPI will fail if it cannot be used.
+        export MPI_ARGS="$MPI_ARGS --mca pml cm --mca mtl ofi"
+    else
+        # Only load the TCP component in BTL so MPI will fail if it cannot be used.
+        export MPI_ARGS="$MPI_ARGS --mca pml ob1 --mca btl tcp,self"
+    fi
     export MPIEXEC_TIMEOUT=1800
 }
 
