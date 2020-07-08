@@ -119,7 +119,8 @@ wait
 
 # Run the efa-check.sh script now that the installer has completed. We need to
 # use a login shell so that $PATH is setup correctly for Debian variants.
-if [ "${PROVIDER}" == "efa" ]; then
+# TODO: Remove the conditional of [ "$ami_arch" = "x86_64" ] when we start testing EFA in ARM AMIs
+if [ "${PROVIDER}" == "efa" ] && [ "$ami_arch" = "x86_64" ]; then
     for IP in ${INSTANCE_IPS[@]}; do
         echo "Running efa-check.sh on ${IP}"
         scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
@@ -133,7 +134,8 @@ if [ "${PROVIDER}" == "efa" ]; then
     done
 fi
 
-if [ ${REBOOT_AFTER_INSTALL} -eq 1 ]; then
+# TODO: Remove the conditional of [ "$ami_arch" = "x86_64" ] when we start testing EFA in ARM AMIs
+if [ ${REBOOT_AFTER_INSTALL} -eq 1 ] && [ "$ami_arch" = "x86_64" ]; then
     for IP in ${INSTANCE_IPS[@]}; do
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
             "sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$IP' \1/'
@@ -155,6 +157,11 @@ if [ ${REBOOT_AFTER_INSTALL} -eq 1 ]; then
     done
 fi
 
+# TODO: Remove this conditional when we start testing EFA in ARM AMIs.
+# Run fabtests with TCP provider for ARM architecture.
+if [ "$ami_arch" = "aarch64" ]; then
+    PROVIDER="tcp"
+fi
 # Prepare runfabtests script to be run on the server (INSTANCE_IPS[0])
 runfabtests_script_builder
 
@@ -171,8 +178,9 @@ for i in $(seq 1 $N); do
     exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
 done
 
-# Run MPI tests only for EFA provider for now.
-if [ ${PROVIDER} == "efa" ]; then
+# TODO: this conditional needs to be modified when we start running MPI tests on EFA-enabled ARM instances.
+# Run MPI tests for EFA provider on x86_64 instances, and arm64 instances (tcp).
+if [[ ${ami_arch} == "x86_64" && ${PROVIDER} == "efa" ]] || [ ${ami_arch} == "aarch64" ]; then
     scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
         $WORKSPACE/libfabric-ci-scripts/mpi_ring_c_test.sh \
         $WORKSPACE/libfabric-ci-scripts/mpi_osu_test.sh \
