@@ -12,8 +12,7 @@ if [ ! "$ami_arch" = "x86_64" ] && [ ! "$ami_arch" = "aarch64" ]; then
     echo "Unknown architecture, ami_arch must be x86_64 or aarch64"
     exit 1
 fi
-# Disable IMPI tests for now until apt/yum repo issues are addressed.
-RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-0}
+RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-1}
 ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
 TEST_SKIP_KMOD=${TEST_SKIP_KMOD:-0}
 get_alinux_ami_id() {
