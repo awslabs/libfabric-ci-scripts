@@ -125,7 +125,8 @@ install_nccl() {
     echo "==> Install NCCL"
     cd $HOME
     sudo rm -rf nccl
-    git clone https://github.com/NVIDIA/nccl.git && cd nccl
+    git clone https://github.com/NVIDIA/nccl.git
+    cd nccl
     git checkout ${NCCL_2_5_7}
     make -j src.build CUDA_HOME=${latest_cuda}
 }
@@ -135,7 +136,8 @@ install_nccl_tests() {
     echo "==> Install NCCL Tests"
     cd $HOME
     sudo rm -rf nccl-tests
-    git clone https://github.com/NVIDIA/nccl-tests.git && cd nccl-tests
+    git clone https://github.com/NVIDIA/nccl-tests.git
+    cd nccl-tests
     make MPI=1 MPI_HOME=/opt/amazon/openmpi NCCL_HOME=$HOME/nccl/build CUDA_HOME=${latest_cuda}
 }
 
@@ -155,7 +157,8 @@ install_aws_ofi_nccl_plugin() {
                 --with-libfabric=$HOME/libfabric/install \
                 --with-nccl=$HOME/nccl/build \
                 --with-cuda=${latest_cuda}
-    make && make install
+    make
+    make install
     echo "export LD_LIBRARY_PATH=$HOME/aws-ofi-nccl/install/lib/:\$LD_LIBRARY_PATH" >> ~/.dlamirc
 }
 
@@ -176,12 +179,14 @@ prepare_aws_ofi_nccl_plugin_with_pr() {
     sudo rm -rf aws-ofi-nccl
     if [[ ${TARGET_BRANCH} == 'master' && ${PROVIDER} == 'tcp;ofi_rxm' ]]; then
         echo "==> Configure based on PR, branch: ${TARGET_BRANCH} for provider: ${PROVIDER}"
-        git clone https://github.com/aws/aws-ofi-nccl.git -b 'master' && cd aws-ofi-nccl
+        git clone https://github.com/aws/aws-ofi-nccl.git -b 'master'
+        cd aws-ofi-nccl
         git fetch origin +refs/pull/${PULL_REQUEST_ID}/*:refs/remotes/origin/pr/${PULL_REQUEST_ID}/*
         git checkout ${PULL_REQUEST_REF} -b PRBranch
     elif [[ ${TARGET_BRANCH} == 'aws' && ${PROVIDER} == 'efa' ]]; then
         echo "==> Configure based on PR, branch: ${TARGET_BRANCH} for provider: ${PROVIDER}"
-        git clone https://github.com/aws/aws-ofi-nccl.git -b 'aws' && cd aws-ofi-nccl
+        git clone https://github.com/aws/aws-ofi-nccl.git -b 'aws'
+        cd aws-ofi-nccl
         git fetch origin +refs/pull/${PULL_REQUEST_ID}/*:refs/remotes/origin/pr/${PULL_REQUEST_ID}/*
         git checkout ${PULL_REQUEST_REF} -b PRBranch
     elif [[ ${PROVIDER} == 'efa' ]]; then
