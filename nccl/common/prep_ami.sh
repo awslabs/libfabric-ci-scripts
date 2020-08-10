@@ -89,9 +89,8 @@ install_libfabric() {
         --enable-efa=${HOME}/rdma-core/build
     make -j 4
     make install
-    echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:\$LD_LIBRARY_PATH" >> ~/.bash_profile
-    echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:\$LD_LIBRARY_PATH" >> ~/.bashrc
-    source ~/.bash_profile
+    echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:\$LD_LIBRARY_PATH" >> ~/.dlamirc
+    source ~/.dlamirc
 }
 
 prepare_libfabric_without_pr() {
@@ -141,6 +140,14 @@ install_nccl_tests() {
 }
 
 install_aws_ofi_nccl_plugin() {
+
+    echo "export LD_LIBRARY_PATH=$HOME/nccl/build/lib:\$LD_LIBRARY_PATH" >> ~/.dlamirc
+    echo "export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib64:\$LD_LIBRARY_PATH" >> ~/.dlamirc
+    echo "export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib:\$LD_LIBRARY_PATH" >> ~/.dlamirc
+    echo "export PATH=/opt/amazon/openmpi/bin:\$PATH" >> ~/.dlamirc
+
+    source ~/.dlamirc
+
     cd $HOME/aws-ofi-nccl
     ./autogen.sh
     ./configure --prefix=$HOME/aws-ofi-nccl/install \
@@ -149,6 +156,7 @@ install_aws_ofi_nccl_plugin() {
                 --with-nccl=$HOME/nccl/build \
                 --with-cuda=${latest_cuda}
     make && make install
+    echo "export LD_LIBRARY_PATH=$HOME/aws-ofi-nccl/install/lib/:\$LD_LIBRARY_PATH" >> ~/.dlamirc
 }
 
 prepare_aws_ofi_nccl_plugin_without_pr() {
