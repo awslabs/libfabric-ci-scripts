@@ -34,10 +34,10 @@ set_jenkins_variables() {
 find_latest_ami() {
 
     ami=$(aws ec2 describe-images --owners amazon --filters \
-         "Name=name,Values=*$1*" \
-         "Name=state,Values=available" "Name=architecture,Values="x86_64"" \
-         --query 'reverse(sort_by(Images, &CreationDate)[].ImageId)' \
-         --output text | awk '{print $1;}')
+        "Name=name,Values=*$1*" \
+        "Name=state,Values=available" "Name=architecture,Values="x86_64"" \
+        --query 'reverse(sort_by(Images, &CreationDate)[].ImageId)' \
+        --output text | awk '{print $1;}')
     echo ${ami}
 }
 
@@ -498,7 +498,7 @@ EOF
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
             --mca btl tcp,self --mca btl_tcp_if_exclude  lo,docker0 \
             --bind-to none ~/aws-ofi-nccl/install/bin/nccl_message_transfer
-        set +xe
+        set +x
         break
     done
 EOF
@@ -534,7 +534,7 @@ EOF
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
             --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
             --bind-to none --tag-output --hostfile hosts ~/aws-ofi-nccl/install/bin/nccl_message_transfer
-        set +xe
+        set +x
         break
     done
 EOF
@@ -564,7 +564,7 @@ EOF
         -n $NUM_GPUS -N 8 \
         --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
         --bind-to none $HOME/nccl-tests/build/all_reduce_perf -b 8 -e 1G -f 2 -g 1 -c 1 -n 100
-    set +xe
+    set +x
 EOF
 }
 
