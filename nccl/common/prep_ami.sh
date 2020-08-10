@@ -32,6 +32,9 @@ fi
 # Locking NCCL version to 2.5.7-1
 NCCL_2_5_7='3701130b3c1bcdb01c14b3cb70fe52498c1e82b7'
 
+# Latest efa installaer location
+EFA_INSTALLER_LOCATION='https://efa-installer.amazonaws.com/aws-efa-installer-latest.tar.gz'
+
 # Identify latest CUDA on server
 latest_cuda=$(find /usr/local -maxdepth 1 -type d -iname "cuda*" | sort -V -r | head -1)
 echo "==> Latest CUDA: ${latest_cuda}"
@@ -60,19 +63,16 @@ EOF
     chmod 600 ~/.ssh/config
 }
 
-# Install rdma-core, required for libfabric
-install_rdma_core() {
-
-    # Build version 27 of rdma-core for EFA
-    echo "==> Building rdma-core"
-    cd ${HOME}
-    sudo rm -rf rdma-core
-    git clone -b v27.0 https://github.com/linux-rdma/rdma-core.git
-    cd ${HOME}/rdma-core
-    ./build.sh
-    echo "export LD_LIBRARY_PATH=${HOME}/rdma-core/build/lib/:\$LD_LIBRARY_PATH" >> ~/.bash_profile
-    echo "export LD_LIBRARY_PATH=${HOME}/rdma-core/build/lib/:\$LD_LIBRARY_PATH" >> ~/.bashrc
-    source ~/.bash_profile
+install_efa_installer() {
+  curl -o efa_installer.tar.gz ${EFA_INSTALLER_LOCATION}
+  tar -xf efa_installer.tar.gz
+  cd aws-efa-installer
+  # add /opt/amazon/efa and /opt/amazon/openmpi to the PATH
+  . /etc/profile.d/efa.sh
+  sudo ./efa_installer.sh -y
+  # check the version of the installer after installation
+  echo "==> Efa installer version after installation"
+  cat /opt/amazon/efa_installed_packages
 }
 
 install_libfabric() {
@@ -86,7 +86,7 @@ install_libfabric() {
         --enable-rxm    \
         --disable-rxd   \
         --disable-verbs \
-        --enable-efa=${HOME}/rdma-core/build
+        --enable-efa
     make -j 4
     make install
     echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:\$LD_LIBRARY_PATH" >> ~/.dlamirc
@@ -197,7 +197,7 @@ install_software() {
 
     generate_key
     generate_config
-    install_rdma_core
+    install_efa_installer
     if [[ ${TARGET_REPO} == 'ofiwg/libfabric' ]];then
         prepare_libfabric_with_pr
         install_libfabric
@@ -220,7 +220,6 @@ install_software() {
 case $PLATFORM_ID in
     amzn)
         sudo yum -y groupinstall 'Development Tools'
-        sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig valgrind-devel
         install_software
         ;;
     ubuntu)
