@@ -31,6 +31,16 @@ set_jenkins_variables() {
     tmp_out=${tmp_out:-$(mktemp -p $WORKSPACE)}
 }
 
+find_latest_ami() {
+
+    ami=$(aws ec2 describe-images --owners amazon --filters \
+         "Name=name,Values=*$1*" \
+         "Name=state,Values=available" "Name=architecture,Values="x86_64"" \
+         --query 'reverse(sort_by(Images, &CreationDate)[].ImageId)' \
+         --output text | awk '{print $1;}')
+    echo ${ami}
+}
+
 set_aws_defaults() {
 
     echo "==> Establishing default parameters for region: $1"
@@ -39,24 +49,18 @@ set_aws_defaults() {
     #Use default vpc_id for each region
     export vpc_id_reg=$(aws ec2 describe-vpcs --query "Vpcs[*].VpcId" --filters Name=isDefault,Values=true --output=text)
 
-    # The latest Deep Learning AMI (Amazon Linux 2) Image
-    ami_amzn=$(aws ec2 describe-images --owners amazon --filters \
-                "Name=name,Values=*Deep Learning AMI (Amazon Linux 2)*" \
-                "Name=state,Values=available" "Name=architecture,Values="x86_64"" \
-                --query 'reverse(sort_by(Images, &CreationDate)[].ImageId)' \
-                --output text | awk '{print $1;}')
 
+    # The latest Deep Learning AMI (Amazon Linux 2) Image
+    ami_amzn=$(find_latest_ami "Deep Learning AMI (Amazon Linux 2)")
     echo "==> Latest Deep Learning AMI (Amazon Linux): ${ami_amzn}"
 
-    # The latest Deep Learning AMI Ubuntu Image
-    ami_ubuntu=$(aws ec2 describe-images --owners amazon --filters \
-                "Name=name,Values=*Deep Learning AMI (Ubuntu 18.04)*" \
-                "Name=state,Values=available" \
-                "Name=architecture,Values="x86_64"" \
-                --query 'reverse(sort_by(Images, &CreationDate)[].ImageId)' \
-                --output text | awk '{print $1;}')
+    # The latest Deep Learning AMI Ubuntu 16.04 Image
+    ami_ubuntu_16_04=$(find_latest_ami "Deep Learning AMI (Ubuntu 16.04)")
+    echo "==> Latest Deep Learning AMI (Ubuntu 16.04): ${ami_ubuntu_16_04}"
 
-    echo "==> Latest Deep Learning AMI (Ubuntu): ${ami_ubuntu}"
+    # The latest Deep Learning AMI Ubuntu 18.04 Image
+    ami_ubuntu_18_04=$(find_latest_ami "Deep Learning AMI (Ubuntu 18.04)")
+    echo "==> Latest Deep Learning AMI (Ubuntu 18.04): ${ami_ubuntu_18_04}"
 }
 
 define_parameters() {
@@ -75,9 +79,15 @@ define_parameters() {
     if [[ "${label}" == 'alinux' ]]; then
         ssh_user='ec2-user'
         prep_ami=${ami_amzn}
-    else
+    elif [[ "${label}" == 'ubuntu_16.04' ]]; then
         ssh_user='ubuntu'
-        prep_ami=${ami_ubuntu}
+        prep_ami=${ami_ubuntu_16_04}
+    elif [[ "${label}" == 'ubuntu_18.04' ]]; then
+        ssh_user='ubuntu'
+        prep_ami=${ami_ubuntu_18_04}
+    else
+        echo "Unknown label"
+        exit 1
     fi
 }
 
