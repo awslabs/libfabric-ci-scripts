@@ -220,12 +220,8 @@ case $PLATFORM_ID in
         install_software
         ;;
     ubuntu)
-        # Wait until lock /var/lib/dpkg/lock-frontend released
-        sleep 300
-        # Building aws-ofi-nccl plugin with openmpi throws the following error:
-        # /usr/bin/ld: cannot find -ludev
-        # Installing libudev-dev mitigates the issue
-        sudo apt-get install -y libudev-dev
+        # Wait until lock /var/lib/dpkg/lock-frontend released by unattended security upgrade
+        sleep 400
         install_software
         ;;
     *)
