@@ -64,15 +64,15 @@ EOF
 }
 
 install_efa_installer() {
-  curl -o efa_installer.tar.gz ${EFA_INSTALLER_LOCATION}
-  tar -xf efa_installer.tar.gz
-  cd aws-efa-installer
-  # add /opt/amazon/efa and /opt/amazon/openmpi to the PATH
-  . /etc/profile.d/efa.sh
-  sudo ./efa_installer.sh -y
-  # check the version of the installer after installation
-  echo "==> Efa installer version after installation"
-  cat /opt/amazon/efa_installed_packages
+    curl -o efa_installer.tar.gz ${EFA_INSTALLER_LOCATION}
+    tar -xf efa_installer.tar.gz
+    cd aws-efa-installer
+    # add /opt/amazon/efa and /opt/amazon/openmpi to the PATH
+    . /etc/profile.d/efa.sh
+    sudo ./efa_installer.sh -y
+    # check the version of the installer after installation
+    echo "==> Efa installer version after installation"
+    cat /opt/amazon/efa_installed_packages
 }
 
 install_libfabric() {
