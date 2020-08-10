@@ -91,7 +91,7 @@ define_parameters() {
     fi
 }
 
-# Create security group for NCCL testing restricted egress
+# Create security group for NCCL testing
 create_efa_sg() {
 
     SGId=$(aws ec2 create-security-group --group-name "EFA-enabled-sg-$(get_uniq_num)" \
@@ -104,23 +104,11 @@ create_efa_sg() {
         --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
 }
 
-# Create security group for custom AMI preparation unrestricted egress
-create_ssh_sg() {
-
-    SSHSG=$(aws ec2 create-security-group --group-name "ssh-group-$(get_uniq_num)" \
-        --description "allow ssh to host" --vpc-id ${vpc_id_reg} --query "GroupId" --output=text)
-    echo "==> Setting rules for ssh sg ${SSHSG}"
-    aws ec2 authorize-security-group-ingress --port 22 --cidr 0.0.0.0/0 \
-        --protocol tcp --group-id ${SSHSG}
-    aws ec2 create-tags --resources ${SSHSG} \
-        --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
-}
-
 define_subnets() {
 
     # Get a list of subnets within the VPC relevant to the SG
     vpc_id=$(aws ec2 describe-security-groups \
-        --group-ids ${SSHSG} \
+        --group-ids ${SGId} \
         --query SecurityGroups[0].VpcId --output=text)
     if [[ "${AWS_DEFAULT_REGION}" == 'us-west-2' ]]; then
         subnet_ids=$(aws ec2 describe-subnets \
@@ -144,7 +132,6 @@ custom_instance_preparation() {
 
     define_parameters
     create_efa_sg
-    create_ssh_sg
     define_subnets
 }
 
@@ -229,7 +216,7 @@ prepare_instance() {
         INSTANCE_STATE="unavailable"
         while [ ${INSTANCE_STATE} != 'running' ] && [ ${create_instance_attempts} -lt ${create_instance_retries} ] ; do
             if [ $1 == 'ami_instance' ] ; then
-                create_instance ${SSHSG} 1 ${prep_ami} ${instance_ami_type}
+                create_instance ${SGId} 1 ${prep_ami} ${instance_ami_type}
             else
                 create_instance ${SGId} ${num_instances} ${AMIS["${AWS_DEFAULT_REGION}"]} ${instance_test_type}
             fi
