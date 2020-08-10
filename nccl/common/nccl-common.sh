@@ -25,12 +25,6 @@ latest_cuda='$(find /usr/local -maxdepth 1 -type d -iname "cuda*" | sort -V -r |
 
 nvidia_driver_path='http://us.download.nvidia.com/tesla/440.33.01/NVIDIA-Linux-x86_64-440.33.01.run'
 
-# LD_LIBRARY_PATH for nccl tests
-custom_ld_library_path='$HOME/anaconda3/lib/:$HOME/aws-ofi-nccl/install/lib/:`
-                        `$HOME/nccl/build/lib:${latest_cuda}:`
-                        `$HOME/libfabric/install/lib/:`
-                        `$HOME/rdma-core/build/lib/:$LD_LIBRARY_PATH'
-
 set_jenkins_variables() {
 
     tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
@@ -483,7 +477,6 @@ generate_unit_tests_script_single_node() {
     #!/bin/bash
     PROVIDER="${PROVIDER}"
     latest_cuda="${latest_cuda}"
-    custom_ld_library_path="${custom_ld_library_path}"
 EOF
 
     cat <<-"EOF" >> ${tmp_script}
@@ -494,21 +487,18 @@ EOF
         set -xe
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 2 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
-            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             --mca btl tcp,self --mca btl_tcp_if_exclude  lo,docker0 \
             --bind-to none ~/aws-ofi-nccl/install/bin/nccl_connection
 
         echo "==> Running ring unit test"
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 3 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
-            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             --mca btl tcp,self --mca btl_tcp_if_exclude  lo,docker0 \
             --bind-to none ~/aws-ofi-nccl/install/bin/ring
 
         echo "==> Running nccl_message_transfer unit test"
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 2 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
-            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             --mca btl tcp,self --mca btl_tcp_if_exclude  lo,docker0 \
             --bind-to none ~/aws-ofi-nccl/install/bin/nccl_message_transfer
         set +xe
@@ -523,7 +513,6 @@ generate_unit_tests_script_multi_node() {
     #!/bin/bash
     PROVIDER="${PROVIDER}"
     latest_cuda="${latest_cuda}"
-    custom_ld_library_path="${custom_ld_library_path}"
 EOF
 
     cat <<-"EOF" >> ${tmp_script}
@@ -534,21 +523,18 @@ EOF
         set -xe
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 2 -N 1 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
-            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
             --bind-to none --tag-output --hostfile hosts ~/aws-ofi-nccl/install/bin/nccl_connection
 
         echo "==> Running ring unit test"
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 3 -N 1 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
-            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
             --bind-to none --tag-output --hostfile hosts ~/aws-ofi-nccl/install/bin/ring
 
         echo "==> Running nccl_message_transfer unit test"
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 2 -N 1 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
-            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
             --bind-to none --tag-output --hostfile hosts ~/aws-ofi-nccl/install/bin/nccl_message_transfer
         set +xe
@@ -564,7 +550,6 @@ generate_nccl_test_script() {
     PROVIDER="${PROVIDER}"
     NUM_GPUS=$1
     latest_cuda="${latest_cuda}"
-    custom_ld_library_path="${custom_ld_library_path}"
 EOF
     cat <<-"EOF" >> ${tmp_script}
     echo "Executing NCCL test.."
@@ -574,7 +559,6 @@ EOF
     set -xe
     timeout 30m /opt/amazon/openmpi/bin/mpirun \
         -x FI_PROVIDER="$PROVIDER" \
-        -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
         -x NCCL_ALGO=ring --hostfile $HOME/hosts \
         -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
         -x FI_EFA_TX_MIN_CREDITS=64 \
