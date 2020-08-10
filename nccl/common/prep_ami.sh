@@ -32,9 +32,6 @@ fi
 # Locking NCCL version to 2.5.7-1
 NCCL_2_5_7='3701130b3c1bcdb01c14b3cb70fe52498c1e82b7'
 
-# the last good commit before latest merge which breaks nccl-tests make
-NCCL_TEST_COMMIT='af4fa0f4cf7c2c3db0540da7ac8d6efc1d526635'
-
 # Identify latest CUDA on server
 latest_cuda=$(find /usr/local -maxdepth 1 -type d -iname "cuda*" | sort -V -r | head -1)
 echo "==> Latest CUDA: ${latest_cuda}"
@@ -140,7 +137,6 @@ install_nccl_tests() {
     cd $HOME
     sudo rm -rf nccl-tests
     git clone https://github.com/NVIDIA/nccl-tests.git && cd nccl-tests
-    git checkout ${NCCL_TEST_COMMIT}
     make MPI=1 MPI_HOME=/opt/amazon/openmpi NCCL_HOME=$HOME/nccl/build CUDA_HOME=${latest_cuda}
 }
 
