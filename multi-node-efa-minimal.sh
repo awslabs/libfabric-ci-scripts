@@ -34,7 +34,15 @@ efa_software_components_minimal()
     echo "curl ${CURL_OPT} -o efa-installer.tar.gz $EFA_INSTALLER_URL" >> ${tmp_script}
     echo "tar -xf efa-installer.tar.gz" >> ${tmp_script}
     echo "cd \${HOME}/aws-efa-installer" >> ${tmp_script}
-    echo "sudo ./efa_installer.sh -m -y" >> ${tmp_script}
+    # If we are not skipping the kernel module, then add a check for SLES
+    if [ ${TEST_SKIP_KMOD} -eq 0 ]; then
+        sles_allow_module
+    fi
+    if [[ $TEST_SKIP_KMOD -eq 1 ]]; then
+        echo "sudo ./efa_installer.sh -k -m -y" >> ${tmp_script}
+    else
+        echo "sudo ./efa_installer.sh -m -y" >> ${tmp_script}
+    fi
 }
 
 multi_node_efa_minimal_script_builder()
