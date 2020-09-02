@@ -16,6 +16,29 @@ RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-1}
 ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
 TEST_SKIP_KMOD=${TEST_SKIP_KMOD:-0}
 TEST_GDR=${TEST_GDR:-0}
+
+get_opensuse1502_ami_id() {
+    region=$1
+    # OpenSUSE does not suppport ARM AMI's
+    aws ec2 describe-images --owners aws-marketplace \
+        --filters 'Name=name,Values=openSUSE-Leap-15.2-?????????-HVM-x86_64*' 'Name=ena-support,Values=true' \
+        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    return $?
+}
+
+get_sles15sp2_ami_id() {
+    region=$1
+    if [ "$ami_arch" = "x86_64" ]; then
+        ami_arch_label="x86_64"
+    elif [ "$ami_arch" = "aarch64" ]; then
+        ami_arch_label="arm64"
+    fi
+    aws ec2 describe-images --owners amazon \
+        --filters "Name=name,Values=suse-sles-15-sp2-?????????-hvm-ssd-${ami_arch_label}" 'Name=ena-support,Values=true' \
+        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
+    return $?
+}
+
 get_alinux_ami_id() {
     region=$1
     if [ "$ami_arch" = "x86_64" ]; then
@@ -182,6 +205,10 @@ create_instance()
             efa)
                 instance_type=c5n.18xlarge
                 network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
+                # Opensuse Leap AMI is not supported on m5n.24xlarge instance
+                if [[ ${label} == "suse" ]]; then
+                    instance_type=c5n.18xlarge
+                fi
                 ;;
             tcp|udp|shm)
                 network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
@@ -278,8 +305,23 @@ check_provider_os()
             "sudo yum -y upgrade && sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
         execution_seq=$((${execution_seq}+1))
     fi
+    if [ ${label} == "suse" ]; then
+        test_ssh $1
+        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
+            "sudo zypper --gpg-auto-import-keys refresh -f && sudo zypper update -y && sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+    fi
 }
-
+#Test SLES15SP2 with allow unsupported modules
+sles_allow_module()
+{
+    cat <<-"EOF" >> ${tmp_script}
+    if [[ $(grep -Po '(?<=^NAME=).*' /etc/os-release) =~  .*SLES.* ]]; then
+        sudo sed -i 's/allow_unsupported_modules .*/allow_unsupported_modules 1/' /etc/modprobe.d/10-unsupported-modules.conf
+        line_number=$(grep -n "exit_sles15_efa_unsupported_module" efa_installer.sh | cut -d":" -f1 | tail -n1)
+        sed -i "${line_number}s/.*/echo \"Allow unsupported modules for testing\"/" efa_installer.sh
+    fi
+EOF
+}
 # Creates a script, the script includes installation commands for
 # different AMIs and appends libfabric script
 script_builder()
@@ -382,6 +424,22 @@ ubuntu_install_deps()
     sudo DEBIAN_FRONTEND=noninteractive apt -y install build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev ninja-build pkg-config valgrind python3-dev cython3
 EOF
 }
+suse_update()
+{
+    # Update and reboot already handled in check_provider_os()
+    return 0
+}
+
+suse_install_deps() {
+    cat <<-"EOF" >> ${tmp_script}
+    sudo zypper install -y autoconf
+    sudo zypper install -y libtool
+    sudo zypper install -y automake
+    sudo zypper install -y git-core
+    sudo zypper install -y wget
+    sudo zypper install -y gcc-c++
+EOF
+}
 
 #Initialize variables
 set_var()
@@ -432,6 +490,10 @@ efa_software_components()
     tar -xf efa-installer.tar.gz
     cd ${HOME}/aws-efa-installer
 EOF
+    # If we are not skipping the kernel module, then add a check for SLES
+    if [ ${TEST_SKIP_KMOD} -eq 0 ]; then
+            sles_allow_module
+    fi
     if [ $TEST_SKIP_KMOD -eq 1 ]; then
         echo "sudo ./efa_installer.sh -y -k" >> ${tmp_script}
     elif [ $TEST_GDR -eq 1 ]; then

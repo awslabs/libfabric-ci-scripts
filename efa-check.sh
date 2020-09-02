@@ -18,7 +18,7 @@ EOF
 
 libfabric_checks() {
     # Check for libfabric and print the version.
-    libfabric=$(ldconfig -p | tr -d '\t' | grep '^libfabric.so.1')
+    libfabric=$(sudo ldconfig -p | tr -d '\t' | grep '^libfabric.so.1')
     if [ $? -ne 0 ]; then
         cat >&2 << EOF
 Error: libfabric shared library not found.
@@ -150,14 +150,14 @@ EOF
 fi
 
 if grep -q '^nvidia' /proc/modules; then
-    echo "NVIDIA kernel module is loaded, version: $(modinfo -F version nvidia)"
+    echo "NVIDIA kernel module is loaded, version: $(sudo modinfo -F version nvidia)"
 else
     echo "NVIDIA kernel module is not loaded"
 fi
-echo "EFA kernel module is loaded, version: $(modinfo -F version efa)"
+echo "EFA kernel module is loaded, version: $(sudo modinfo -F version efa)"
 
 # Check for rdma-core and print the version.
-libibverbs=$(ldconfig -p | tr -d '\t' | grep '^libibverbs.so.1')
+libibverbs=$(sudo ldconfig -p | tr -d '\t' | grep '^libibverbs.so.1')
 if [ $? -ne 0 ]; then
     cat >&2 << EOF
 Error: libibverbs shared library not found and is required for the EFA
@@ -168,7 +168,7 @@ fi
 
 echo "libibverbs in ldcache: $(readlink -m "$(echo "$libibverbs" | awk '{print $4}')")"
 
-libefa=$(ldconfig -p | tr -d '\t' | grep '^libefa.so.1')
+libefa=$(sudo ldconfig -p | tr -d '\t' | grep '^libefa.so.1')
 if [ $? -ne 0 ]; then
     cat >&2 << EOF
 Error: libefa shared library not found and is required for the EFA
