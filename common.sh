@@ -179,7 +179,7 @@ create_instance()
     if [ $ami_arch = "x86_64" ]; then
         case "${PROVIDER}" in
             efa)
-                instance_type=m5n.24xlarge
+                instance_type=c5n.18xlarge
                 network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
                 ;;
             tcp|udp|shm)
