@@ -222,6 +222,7 @@ prepare_instance() {
             fi
             if [ ${create_instance_exit_code} -ne 0 ]; then
                 echo "==> Changing the region"
+                delete_pg
                 # Start over with new region
                 continue 3
             else
@@ -422,6 +423,7 @@ create_pg() {
 
 delete_pg() {
 
+    echo "==> Removing placement groups"
     for placement_group in ${PGS[@]}; do
         if [ -z ${placement_group} ]; then
             echo "Placement group: ${placement_group} does not exist."
@@ -429,6 +431,10 @@ delete_pg() {
         fi
         echo "==> Removing placement group: ${placement_group}"
         aws ec2 delete-placement-group --group-name ${placement_group}
+    done
+    # clearing the PGs dict
+    for key in ${!PGS[@]}; do
+        unset PGS["${key}"]
     done
 }
 
