@@ -430,8 +430,6 @@ efa_software_components()
 EOF
     if [ $TEST_SKIP_KMOD -eq 1 ]; then
         echo "sudo ./efa_installer.sh -y -k" >> ${tmp_script}
-        #efa installer v 1.8.4 unloads efa module
-        echo "sudo modprobe efa" >> ${tmp_script}
     else
         echo "sudo ./efa_installer.sh -y" >> ${tmp_script}
     fi
