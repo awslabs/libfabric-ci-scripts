@@ -63,6 +63,30 @@ EOF
     chmod 600 ~/.ssh/config
 }
 
+check_lock() {
+
+    set +e
+    echo "==> Checking if lock-frontend is in use"
+    lock_check_retries=10
+    no_lock=0
+    while [ $lock_check_retries -ne 0 ] && [ $no_lock -ne 1 ]; do
+        lock=$(sudo lsof /var/lib/dpkg/lock-frontend)
+        if [ ! -z "${lock}" ]; then
+            echo "lock-frontend is still in use, waiting for 2 minutes"
+            lock_check_retries=$((lock_check_retries-1))
+            sleep 2m
+        else
+            echo "lock-frontend is released"
+            no_lock=1
+        fi
+    done
+    if [ ! -z "${lock}" ] ; then
+        echo "All attempts to wait for lock are failed."
+        exit 1
+    fi
+    set -e
+}
+
 install_efa_installer() {
     curl -o efa_installer.tar.gz ${EFA_INSTALLER_LOCATION}
     tar -xf efa_installer.tar.gz
@@ -229,7 +253,8 @@ case $PLATFORM_ID in
         ;;
     ubuntu)
         # Wait until lock /var/lib/dpkg/lock-frontend released by unattended security upgrade
-        sleep 400
+        sleep 30
+        check_lock
         install_software
         ;;
     *)
