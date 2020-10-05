@@ -42,8 +42,10 @@ function ompi_setup {
     # doesn't load .bashrc/.bash_profile for non-interactive shells.
     export MPI_ARGS="-x LD_LIBRARY_PATH"
     if [ $ARCH = "x86_64" ]; then
-        # Only load the OFI component in MTL so MPI will fail if it cannot be used.
-        export MPI_ARGS="$MPI_ARGS --mca pml cm --mca mtl ofi"
+        # Only load the OFI component in MTL so MPI will fail if it cannot
+        # be used. Also disable the Open IB BTL to avoid the call to
+        # ibv_fork_init().
+        export MPI_ARGS="$MPI_ARGS --mca pml cm --mca mtl ofi --mca btl ^openib"
     else
         # Only load the TCP component in BTL so MPI will fail if it cannot be used.
         export MPI_ARGS="$MPI_ARGS --mca pml ob1 --mca btl tcp,self"
