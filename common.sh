@@ -15,6 +15,7 @@ fi
 RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-1}
 ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
 TEST_SKIP_KMOD=${TEST_SKIP_KMOD:-0}
+TEST_GDR=${TEST_GDR:-0}
 get_alinux_ami_id() {
     region=$1
     if [ "$ami_arch" = "x86_64" ]; then
@@ -176,7 +177,7 @@ create_instance()
     SERVER_ERROR=(InsufficientInstanceCapacity RequestLimitExceeded ServiceUnavailable Unavailable)
     create_instance_count=0
     error=1
-    if [ $ami_arch = "x86_64" ]; then
+    if [ $ami_arch = "x86_64" ] && [ $TEST_GDR -eq 0 ]; then
         case "${PROVIDER}" in
             efa)
                 instance_type=c5n.18xlarge
@@ -188,6 +189,9 @@ create_instance()
             *)
                 exit 1
         esac
+    elif [ $TEST_GDR -eq 1 ]; then
+        instance_type=g4dn.metal
+        network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
     else
         instance_type=a1.4xlarge
         network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
@@ -430,6 +434,8 @@ efa_software_components()
 EOF
     if [ $TEST_SKIP_KMOD -eq 1 ]; then
         echo "sudo ./efa_installer.sh -y -k" >> ${tmp_script}
+    elif [ $TEST_GDR -eq 1 ]; then
+        echo "sudo ./efa_installer.sh -y -g" >> ${tmp_script}
     else
         echo "sudo ./efa_installer.sh -y" >> ${tmp_script}
     fi
