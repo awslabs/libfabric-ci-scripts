@@ -95,13 +95,12 @@ define_parameters() {
 create_efa_sg() {
 
     SGId=$(aws ec2 create-security-group --group-name "EFA-enabled-sg-$(get_uniq_num)" \
+        --tag-specification "ResourceType=security-group,Tags=[{Key=Workspace,Value="${WORKSPACE}"},{Key=Build_Number,Value="${BUILD_NUMBER}"}]" \
         --description "EFA-enabled security group" --vpc-id ${vpc_id_reg} --query "GroupId" --output=text)
     echo "==> Setting rules for efa sg ${SGId}"
     aws ec2 authorize-security-group-egress --group-id ${SGId} --protocol all --source-group ${SGId}
     aws ec2 authorize-security-group-ingress --group-id ${SGId} --protocol all --source-group ${SGId}
     aws ec2 authorize-security-group-ingress --port 22 --cidr 0.0.0.0/0 --protocol tcp --group-id ${SGId}
-    aws ec2 create-tags --resources ${SGId} \
-        --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
 }
 
 define_subnets() {
