@@ -350,8 +350,6 @@ copy_ami() {
                 --output=text --query 'ImageId')
     echo "==> Wait for image ${COPIED_AMI} to become available"
     test_ami_status ${COPIED_AMI} ${destination_region}
-    aws ec2 create-tags --resources ${COPIED_AMI} --region ${destination_region} \
-        --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
     AMIS["${destination_region}"]=${COPIED_AMI}
 }
 
@@ -360,12 +358,10 @@ create_ami() {
 
     echo "==> Create custom AMI"
     CUSTOM_AMI=$(aws ec2 create-image --instance-id $1 --name "nccl-enabled-ami-$(get_uniq_num)" \
-        --description "EFA and NCCL-enabled AMI" --output=text --query 'ImageId')
+        --description "${WORKSPACE}_${BUILD_NUMBER}" --output=text --query 'ImageId')
 
     echo "==> Wait for image ${CUSTOM_AMI} to become available"
     test_ami_status ${CUSTOM_AMI} ${AWS_DEFAULT_REGION}
-    aws ec2 create-tags --resources ${CUSTOM_AMI} \
-        --tags Key=Workspace,Value="${WORKSPACE}" Key=Build_Number,Value="${BUILD_NUMBER}"
     AMIS["${AWS_DEFAULT_REGION}"]=${CUSTOM_AMI}
 }
 
