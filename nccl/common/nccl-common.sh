@@ -418,9 +418,11 @@ create_pg() {
     # PG is tied to it and cannot be used in different AZs
     for subnet in ${subnet_ids[@]}; do
         PLACEMENT_GROUP="placement-group-$(get_uniq_num)"
-            aws ec2 create-placement-group \
+            placement_group_id=$(aws ec2 create-placement-group \
                 --group-name ${PLACEMENT_GROUP} \
-                --strategy cluster
+                --strategy cluster \
+                --tag-specification "ResourceType=placement-group,Tags=[{Key=Workspace,Value="${WORKSPACE}"},{Key=Build_Number,Value="${BUILD_NUMBER}"}]" \
+                --output=text --query 'PlacementGroup.GroupId')
             if [ $? -eq 0 ]; then
                 echo "Placement group: ${PLACEMENT_GROUP} created."
             fi
