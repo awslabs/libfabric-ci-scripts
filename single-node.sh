@@ -9,6 +9,7 @@ ami=($slave_value)
 NODES=1
 # Placement group is not needed for single-node tests.
 export ENABLE_PLACEMENT_GROUP=0
+export USER_DATA_FILE=${USER_DATA_FILE:-${JENKINS_HOME}/user_data_script.sh}
 
 set +x
 create_instance || { echo "==>Unable to create instance"; exit 65; }
