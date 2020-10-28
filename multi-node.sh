@@ -11,6 +11,7 @@ libfabric_job_type=${libfabric_job_type:-"master"}
 # Current LibfabricCI IAM permissions do not allow placement group creation,
 # enable this after it is fixed.
 # export ENABLE_PLACEMENT_GROUP=1
+export USER_DATA_FILE=${USER_DATA_FILE:-${JENKINS_HOME}/user_data_script.sh}
 
 # Test whether the instance is ready for SSH or not. Once the instance is ready,
 # copy SSH keys from Jenkins and install libfabric

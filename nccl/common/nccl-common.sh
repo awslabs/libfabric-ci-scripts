@@ -156,8 +156,12 @@ create_instance() {
     while [ ${error} -ne 0 ] && [ ${creation_attempts_count} -lt ${create_instance_retries} ]; do
         for subnet in ${subnet_ids[@]}; do
             if [ ${ENABLE_PLACEMENT_GROUP} -eq 1 ]; then
-                addl_args="--placement GroupName="${PGS["${subnet}"]}
+                addl_args+=" --placement GroupName="${PGS["${subnet}"]}
             fi
+            if [[ -n ${USER_DATA_FILE} && -f ${USER_DATA_FILE} ]]; then
+                addl_args+=" --user-data file://${USER_DATA_FILE}"
+            fi
+
             error=1
             set +e
             INSTANCE_IDS=$(aws ec2 run-instances \
