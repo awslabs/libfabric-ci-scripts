@@ -232,7 +232,7 @@ create_instance()
     if [[ -n ${USER_DATA_FILE} && -f ${USER_DATA_FILE} ]]; then
         addl_args+=" --user-data file://${USER_DATA_FILE}"
     fi
-}
+
     echo "==> Creating instances"
     while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]; do
         for subnet in ${subnet_ids[@]}; do
