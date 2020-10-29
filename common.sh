@@ -375,7 +375,6 @@ EOF
 alinux_install_deps() {
     cat <<-"EOF" >> ${tmp_script}
     sudo yum -y groupinstall 'Development Tools'
-    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig
 EOF
 }
 
@@ -387,14 +386,8 @@ EOF
 }
 
 rhel_install_deps() {
-    # Optional and extras needed for rdma-core build
     cat <<-"EOF" >> ${tmp_script}
     sudo yum -y groupinstall 'Development Tools'
-    sudo yum-config-manager --enable rhel-7-server-rhui-optional-rpms
-    # An update after enabling the rhui optional repository seems to be needed
-    # to refresh the CA certs.
-    sudo yum update -y
-    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig
 EOF
 }
 
@@ -407,7 +400,6 @@ centos_update()
 centos_install_deps() {
     cat <<-"EOF" >> ${tmp_script}
     sudo yum -y groupinstall 'Development Tools'
-    sudo yum -y install cmake gcc libnl3-devel libudev-devel make pkgconfig
 EOF
 }
 
@@ -425,7 +417,8 @@ ubuntu_install_deps()
     sudo DEBIAN_FRONTEND=noninteractive apt -y install autoconf
     sudo DEBIAN_FRONTEND=noninteractive apt -y install libltdl-dev
     sudo DEBIAN_FRONTEND=noninteractive apt -y install make
-    sudo DEBIAN_FRONTEND=noninteractive apt -y install build-essential cmake gcc libudev-dev libnl-3-dev libnl-route-3-dev ninja-build pkg-config valgrind python3-dev cython3
+    sudo DEBIAN_FRONTEND=noninteractive apt -y install gcc
+    sudo DEBIAN_FRONTEND=noninteractive apt -y install g++
 EOF
 }
 suse_update()
