@@ -604,10 +604,10 @@ parse_txt_junit_xml()
             # If the line is a command indicated by + sign then assign name tag
             # to it, command is the testname used in the xml
             if [[ ${line} == *${instance_ip_or_id[1]}' +'* ]]; then
-                # Junit deosn't accept quotes or colons in testname in the xml, convert
-                # them to underscores. Parse the command to yaml, by inserting
-                # - name tag before the command
-                echo ${line//[\":]/_} | sed "s/\(${instance_ip_or_id[1]} [+]\+\)\(.*\)/- name: $(printf '%08d\n' $line_no)-\2\n  time: 0\n  result:\n  server_stdout: |/g" \
+                # Junit deosn't accept quotes or colons or less than sign in
+                # testname in the xml, convert them to underscores. Parse the
+                # command to yaml, by inserting - name tag before the command
+                echo ${line//[\"<:]/_} | sed "s/\(${instance_ip_or_id[1]} [+]\+\)\(.*\)/- name: $(printf '%08d\n' $line_no)-\2\n  time: 0\n  result:\n  server_stdout: |/g" \
                 >> ${file_name}
                 line_no=$((${line_no}+1))
             else
