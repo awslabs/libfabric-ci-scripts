@@ -61,7 +61,7 @@ execute_runfabtests()
     set -x
 }
 
-create_instance multi || { echo "==>Unable to create instance"; exit 65; }
+create_resource multi || { echo "==>Unable to create instance"; exit 65; }
 
 get_instance_ip
 INSTANCE_IPS=($INSTANCE_IPS)
