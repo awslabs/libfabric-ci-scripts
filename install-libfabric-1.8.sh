@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
+INSTALL_DIR=$1
 echo "==> Building libfabric 1.8.x"
-cd ${HOME}
-git clone https://github.com/ofiwg/libfabric
-cd ${HOME}/libfabric
-git fetch origin +refs/pull/$PULL_REQUEST_ID/*:refs/remotes/origin/pr/$PULL_REQUEST_ID/*
-git checkout $PULL_REQUEST_REF -b PRBranch
-./autogen.sh
+pushd ${INSTALL_DIR}/libfabric
+mkdir ${HOME}/libfabric
 ./configure --prefix=${HOME}/libfabric/install/ \
     --enable-debug  \
     --enable-mrail  \
@@ -16,7 +13,8 @@ git checkout $PULL_REQUEST_REF -b PRBranch
     --disable-verbs
 make -j 4
 make install
-LIBFABRIC_INSTALL_PATH=${HOME}/libfabric/install
+export LIBFABRIC_INSTALL_PATH=${HOME}/libfabric/install
 # ld.so.conf.d files are preferred in alphabetical order
 # this doesn't seem to be working for non-interactive shells
 sudo bash -c "echo ${LIBFABRIC_INSTALL_PATH} > /etc/ld.so.conf.d/aaaa-libfabric-testing.sh"
+popd

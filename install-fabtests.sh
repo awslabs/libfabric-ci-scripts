@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+INSTALL_DIR=$1
+PROVIDER=$2
+LIBFABRIC_INSTALL_PATH=$3
 echo "==> Building fabtests"
 cd ${HOME}
 fi_info_bin=${LIBFABRIC_INSTALL_PATH}/bin/fi_info
@@ -12,11 +15,13 @@ if [ ! -d libfabric ]; then
     # installed version of libfabric.
     git clone https://github.com/ofiwg/libfabric
     ofi_ver=$(${fi_info_bin} --version | grep 'libfabric api' | awk '{print $3}')
-    pushd libfabric
+    cd libfabric
     git checkout "v${ofi_ver}.x"
-    popd
+    cd fabtests
+else
+    cd ${INSTALL_DIR}/libfabric/fabtests
+    mkdir ${HOME}/libfabric/fabtests
 fi
-cd ${HOME}/libfabric/fabtests
 ./autogen.sh
 ./configure --with-libfabric=${LIBFABRIC_INSTALL_PATH} \
     --prefix=${HOME}/libfabric/fabtests/install/ \
