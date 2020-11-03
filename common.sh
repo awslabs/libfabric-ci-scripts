@@ -16,6 +16,7 @@ RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-1}
 ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
 TEST_SKIP_KMOD=${TEST_SKIP_KMOD:-0}
 TEST_GDR=${TEST_GDR:-0}
+INSTALL_CENTOS_STREAM=${INSTALL_CENTOS_STREAM:-0}
 
 get_opensuse1502_ami_id() {
     region=$1
@@ -360,6 +361,11 @@ check_provider_os()
     # Ensure we are on the latest CentOS version.
     if [ ${label} == "centos" ]; then
         test_ssh $1
+        if [ "${INSTALL_CENTOS_STREAM}" -eq 1 ]; then
+            ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
+            "sudo yum -y install centos-release-stream" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+            execution_seq=$((${execution_seq}+1))
+        fi
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
             "sudo yum -y upgrade && sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
         execution_seq=$((${execution_seq}+1))
