@@ -11,14 +11,25 @@ NODES=1
 export ENABLE_PLACEMENT_GROUP=0
 export USER_DATA_FILE=${USER_DATA_FILE:-${JENKINS_HOME}/user_data_script.sh}
 
-create_resource single || { echo "==>Unable to create instance"; exit 65; }
+set +x
+create_instance || { echo "==>Unable to create instance"; exit 65; }
+set -x
+
+execution_seq=$((${execution_seq}+1))
+test_instance_status ${INSTANCE_IDS}
 
 get_instance_ip
+
+execution_seq=$((${execution_seq}+1))
+# Kernel upgrade only for Ubuntu and provider EFA
+check_provider_os ${INSTANCE_IPS}
+
+# Add AMI specific installation commands
+script_builder single-node
 
 # Appending fabtests to the existing installation script
 cat <<-"EOF" >> ${tmp_script}
 . ~/.bash_profile
-PROVIDER=$1
 ssh-keygen -f ${HOME}/.ssh/id_rsa -N "" > /dev/null
 cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 
@@ -50,20 +61,23 @@ case "${PROVIDER}" in
     ;;
 esac
 
-bash -c "FI_LOG_LEVEL=warn $runfabtests_script ${FABTESTS_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1" | tee ~/output_dir/fabtests.txt
+bash -c "$runfabtests_script ${FABTESTS_OPTS} ${PROVIDER} 127.0.0.1 127.0.0.1"
 
 EOF
 
+# Test whether node is ready for SSH connection or not
+test_ssh ${INSTANCE_IPS}
+
+execution_seq=$((${execution_seq}+1))
 # For single node, the ssh connection is established only once. The script
 # builds libfabric and also executes fabtests
 set +x
 ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} \
-    "bash -s" -- <${tmp_script} "$PROVIDER" 2>&1
+    "bash -s" -- <${tmp_script} \
+    "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | \
+    sed 's/\(.*\)/'${INSTANCE_IPS}' \1/' | tee ${output_dir}/temp_execute_runfabtests.txt
 EXIT_CODE=${PIPESTATUS[0]}
 set -x
-
-# Get log directory from instance
-scp -r -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS}:~/output_dir $output_dir/
 
 # Get build status
 exit_status "$EXIT_CODE" "${INSTANCE_IPS}"
