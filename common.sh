@@ -252,7 +252,13 @@ create_instance()
     fi
 
     INSTANCE_IDS=''
-    SERVER_ERROR=(InsufficientInstanceCapacity RequestLimitExceeded ServiceUnavailable Unavailable)
+    SERVER_ERROR=(
+    InsufficientInstanceCapacity
+    RequestLimitExceeded
+    ServiceUnavailable
+    Unavailable
+    Unsupported
+    )
     create_instance_count=0
     error=1
     if [ $ami_arch = "x86_64" ] && [ $TEST_GDR -eq 0 ]; then
