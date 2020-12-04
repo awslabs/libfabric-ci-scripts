@@ -20,8 +20,9 @@ TEST_GDR=${TEST_GDR:-0}
 get_opensuse1502_ami_id() {
     region=$1
     # OpenSUSE does not suppport ARM AMI's
+    # openSUSE-Leap-15.2 Build7.1 cabelo@opensuse.org
     aws ec2 describe-images --owners aws-marketplace \
-        --filters 'Name=name,Values=openSUSE-Leap-15.2-?????????-HVM-x86_64*' 'Name=ena-support,Values=true' \
+        --filters 'Name=product-code,Values=5080kaujzrzibjdwrkruspbj7' 'Name=ena-support,Values=true' \
         --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
     return $?
 }
