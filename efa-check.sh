@@ -116,17 +116,25 @@ EOF
 fi
 echo "Current memory lock limit: $(ulimit -l)"
 
-hugepages=$(cat /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages)
-# Check for huge pages. 5128 2MiB huge pages is enough for current Amazon EC2
-# instance types.
-if [ "$hugepages" -lt 5128 ]; then
+huge_pages_size=$(grep "^Hugepagesize:" /proc/meminfo  | awk '{print $2}')
+huge_pages_file="/sys/kernel/mm/hugepages/hugepages-${huge_pages_size}kB/nr_hugepages"
+hugepages=$(cat $huge_pages_file)
+efa_ep_huge_pages_memory=$((110 * 1024)) # convert to kB
+number_of_cores=$(lscpu | grep "^CPU(s):"  | awk '{print $2}')
+efa_total_huge_pages_memory=$(($efa_ep_huge_pages_memory * $number_of_cores))
+efa_number_of_huge_pages=$(($efa_total_huge_pages_memory / $huge_pages_size + 1))
+# For each end point, the libfabric EFA provider will create two packet pools,
+# which is backed by huge page memory. The two packet pools will use 110 MB of
+# memory. We need to reserve at least cores * 110 MB worth of memory in huge
+# pages.
+if [ "$hugepages" -lt $efa_number_of_huge_pages ]; then
     cat >&2 << EOF
 Warning: Configuring huge pages is recommended for the best performance with
 EFA.
 EOF
     ret=1
 fi
-echo "Current number of 2MiB huge pages: $hugepages"
+echo "Current number of $huge_pages_size kB huge pages: $hugepages"
 
 echo ""
 echo "======== Software information ========"
