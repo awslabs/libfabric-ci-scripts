@@ -491,6 +491,7 @@ ubuntu_install_deps()
     sudo DEBIAN_FRONTEND=noninteractive apt -y install make
     sudo DEBIAN_FRONTEND=noninteractive apt -y install gcc
     sudo DEBIAN_FRONTEND=noninteractive apt -y install g++
+    sudo DEBIAN_FRONTEND=noninteractive apt -y install gfortran
 EOF
 }
 suse_update()
@@ -507,6 +508,7 @@ suse_install_deps() {
     sudo zypper install -y git-core
     sudo zypper install -y wget
     sudo zypper install -y gcc-c++
+    sudo zypper install -y gcc-fortran
 EOF
 }
 
