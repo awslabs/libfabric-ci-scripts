@@ -450,6 +450,7 @@ EOF
 rhel_install_deps() {
     cat <<-"EOF" >> ${tmp_script}
     sudo yum -y groupinstall 'Development Tools'
+    sudo yum -y install gcc-gfortran
     # python is needed for running fabtests,
     # which is not available on base rhel8 ami.
     if [ ! $(which python) ] && [ ! $(which python2) ] && [ ! $(which python3) ]; then
@@ -467,6 +468,7 @@ centos_update()
 centos_install_deps() {
     cat <<-"EOF" >> ${tmp_script}
     sudo yum -y groupinstall 'Development Tools'
+    sudo yum -y install gcc-gfortran
     # python is needed for running fabtests,
     # which is not available on base centos8 ami.
     if [ ! $(which python) ] && [ ! $(which python2) ] && [ ! $(which python3) ]; then
