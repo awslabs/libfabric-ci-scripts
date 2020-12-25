@@ -16,6 +16,10 @@ if [ ! -d libfabric ]; then
     git checkout "v${ofi_ver}.x"
     popd
 fi
+if [ ! -z "${target_fabtest_tag}" ]; then
+    cd ${HOME}/libfabric
+    git checkout tags/${target_fabtest_tag}
+fi
 cd ${HOME}/libfabric/fabtests
 ./autogen.sh
 ./configure --with-libfabric=${LIBFABRIC_INSTALL_PATH} \
