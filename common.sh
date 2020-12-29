@@ -374,7 +374,7 @@ check_provider_os()
     if [ ${label} == "suse" ]; then
         test_ssh $1
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
-            "sudo zypper --gpg-auto-import-keys refresh -f && sudo zypper update -y && sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+            "sudo zypper --gpg-auto-import-keys refresh -f && sudo zypper update -y && sudo pip install lxml --upgrade && sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
     fi
 }
 #Test SLES15SP2 with allow unsupported modules
