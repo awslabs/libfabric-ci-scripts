@@ -213,6 +213,8 @@ prepare_instance() {
         custom_instance_preparation
         echo "==> Launching instance in region ${AWS_DEFAULT_REGION}"
         num_instances=$2
+        # HW CUDA errors: https://docs.nvidia.com/deploy/xid-errors/index.html
+        CUDA_HW_ERROR_CODES=(48 74)
         INSTANCES=()
         create_pg
         create_instance_attempts=0
@@ -237,6 +239,26 @@ prepare_instance() {
                         break
                     fi
                 done
+                if [ $1 != 'ami_instance' ] ; then
+                    for INSTANCE_ID in ${INSTANCES[@]};do
+                        run_nvidia_checks $INSTANCE_ID
+                        sleep 1m
+                        test_dmesg_errors $INSTANCE_ID
+                        if [[ ! -z ${ERRORS} ]]; then
+                            echo "XID errors: ${ERRORS}"
+                        fi
+                        for code in ${CUDA_HW_ERROR_CODES[@]}; do
+                            if [[ "${ERRORS}" == *${code},* ]]; then
+                                echo "!!!Node $INSTANCE_ID reports CUDA XID ${code} errors terminating the instances!!!"
+                                terminate_instances
+                                INSTANCE_STATE='terminated'
+                                # Wait before creating new instance to avoid the same pool
+                                sleep 2m
+                                break 2
+                            fi
+                        done
+                    done
+                fi
             fi
                 create_instance_attempts=$((create_instance_attempts+1))
         done
@@ -295,6 +317,15 @@ test_ssh() {
     done
     echo "Host instance ssh exited with status ${host_ready}"
     set -e
+}
+
+test_dmesg_errors() {
+
+    ERRORS=''
+    PublicDNS=$(get_public_dns $1)
+    ERRORS=$(ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
+        -i "~/${slave_keypair}" ${ssh_user}@${PublicDNS} dmesg | grep -e "Xid" || true)
+    echo "ERRORS: ${ERRORS}"
 }
 
 terminate_instances() {
@@ -480,6 +511,25 @@ EOF
 EOF
     ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
         -i "~/${slave_keypair}" ${ssh_user}@$1 "bash -s" < ${tmp_script}
+}
+
+run_nvidia_checks() {
+    cat <<-"EOF" > ${tmp_script}
+    #!/bin/bash
+    echo "==> Running basic nvidia devices check"
+    nvidia-smi
+    echo "==> Running bandwidthTest for each NVIDIA device"
+    sudo lspci | grep NVIDIA | cut -d" " -f 1 > devices.txt
+    readarray devices_arr < devices.txt
+    cd /usr/local/cuda/samples/1_Utilities/bandwidthTest
+    sudo make
+    for device in "${devices_arr[@]}"; do
+        ./bandwidthTest --device ${device}
+    done
+EOF
+    PDNS=$(get_public_dns $1)
+    ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
+        -i "~/${slave_keypair}" ${ssh_user}@${PDNS} "bash -s" < ${tmp_script}
 }
 
 generate_unit_tests_script_single_node() {
