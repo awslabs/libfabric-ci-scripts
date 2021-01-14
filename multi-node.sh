@@ -55,11 +55,15 @@ set -x
 INSTANCE_IDS=($INSTANCE_IDS)
 
 execution_seq=$((${execution_seq}+1))
+pids=""
 # Wait until all instances have passed status check
 for ID in ${INSTANCE_IDS[@]}; do
     test_instance_status "$ID" &
+    pids="$pids $!"
 done
-wait
+for pid in $pids; do
+    wait $pid || { echo "==>Instance status check failed"; exit 65; }
+done
 
 get_instance_ip
 INSTANCE_IPS=($INSTANCE_IPS)
