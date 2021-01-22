@@ -131,12 +131,6 @@ if [ ${REBOOT_AFTER_INSTALL} -eq 1 ] && [ "$ami_arch" = "x86_64" ]; then
     done
 fi
 
-# TODO: Remove this conditional when we start testing EFA in ARM AMIs.
-# Run fabtests with TCP provider for ARM architecture.
-if [ "$ami_arch" = "aarch64" ]; then
-    PROVIDER="tcp"
-fi
-
 execution_seq=$((${execution_seq}+1))
 # SSH into SERVER node and run fabtests
 N=$((${#INSTANCE_IPS[@]}-1))
