@@ -418,6 +418,15 @@ script_builder()
     fi
 
     ${label}_install_deps
+    # install CUDA toolkit only for non-gdr test on x86_64 platform.
+    if [ "$ami_arch" = "x86_64" ] && [ "$BUILD_GDR" -eq 0 ]; then
+        cat <<-"EOF" >> ${tmp_script}
+        curl -O https://developer.download.nvidia.com/compute/cuda/11.0.3/local_installers/cuda_11.0.3_450.51.06_linux.run
+        chmod +x cuda_11.0.3_450.51.06_linux.run
+        sudo ./cuda_11.0.3_450.51.06_linux.run --silent --toolkit
+        sudo ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/libcuda.so
+EOF
+    fi
     if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
         echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${tmp_script}
     elif [ ${TARGET_BRANCH} == "v1.8.x" ]; then
