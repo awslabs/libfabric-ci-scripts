@@ -279,7 +279,7 @@ create_instance()
                 exit 1
         esac
     elif [ $BUILD_GDR -eq 1 ]; then
-        instance_type=g4dn.metal
+        instance_type=p4d.24xlarge
         network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
     else
         instance_type=a1.4xlarge
