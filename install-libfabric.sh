@@ -10,14 +10,19 @@ if [ ! "$PULL_REQUEST_ID" = "None" ]; then
     git checkout $PULL_REQUEST_REF -b PRBranch
 fi
 ./autogen.sh
-./configure --prefix=${HOME}/libfabric/install/ \
+configure_flags=(--prefix=${HOME}/libfabric/install/ \
     --enable-debug  \
     --enable-mrail  \
     --enable-tcp    \
     --enable-rxm    \
     --disable-rxd   \
     --disable-verbs \
-    --enable-efa
+    --enable-efa )
+# Build libfabric with cuda on x86_64 platform only.
+if [ "$(uname -m)" == "x86_64" ]; then
+    configure_flags+=(--with-cuda=/usr/local/cuda --enable-cuda-dlopen)
+fi
+./configure "${configure_flags[@]}"
 make -j 4
 make install
 LIBFABRIC_INSTALL_PATH=${HOME}/libfabric/install
