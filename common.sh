@@ -362,6 +362,20 @@ get_instance_ip()
                         --output=text)
 }
 
+# disable nouveau open source driver on instances.
+disable_nouveau()
+{
+    test_ssh $1
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
+        "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/disable-nouveau.sh 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+    if [ ${PIPESTATUS[0]} -ne 0 ]; then
+        echo "Disabling nouveau failed on $1"
+        exit 1
+    fi
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
+        "sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
+}
+
 # Check provider and OS type, If EFA and Ubuntu then call ubuntu_kernel_upgrade
 check_provider_os()
 {

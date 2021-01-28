@@ -17,6 +17,10 @@ export USER_DATA_FILE=${USER_DATA_FILE:-${JENKINS_HOME}/user_data_script.sh}
 # copy SSH keys from Jenkins and install libfabric
 install_libfabric()
 {
+    if [ "$BUILD_GDR" -eq 1 ]; then
+        disable_nouveau "$1"
+        test_ssh "$1"
+    fi
     check_provider_os "$1"
     test_ssh "$1"
     set +x
