@@ -138,7 +138,7 @@ for IP in ${INSTANCE_IPS[@]}; do
     ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
         "bash --login efa-check.sh --skip-libfabric --skip-mpi" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$IP' \1/'
     if [ ${PIPESTATUS[0]} -ne 0 ]; then
-        "EFA check after reboot failed on ${IP}"
+        "EFA check failed on ${IP}"
         exit 1
     fi
 done
