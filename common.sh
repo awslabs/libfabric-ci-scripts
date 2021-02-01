@@ -61,7 +61,7 @@ get_alinux2_ami_id() {
     return $?
 }
 
-get_ubuntu_1604_ami_id() {
+get_ubuntu1604_ami_id() {
     region=$1
     if [ "$ami_arch" = "x86_64" ]; then
         ami_arch_label="amd64"
@@ -75,7 +75,7 @@ get_ubuntu_1604_ami_id() {
     return $?
 }
 
-get_ubuntu_1804_ami_id() {
+get_ubuntu1804_ami_id() {
     region=$1
     if [ "$ami_arch" = "x86_64" ]; then
         ami_arch_label="amd64"
@@ -89,7 +89,7 @@ get_ubuntu_1804_ami_id() {
     return $?
 }
 
-get_ubuntu_2004_ami_id() {
+get_ubuntu2004_ami_id() {
     region=$1
     if [ "$ami_arch" = "x86_64" ]; then
         ami_arch_label="amd64"
@@ -228,7 +228,7 @@ create_instance()
                 ami[0]=$(get_rhel76_ami_id $AWS_DEFAULT_REGION)
                 ;;
             ubuntu)
-                ami[0]=$(get_ubuntu_1804_ami_id $AWS_DEFAULT_REGION)
+                ami[0]=$(get_ubuntu1804_ami_id $AWS_DEFAULT_REGION)
                 ;;
             alinux)
                 ami[0]=$(get_alinux2_ami_id $AWS_DEFAULT_REGION)
