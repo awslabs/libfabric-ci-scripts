@@ -395,6 +395,10 @@ script_builder()
     type=$1
     set_var
     ${label}_update
+    if [ $BUILD_GDR -eq 1 ]; then
+        cat install-nvidia-driver.sh >> ${tmp_script}
+        cat install-nvidia-fabric-manager.sh >> ${tmp_script}
+    fi
     efa_software_components
 
     # The libfabric shm provider use CMA for communication. By default ubuntu
@@ -425,6 +429,11 @@ script_builder()
     fi
 
     cat install-fabtests.sh >> ${tmp_script}
+    if [ $BUILD_GDR -eq 1 ]; then
+        cat install-nccl.sh >> ${tmp_script}
+        cat install-aws-ofi-nccl.sh >> ${tmp_script}
+        cat install-nccl-tests.sh >> ${tmp_script}
+    fi
 }
 
 alinux_update()
