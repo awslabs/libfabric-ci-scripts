@@ -651,6 +651,10 @@ split_files()
         execution_seq=$((${execution_seq}+1))
         mv temp_execute_osu_impi.txt ${execution_seq}_${INSTANCE_IPS[0]}_osu_impi.txt
     fi
+    if [ ${BUILD_GDR} -eq 1 ]; then
+        execution_seq=$((${execution_seq}+1))
+        mv temp_execute_nccl_tests.txt ${execution_seq}_${INSTANCE_IPS[0]}_nccl_tests.txt
+    fi
     popd
 }
 # Parses the output text file to yaml and then runs rft_yaml_to_junit_xml script
