@@ -294,6 +294,11 @@ create_instance()
     if [[ -n ${USER_DATA_FILE} && -f ${USER_DATA_FILE} ]]; then
         addl_args+=" --user-data file://${USER_DATA_FILE}"
     fi
+    # NVIDIA drivers and CUDA toolkit are large, allocate more EBS space for them.
+    if [ "$ami_arch" = "x86_64" ]; then
+        dev_name=$(aws ec2 describe-images --image-id ${ami[0]} --query 'Images[*].RootDeviceName' --output text)
+        addl_args="${addl_args} --block-device-mapping=[{\"DeviceName\":\"${dev_name}\",\"Ebs\":{\"VolumeSize\":64}}]"
+    fi
 
     echo "==> Creating instances"
     while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]; do
