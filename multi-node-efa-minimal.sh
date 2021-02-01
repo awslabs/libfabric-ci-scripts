@@ -40,6 +40,8 @@ efa_software_components_minimal()
     fi
     if [[ $TEST_SKIP_KMOD -eq 1 ]]; then
         echo "sudo ./efa_installer.sh -k -m -y" >> ${tmp_script}
+    elif [ ${BUILD_GDR} -eq 1 ]; then
+        echo "sudo ./efa_installer.sh -g -m -y" >> ${tmp_script}
     else
         echo "sudo ./efa_installer.sh -m -y" >> ${tmp_script}
     fi
@@ -50,6 +52,9 @@ multi_node_efa_minimal_script_builder()
     type=$1
     set_var
     ${label}_update
+    if [ $BUILD_GDR -eq 1 ]; then
+        cat install-nvidia-driver.sh >> ${tmp_script}
+    fi
     efa_software_components_minimal
 
     # Ubuntu disallows non-child process ptrace by default, which is
@@ -68,6 +73,10 @@ multi_node_efa_minimal_script_builder()
 # copy SSH keys from Jenkins and install libfabric
 install_libfabric()
 {
+    if [ "$BUILD_GDR" -eq 1 ]; then
+        disable_nouveau "$1"
+        test_ssh "$1"
+    fi
     check_provider_os "$1"
     test_ssh "$1"
     set +x
