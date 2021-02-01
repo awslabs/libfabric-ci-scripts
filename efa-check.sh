@@ -33,6 +33,14 @@ EOF
         fi_info --version
         echo "EFA libfabric providers:"
         fi_info -p efa
+        if [ "$efa_gdr_enabled" -eq 1 ]; then
+            if ! FI_EFA_USE_DEVICE_RDMA=1 fi_info -p efa -c FI_HMEM; then
+                echo "EFA libfabric provider does not have FI_HMEM capability."
+                return 1
+            else
+                echo "EFA libfabric provider has FI_HMEM capability."
+            fi
+        fi
     fi
 }
 
@@ -101,6 +109,13 @@ if command -v ibv_devices >/dev/null 2>&1; then
     ibv_devices
 fi
 
+efa_gdr_enabled=0
+if sudo modinfo efa | grep gdr | grep -o Y; then
+    echo "EFA kmod has gdr enabled."
+    efa_gdr_enabled=1
+else
+    echo "EFA kmod does not have gdr enabled."
+fi
 echo ""
 echo "======== Configuration check ========"
 # Check for memory lock limit and warn if less than 16GiB. 16GiB is enough for
