@@ -183,4 +183,22 @@ if [[ ${ami_arch} == "x86_64" && ${PROVIDER} == "efa" ]] || [ ${ami_arch} == "aa
     done
 fi
 
+# Run nccl-tests for GDR Test.
+if [ ${BUILD_GDR} -eq 1 ]; then
+    scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
+        $WORKSPACE/libfabric-ci-scripts/run-nccl-tests.sh \
+        $WORKSPACE/libfabric-ci-scripts/mpi_common.sh \
+        ${ami[1]}@${INSTANCE_IPS[0]}:
+    execution_seq=$((${execution_seq}+1))
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
+        bash run-nccl-tests.sh ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_nccl_tests.txt
+
+    set +e
+    grep -q "Test Passed" ${output_dir}/temp_execute_nccl_tests.txt
+    if [ $? -ne 0 ]; then
+        BUILD_CODE=1
+        echo "GDR nccl-tests failed."
+    fi
+    set -e
+fi
 exit ${BUILD_CODE}
