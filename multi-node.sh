@@ -112,29 +112,6 @@ if [ "${PROVIDER}" == "efa" ] && [ "$ami_arch" = "x86_64" ]; then
     done
 fi
 
-# TODO: Remove the conditional of [ "$ami_arch" = "x86_64" ] when we start testing EFA in ARM AMIs
-if [ ${REBOOT_AFTER_INSTALL} -eq 1 ] && [ "$ami_arch" = "x86_64" ]; then
-    for IP in ${INSTANCE_IPS[@]}; do
-        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
-            "sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$IP' \1/'
-    done
-
-    for IP in ${INSTANCE_IPS[@]}; do
-        test_ssh ${IP}
-    done
-
-    # And run the efa-check.sh script again if we rebooted.
-    for IP in ${INSTANCE_IPS[@]}; do
-        echo "Running efa-check.sh on ${IP} after reboot"
-        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${IP} \
-            "bash --login efa-check.sh" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$IP' \1/'
-        if [ ${PIPESTATUS[0]} -ne 0 ]; then
-            "EFA check after reboot failed on ${IP}"
-            exit 1
-        fi
-    done
-fi
-
 execution_seq=$((${execution_seq}+1))
 # SSH into SERVER node and run fabtests
 N=$((${#INSTANCE_IPS[@]}-1))
