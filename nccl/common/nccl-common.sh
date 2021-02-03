@@ -241,6 +241,7 @@ prepare_instance() {
                 done
                 if [ $1 != 'ami_instance' ] ; then
                     for INSTANCE_ID in ${INSTANCES[@]};do
+                        test_ssh $INSTANCE_ID
                         run_nvidia_checks $INSTANCE_ID
                         sleep 1m
                         test_dmesg_errors $INSTANCE_ID

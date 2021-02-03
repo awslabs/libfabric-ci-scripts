@@ -31,10 +31,6 @@ ENABLE_PLACEMENT_GROUP=1
 
 prepare_instance 'test_instance' ${NUM_NODES}
 
-for instance in ${INSTANCES[@]}; do
-    test_ssh ${instance}
-done
-
 nodes_ips=()
 
 nodes_pub_dns=()
