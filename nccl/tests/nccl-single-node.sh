@@ -28,8 +28,6 @@ ENABLE_PLACEMENT_GROUP=1
 
 prepare_instance 'test_instance' ${NUM_NODES}
 
-test_ssh ${INSTANCE_IDS}
-
 PublicDNSLeader=$(get_public_dns ${INSTANCE_IDS})
 
 LeaderIp=$(get_instance_ip ${INSTANCE_IDS})
