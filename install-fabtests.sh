@@ -30,10 +30,21 @@ make install
 
 # Runs all the tests in the fabtests suite between two nodes while only expanding failed cases
 EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
-if [ -f ${EXCLUDE} ]; then
-    EXCLUDE="-R -f ${EXCLUDE}"
-else
-    EXCLUDE=""
+if [ "${PROVIDER}" == "efa" ]; then
+    if [ ! -f ${EXCLUDE} ]; then
+        echo "exclude file for efa does not exist! Exiting ..."
+        exit 1
+    fi
+
+    # fi_dgram_pingpong test assums packet delivery, which dgram end point
+    # does not guarantee. As a result, this test only works with out of
+    # band synchronization (-b option). However, runfabtests.sh run all
+    # the tests with in band synchronization (-E option).
+    # Therefore we exclude it from runfabtests.sh and run this test
+    # separately with -b option in multinode_runfabtests.sh
+    echo "# skip dgram_pingpong test" >> ${EXCLUDE}
+    echo "dgram_pingpong" >> ${EXCLUDE}
+    echo "" >> ${EXCLUDE}
 fi
 # .bashrc and .bash_profile are loaded differently depending on distro and
 # whether the shell is interactive or not, just do both to be safe.
