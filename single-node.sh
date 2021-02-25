@@ -35,6 +35,13 @@ cat ${HOME}/.ssh/id_rsa.pub >> ${HOME}/.ssh/authorized_keys
 
 runfabtests_script="${HOME}/libfabric/fabtests/install/bin/runfabtests.sh"
 
+EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
+if [ -f ${EXCLUDE} ]; then
+    EXCLUDE="-R -f ${EXCLUDE}"
+else
+    EXCLUDE=""
+fi
+
 # Provider-specific handling of the options passed to runfabtests.sh
 FABTESTS_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
 case "${PROVIDER}" in
