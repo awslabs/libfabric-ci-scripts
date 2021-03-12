@@ -2,6 +2,7 @@
 
 source ~/.bash_profile
 source ~/mpi_common.sh
+source ~/wget_check.sh
 
 set -x
 set -o pipefail
@@ -14,8 +15,8 @@ hostfile=$(mktemp)
 out1=$(mktemp)
 out2=$(mktemp)
 
-curl ${CURL_OPT} -O https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring_c.c
-curl ${CURL_OPT} -O https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring_usempi.f90
+wget_check "https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring_c.c" "ring_c.c"
+wget_check "https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring_usempi.f90" "ring_usempi.f90"
 
 if [ "${mpi}" == "ompi" ]; then
     ompi_setup

@@ -2,7 +2,7 @@
 
 source ~/.bash_profile
 source ~/mpi_common.sh
-
+source ~/wget_check.sh
 set -x
 set -o pipefail
 mpi=$1
@@ -13,7 +13,7 @@ hosts=$@
 hostfile=$(mktemp)
 out=$(mktemp)
 
-curl ${CURL_OPT} -O http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz
+wget_check "http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz" "osu-micro-benchmarks-5.6.2.tar.gz"
 osu_dir="osu-micro-benchmarks-5.6.2"
 one_rank_per_node=""
 if [ "${mpi}" == "ompi" ]; then

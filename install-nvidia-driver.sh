@@ -5,6 +5,7 @@
 # to keep whatever we install before the EFA installer to a minimum to
 # try to match what a customer will do.
 
+source ~/wget_check.sh
 os_name="$(. /etc/os-release; echo $NAME)"
 os_version_id="$(. /etc/os-release; echo $VERSION_ID)"
 if [  "$os_name" == "Ubuntu" ]; then
@@ -28,7 +29,7 @@ if [ "$os_name" = "CentOS Linux" ] || [ "$os_name" = "Red Hat Enterprise Linux" 
         sudo yum install -y dkms
     fi
 fi
-curl --retry 5 -O https://developer.download.nvidia.com/compute/cuda/11.0.3/local_installers/cuda_11.0.3_450.51.06_linux.run
+wget_check "https://developer.download.nvidia.com/compute/cuda/11.0.3/local_installers/cuda_11.0.3_450.51.06_linux.run" "cuda_11.0.3_450.51.06_linux.run"
 chmod +x cuda_11.0.3_450.51.06_linux.run
 sudo sh cuda_11.0.3_450.51.06_linux.run --override --silent
 echo "export PATH=/usr/local/cuda/bin:/usr/local/cuda/NsightCompute-2019.1:\$PATH" >> ~/.bash_profile
