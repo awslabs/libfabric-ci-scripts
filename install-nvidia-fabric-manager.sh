@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source ~/wget_check.sh
 os_name="$(. /etc/os-release; echo $NAME)"
 os_version_id="$(. /etc/os-release; echo $VERSION_ID)"
 # Make the version the same with nvidia driver
@@ -25,7 +26,7 @@ else
     pkg_name="nvidia-fabricmanager-450-${pkg_version}-1.${pkg_arch_label}.rpm"
 fi
 pkg_repo="https://developer.download.nvidia.com/compute/cuda/repos/${pkg_distribution}/x86_64"
-curl --retry 5 -O ${pkg_repo}/${pkg_name}
+wget_check "${pkg_repo}/${pkg_name}" "${pkg_name}"
 if [ "$os_name" == "Ubuntu" ]; then
     sudo apt install -y ./${pkg_name}
 elif [ "$os_name" == "OpenSUSE Leap" ] || [ "$os_name" == "SLES" ]; then

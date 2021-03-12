@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 # MPI helper shell functions
-CURL_OPT="--retry 5"
 # Detect architecture
 ARCH=$(uname -m)
 if [ ! "$ARCH" = "x86_64" ] && [ ! "$ARCH" = "aarch64" ]; then

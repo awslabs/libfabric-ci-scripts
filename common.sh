@@ -1,9 +1,8 @@
 #!/bin/bash
 
+source $WORKSPACE/libfabric-ci-scripts/wget_check.sh
 execution_seq=1
 BUILD_CODE=0
-CURL_OPT="--retry 5"
-WGET_OPT="--tries=5"
 output_dir=${output_dir:-$(mktemp -d -p $WORKSPACE)}
 tmp_script=${tmp_script:-$(mktemp -p $WORKSPACE)}
 # set default architecture of ami as x86_64
@@ -414,6 +413,11 @@ script_builder()
     type=$1
     set_var
     ${label}_update
+    # For rhel and centos we need to install wget, so we can download
+    # EFA Installer
+    if [ ${label} == "rhel" ] || [ ${label} == "centos" ]; then
+        echo "sudo yum -y install wget" >> ${tmp_script}
+    fi
     if [ $BUILD_GDR -eq 1 ]; then
         cat install-nvidia-driver.sh >> ${tmp_script}
         cat install-nvidia-fabric-manager.sh >> ${tmp_script}
@@ -435,7 +439,7 @@ script_builder()
     # install CUDA toolkit only for non-gdr test on x86_64 platform.
     if [ "$ami_arch" = "x86_64" ] && [ "$BUILD_GDR" -eq 0 ]; then
         cat <<-"EOF" >> ${tmp_script}
-        curl -O https://developer.download.nvidia.com/compute/cuda/11.0.3/local_installers/cuda_11.0.3_450.51.06_linux.run
+        wget_check "https://developer.download.nvidia.com/compute/cuda/11.0.3/local_installers/cuda_11.0.3_450.51.06_linux.run" "cuda_11.0.3_450.51.06_linux.run"
         chmod +x cuda_11.0.3_450.51.06_linux.run
         sudo ./cuda_11.0.3_450.51.06_linux.run --silent --toolkit
         sudo ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/libcuda.so
@@ -557,11 +561,10 @@ set_var()
     cat <<-"EOF" > ${tmp_script}
     #!/bin/bash
     set -xe
+    source ~/wget_check.sh
     PULL_REQUEST_ID=$1
     PULL_REQUEST_REF=$2
     PROVIDER=$3
-    export CURL_OPT="--retry 5"
-    export WGET_OPT="--tries=5"
     echo "==>Installing OS specific packages"
 EOF
 }
@@ -595,8 +598,9 @@ efa_software_components()
             EFA_INSTALLER_URL="https://efa-installer.amazonaws.com/aws-efa-installer-latest.tar.gz"
         fi
     fi
-    echo "curl ${CURL_OPT} -o efa-installer.tar.gz $EFA_INSTALLER_URL" >> ${tmp_script}
+    echo "EFA_INSTALLER_URL=$EFA_INSTALLER_URL" >> ${tmp_script}
     cat <<-"EOF" >> ${tmp_script}
+    wget_check "$EFA_INSTALLER_URL" "efa-installer.tar.gz"
     tar -xf efa-installer.tar.gz
     cd ${HOME}/aws-efa-installer
 EOF
@@ -637,7 +641,7 @@ get_rft_yaml_to_junit_xml()
 {
     pushd ${output_dir}
     # fabtests junit parser script
-    wget ${WGET_OPT} https://raw.githubusercontent.com/ofiwg/libfabric/master/fabtests/scripts/rft_yaml_to_junit_xml
+    wget_check "https://raw.githubusercontent.com/ofiwg/libfabric/master/fabtests/scripts/rft_yaml_to_junit_xml" "rft_yaml_to_junit_xml"
     # Add Excluded tag
     sed -i "s,<skipped />,<skipped />\n    EOT\n  when 'Excluded'\n    puts <<-EOT\n    <skipped />,g" rft_yaml_to_junit_xml
     sed -i "s,skipped += 1,skipped += 1\n  when 'Excluded'\n    skipped += 1,g" rft_yaml_to_junit_xml

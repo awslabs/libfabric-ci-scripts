@@ -30,10 +30,12 @@ efa_software_components_minimal()
     if [ -z "$EFA_INSTALLER_URL" ]; then
         EFA_INSTALLER_URL="https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-latest.tar.gz"
     fi
-
-    echo "curl ${CURL_OPT} -o efa-installer.tar.gz $EFA_INSTALLER_URL" >> ${tmp_script}
-    echo "tar -xf efa-installer.tar.gz" >> ${tmp_script}
-    echo "cd \${HOME}/aws-efa-installer" >> ${tmp_script}
+    echo "EFA_INSTALLER_URL=$EFA_INSTALLER_URL" >> ${tmp_script}
+    cat <<-"EOF" >> ${tmp_script}
+    wget_check "$EFA_INSTALLER_URL" "efa-installer.tar.gz"
+    tar -xf efa-installer.tar.gz
+    cd ${HOME}/aws-efa-installer
+EOF
     # If we are not skipping the kernel module, then add a check for SLES
     if [ ${TEST_SKIP_KMOD} -eq 0 ]; then
         sles_allow_module
@@ -52,6 +54,9 @@ multi_node_efa_minimal_script_builder()
     type=$1
     set_var
     ${label}_update
+    if [ ${label} == "rhel" ] || [ ${label} == "centos" ]; then
+        echo "sudo yum -y install wget" >> ${tmp_script}
+    fi
     if [ $BUILD_GDR -eq 1 ]; then
         cat install-nvidia-driver.sh >> ${tmp_script}
     fi
@@ -108,6 +113,12 @@ INSTANCE_IPS=($INSTANCE_IPS)
 
 # Prepare AMI specific libfabric installation script
 multi_node_efa_minimal_script_builder
+
+for IP in ${INSTANCE_IPS[@]}; do
+    scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
+        $WORKSPACE/libfabric-ci-scripts/wget_check.sh \
+        ${ami[1]}@${IP}:~/
+done
 
 # Generate ssh key for fabtests
 set +x
