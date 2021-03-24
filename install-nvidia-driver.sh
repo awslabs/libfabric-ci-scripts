@@ -23,6 +23,7 @@ else
 fi
 
 if [ "$os_name" = "CentOS Linux" ] || [ "$os_name" = "Red Hat Enterprise Linux" ]; then
+    sudo yum -y install wget
     if [ "$os_version_id" = "8" ] || echo "${os_version_id}" | grep -q '8\.[0-9]' ; then
         sudo yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
         sudo yum config-manager --enable epel
