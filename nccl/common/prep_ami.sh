@@ -113,8 +113,10 @@ install_libfabric() {
         --enable-efa
     make -j 4
     make install
-    echo "export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:\$LD_LIBRARY_PATH" >> ~/.dlamirc
-    source ~/.dlamirc
+
+    # Prepend LD_LIBRARY_PATH for non-interactive shell
+    sed -i "1s;^;export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:\$LD_LIBRARY_PATH\n;" ~/.bashrc
+    source ~/.bashrc
 }
 
 prepare_libfabric_without_pr() {
@@ -167,12 +169,13 @@ install_nccl_tests() {
 
 install_aws_ofi_nccl_plugin() {
 
-    echo "export LD_LIBRARY_PATH=$HOME/nccl/build/lib:\$LD_LIBRARY_PATH" >> ~/.dlamirc
-    echo "export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib64:\$LD_LIBRARY_PATH" >> ~/.dlamirc
-    echo "export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib:\$LD_LIBRARY_PATH" >> ~/.dlamirc
-    echo "export PATH=/opt/amazon/openmpi/bin:\$PATH" >> ~/.dlamirc
+    # Prepend LD_LIBRARY_PATH for non-interactive shell
+    sed -i "1s;^;export LD_LIBRARY_PATH=$HOME/nccl/build/lib:\$LD_LIBRARY_PATH\n;" ~/.bashrc
+    sed -i "1s;^;export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib64:\$LD_LIBRARY_PATH\n;" ~/.bashrc
+    sed -i "1s;^;export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib:\$LD_LIBRARY_PATH\n;" ~/.bashrc
+    sed -i "1s;^;export PATH=/opt/amazon/openmpi/bin:\$PATH\n;" ~/.bashrc
 
-    source ~/.dlamirc
+    source ~/.bashrc
 
     cd $HOME/aws-ofi-nccl
     ./autogen.sh
@@ -183,7 +186,9 @@ install_aws_ofi_nccl_plugin() {
                 --with-cuda=${latest_cuda}
     make
     make install
-    echo "export LD_LIBRARY_PATH=$HOME/aws-ofi-nccl/install/lib/:\$LD_LIBRARY_PATH" >> ~/.dlamirc
+
+    # Prepend LD_LIBRARY_PATH for non-interactive shell
+    sed -i "1s;^;export LD_LIBRARY_PATH=$HOME/aws-ofi-nccl/install/lib/:\$LD_LIBRARY_PATH\n;" ~/.bashrc
 }
 
 prepare_aws_ofi_nccl_plugin_without_pr() {
