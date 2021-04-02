@@ -8,7 +8,7 @@
 # provided during download (generally .tar format). We need to rename
 # it to .html format, to cat it to stdout
 
-WGET_OPT="--tries=5 --content-on-error"
+WGET_OPT="--tries=5 --content-on-error --no-verbose"
 
 function wget_check {
     url=$1
