@@ -12,8 +12,21 @@ git log -1
             --with-cuda=/usr/local/cuda \
             --with-nccl=$HOME/nccl/build \
             --with-mpi=/opt/amazon/openmpi
+if [ $? -ne 0 ]; then
+	echo "Configure failed!"
+	exit -1
+fi
 make
+if [ $? -ne 0 ]; then
+	echo "make failed!"
+	exit -1
+fi
+
 make install
+if [ $? -ne 0 ]; then
+	echo "make install failed!"
+	exit -1
+fi
 popd
 
 echo "export LD_LIBRARY_PATH=$HOME/aws-ofi-nccl/install/lib/:\$LD_LIBRARY_PATH" >> ~/.bash_profile
