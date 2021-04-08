@@ -4,6 +4,10 @@ cd $HOME
 git clone -b ${NCCL_VERSION} https://github.com/NVIDIA/nccl.git
 pushd nccl
 make -j src.build CUDA_HOME=/usr/local/cuda NVCC_GENCODE="-gencode=arch=compute_80,code=sm_80"
+if [ $? -ne 0 ]; then
+	echo "NCCL build failed!"
+	exit -1
+fi
 popd
 
 echo "export LD_LIBRARY_PATH=$HOME/nccl/build/lib/:\$LD_LIBRARY_PATH" >> ~/.bash_profile
