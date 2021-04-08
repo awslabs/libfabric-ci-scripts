@@ -31,8 +31,17 @@ if [ "$os_name" = "CentOS Linux" ] || [[ "$os_name" =~ "Red Hat Enterprise Linux
     fi
 fi
 wget_check "https://developer.download.nvidia.com/compute/cuda/11.0.3/local_installers/cuda_11.0.3_450.51.06_linux.run" "cuda_11.0.3_450.51.06_linux.run"
+if [ $? -ne 0 ]; then
+    echo "Download cuda toolkit failed"
+    exit -1
+fi
 chmod +x cuda_11.0.3_450.51.06_linux.run
 sudo sh cuda_11.0.3_450.51.06_linux.run --override --silent
+if [ $? -ne 0 ]; then
+    echo "Install cuda toolkit failed"
+    exit -1
+fi
+
 echo "export PATH=/usr/local/cuda/bin:/usr/local/cuda/NsightCompute-2019.1:\$PATH" >> ~/.bash_profile
 echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64:\$LD_LIBRARY_PATH" >> ~/.bash_profile
 echo "export PATH=/usr/local/cuda/bin:/usr/local/cuda/NsightCompute-2019.1:\$PATH" >> ~/.bashrc
