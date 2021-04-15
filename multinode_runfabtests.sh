@@ -1,31 +1,41 @@
 . ~/.bash_profile
 
-run_dgram_pingpong_with_b()
+run_test_with_expected_ret()
 {
     SERVER_IP=$1
     CLIENT_IP=$2
-    dgram_pingpong="${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong"
-    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no ${SERVER_IP} ${dgram_pingpong} -k -p efa -b >& server.out &
+    PROGRAM_TO_RUN=$3
+    EXPECT_RESULT=$4
+
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no ${SERVER_IP} ${PROGRAM_TO_RUN} >& server.out &
     server_pid=$!
     sleep 1
 
-    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no ${CLIENT_IP} ${dgram_pingpong} -k -p efa -b ${SERVER_IP} >& client.out &
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no ${CLIENT_IP} ${PROGRAM_TO_RUN} ${SERVER_IP} >& client.out &
     client_pid=$!
 
     wait $client_pid
     client_ret=$?
+
     if [ $client_ret -ne 0 ]; then
         kill -9 $server_pid
     fi
 
     wait $server_pid
     server_ret=$?
-    if [ $server_ret -eq 0 ] && [ $client_ret -eq 0 ]; then
-        echo "fi_dgram_pingpong test passed!"
-        ret=0
+
+    if [ ${EXPECT_RESULT} = "FAIL" ]; then
+        if [ $server_ret -ne 0 ] || [ $client_ret -ne 0 ]; then
+            echo "Test ${PROGRAM_TO_RUN} Passed!"
+        else
+            echo "Test ${PROGRAM_TO_RUN} Failed!"
+        fi
     else
-        echo "fi_dgram_pingpong test failed!"
-        ret=1
+        if [ $server_ret -eq 0 ] && [ $client_ret -eq 0 ]; then
+            echo "Test ${PROGRAM_TO_RUN} Passed!"
+        else
+            echo "Test ${PROGRAM_TO_RUN} Failed!"
+        fi
     fi
 
     echo "server output:"
@@ -69,12 +79,35 @@ if [ ${PROVIDER} == "efa" ]; then
         FABTESTS_OPTS+=" -C \"-P 0\" -s $gid_s -c $gid_c -t all"
     fi
 fi
+
 bash -c "$runfabtests_script ${FABTESTS_OPTS} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}"
 
 if [ ${PROVIDER} == "efa" ]; then
     # dgram_pingpong test has been excluded during installation
     # (in install-fabtests.sh), because it does not work with "-E" option.
     # So here we run it separately using "-b" option
+
+    bash_option=$-
+    restore_e=0
+    if [[ $bash_option =~ e ]]; then
+        restore_e=1
+        set +e
+    fi
+
     echo "Run fi_dgram_pingpong with out-of-band synchronization"
-    run_dgram_pingpong_with_b ${SERVER_IP} ${CLIENT_IP}
+    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong" "PASS"
+
+    # Run fi_rdm_tagged_bw with fork when different environment variables are set.
+    echo "Run fi_rdm_tagged_bw with fork"
+    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -p efa -K -E" "FAIL"
+
+    echo "Run fi_rdm_tagged_bw with fork and RDMAV_FORK_SAFE set"
+    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "RDMAV_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E" "PASS"
+
+    echo "Run fi_rdm_tagged_bw with fork and FI_EFA_FORK_SAFE set"
+    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "FI_EFA_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E" "PASS"
+
+    if [ $restore_e -eq 1 ]; then
+        set -e
+    fi
 fi
