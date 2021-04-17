@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 os_name="$(. /etc/os-release; echo $NAME)"
 if [  "$os_name" == "Ubuntu" ]; then
