@@ -1,5 +1,19 @@
 #!/bin/bash
 
+os_name="$(. /etc/os-release; echo $NAME)"
+if [  "$os_name" == "Ubuntu" ]; then
+    sudo apt-get install -y libtool
+elif [ "$os_name" == "openSUSE Leap" ] || [ "$os_name" == "SLES" ]; then
+    sudo zypper install -y libtool
+else
+    sudo yum install -y libtool
+fi
+
+if [ $? -ne 0 ]; then
+    echo "Failed to install libtool, which is required to compile AWS OFI NCCL plugin"
+    exit -1
+fi
+
 AWS_OFI_NCCL_BRANCH="aws"
 cd $HOME
 git clone -b ${AWS_OFI_NCCL_BRANCH} https://github.com/aws/aws-ofi-nccl.git
