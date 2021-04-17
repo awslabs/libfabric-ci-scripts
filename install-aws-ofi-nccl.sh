@@ -2,11 +2,11 @@
 
 os_name="$(. /etc/os-release; echo $NAME)"
 if [  "$os_name" == "Ubuntu" ]; then
-    sudo apt-get install -y libtool
+    sudo apt-get install -y libtool autoconf automake
 elif [ "$os_name" == "openSUSE Leap" ] || [ "$os_name" == "SLES" ]; then
-    sudo zypper install -y libtool
+    sudo zypper install -y libtool autoconf automake
 else
-    sudo yum install -y libtool
+    sudo yum install -y libtool autoconf automake
 fi
 
 if [ $? -ne 0 ]; then
@@ -27,19 +27,19 @@ git log -1
             --with-nccl=$HOME/nccl/build \
             --with-mpi=/opt/amazon/openmpi
 if [ $? -ne 0 ]; then
-	echo "Configure failed!"
-	exit -1
+    echo "Configure failed!"
+    exit -1
 fi
 make
 if [ $? -ne 0 ]; then
-	echo "make failed!"
-	exit -1
+    echo "make failed!"
+    exit -1
 fi
 
 make install
 if [ $? -ne 0 ]; then
-	echo "make install failed!"
-	exit -1
+    echo "make install failed!"
+    exit -1
 fi
 popd
 
