@@ -19,8 +19,15 @@ function wget_check {
         restore_e=1
         set +e
     fi
+
     # bash -c is used to avoid issues due to quotation within quotation
-    bash -c "wget ${WGET_OPT} -O $file_name $url"
+    if [[ $url =~ ^s3:\/\/ ]]; then
+        export PATH=$HOME/.local/bin:$PATH
+        bash -c "aws s3 cp --only-show-errors $url $file_name"
+    else
+        bash -c "wget ${WGET_OPT} -O $file_name $url"
+    fi
+
     if [ $? -ne 0 ]; then
         if [ -f "$file_name" ]; then
             # Only if the file type has ASCII text output the file
