@@ -4,7 +4,6 @@ source ~/.bash_profile
 source ~/mpi_common.sh
 source /etc/profile.d/efa.sh
 
-set -x
 set -o pipefail
 
 hosts=$@
