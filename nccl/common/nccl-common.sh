@@ -20,10 +20,22 @@ declare -A PGS
 # List of aws regions where tests can be executed
 aws_regions=('us-east-1' 'us-west-2')
 
-# Latest CUDA available
-latest_cuda='$(find /usr/local -maxdepth 1 -type d -iname "cuda*" | sort -V -r | head -1)'
-
 nvidia_driver_path='http://us.download.nvidia.com/tesla/440.33.01/NVIDIA-Linux-x86_64-440.33.01.run'
+
+# Components installation prefixes
+LIBFABRIC_INSTALL_PREFIX='$HOME/libfabric/install'
+AWS_OFI_NCCL_INSTALL_PREFIX='$HOME/aws-ofi-nccl/install'
+NCCL_INSTALL_PREFIX='$HOME/nccl'
+
+# LD_LIBRARY_PATH for nccl tests
+# TODO: Find alternative way for LD_LIBRARY_PATH construction
+# custom_ld_library_path should be updated in case
+# of any changes in components installation prefixes
+custom_ld_library_path="$AWS_OFI_NCCL_INSTALL_PREFIX/lib/:`
+                        `$NCCL_INSTALL_PREFIX/build/lib:`
+                        `$LIBFABRIC_INSTALL_PREFIX/lib/:`
+                        `/opt/amazon/openmpi/lib64:`
+                        `/opt/amazon/openmpi/lib:\$LD_LIBRARY_PATH"
 
 set_jenkins_variables() {
 
@@ -276,7 +288,7 @@ ami_instance_preparation() {
     prepare_instance 'ami_instance' 1
     test_ssh ${INSTANCE_IDS}
     # Install software and prepare custom AMI
-    prepare_ami "${PULL_REQUEST_REF}" "${PULL_REQUEST_ID}" "${TARGET_BRANCH}" "${TARGET_REPO}" "${PROVIDER}"
+    prepare_ami "${PULL_REQUEST_REF}" "${PULL_REQUEST_ID}" "${TARGET_BRANCH}" "${TARGET_REPO}" "${PROVIDER}" "${LIBFABRIC_INSTALL_PREFIX}" "${AWS_OFI_NCCL_INSTALL_PREFIX}" "${NCCL_INSTALL_PREFIX}"
     # Upload AMI to marketplace
     create_ami ${INSTANCE_IDS}
     # Copy ami to different region, required for region switch
@@ -348,6 +360,9 @@ prepare_ami() {
     export TARGET_BRANCH="$3"
     export TARGET_REPO="$4"
     export PROVIDER="$5"
+    export LIBFABRIC_INSTALL_PREFIX="$6"
+    export AWS_OFI_NCCL_INSTALL_PREFIX="$7"
+    export NCCL_INSTALL_PREFIX="$8"
 EOF
 
     cat $WORKSPACE/libfabric-ci-scripts/nccl/common/prep_ami.sh >> ${tmp_script}
@@ -538,7 +553,7 @@ generate_unit_tests_script_single_node() {
     cat <<-EOF > ${tmp_script}
     #!/bin/bash
     PROVIDER="${PROVIDER}"
-    latest_cuda="${latest_cuda}"
+    custom_ld_library_path="${custom_ld_library_path}"
 EOF
 
     cat <<-"EOF" >> ${tmp_script}
@@ -549,6 +564,7 @@ EOF
         set -xe
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 2 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
+            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             -x RDMAV_FORK_SAFE=1 --mca pml ^cm \
             --mca btl tcp,self --mca btl_tcp_if_exclude  lo,docker0 \
             --bind-to none ~/aws-ofi-nccl/install/bin/nccl_connection
@@ -556,6 +572,7 @@ EOF
         echo "==> Running ring unit test"
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 3 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
+            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             -x RDMAV_FORK_SAFE=1 --mca pml ^cm \
             --mca btl tcp,self --mca btl_tcp_if_exclude  lo,docker0 \
             --bind-to none ~/aws-ofi-nccl/install/bin/ring
@@ -563,6 +580,7 @@ EOF
         echo "==> Running nccl_message_transfer unit test"
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 2 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
+            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             -x RDMAV_FORK_SAFE=1 --mca pml ^cm \
             --mca btl tcp,self --mca btl_tcp_if_exclude  lo,docker0 \
             --bind-to none ~/aws-ofi-nccl/install/bin/nccl_message_transfer
@@ -577,7 +595,7 @@ generate_unit_tests_script_multi_node() {
     cat <<-EOF > ${tmp_script}
     #!/bin/bash
     PROVIDER="${PROVIDER}"
-    latest_cuda="${latest_cuda}"
+    custom_ld_library_path="${custom_ld_library_path}"
 EOF
 
     cat <<-"EOF" >> ${tmp_script}
@@ -588,6 +606,7 @@ EOF
         set -xe
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 2 -N 1 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
+            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             -x RDMAV_FORK_SAFE=1 --mca pml ^cm \
             --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
             --bind-to none --tag-output --hostfile hosts ~/aws-ofi-nccl/install/bin/nccl_connection
@@ -595,6 +614,7 @@ EOF
         echo "==> Running ring unit test"
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 3 -N 1 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
+            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             -x RDMAV_FORK_SAFE=1 --mca pml ^cm \
             --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
             --bind-to none --tag-output --hostfile hosts ~/aws-ofi-nccl/install/bin/ring
@@ -602,6 +622,7 @@ EOF
         echo "==> Running nccl_message_transfer unit test"
         timeout 5m /opt/amazon/openmpi/bin/mpirun -n 2 -N 1 \
             -x FI_PROVIDER="$PROVIDER" -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
+            -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
             -x RDMAV_FORK_SAFE=1 --mca pml ^cm \
             --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 \
             --bind-to none --tag-output --hostfile hosts ~/aws-ofi-nccl/install/bin/nccl_message_transfer
@@ -617,7 +638,7 @@ generate_nccl_test_script() {
     #!/bin/bash
     PROVIDER="${PROVIDER}"
     NUM_GPUS=$1
-    latest_cuda="${latest_cuda}"
+    custom_ld_library_path="${custom_ld_library_path}"
 EOF
     cat <<-"EOF" >> ${tmp_script}
     echo "Executing NCCL test.."
@@ -629,6 +650,7 @@ EOF
         -x FI_PROVIDER="$PROVIDER" \
         -x NCCL_ALGO=ring --hostfile $HOME/hosts \
         -x FI_EFA_ENABLE_SHM_TRANSFER=0 \
+        -x LD_LIBRARY_PATH="${custom_ld_library_path}" \
         -x FI_EFA_TX_MIN_CREDITS=64 \
         -x RDMAV_FORK_SAFE=1 \
         -x NCCL_DEBUG=INFO \
@@ -637,6 +659,16 @@ EOF
         --bind-to none $HOME/nccl-tests/build/all_reduce_perf -b 8 -e 1G -f 2 -g 1 -c 1 -n 100
     set +x
 EOF
+}
+
+# Check if EFA provider has been used during test execution
+check_allperf_efa_usage() {
+
+    grep "Selected Provider is efa" $1 > /dev/null
+    if [ $? -ne 0 ];then
+        echo "EFA PROVIDER has not been used during the test"
+        exit 1
+    fi
 }
 
 on_exit() {
