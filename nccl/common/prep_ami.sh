@@ -29,8 +29,8 @@ if [[ ${TARGET_REPO} == 'ofiwg/libfabric' ]];then
     fi
 fi
 
-# Locking NCCL version to 2.7.8-1
-NCCL_2_7_8='033d799524fb97629af5ac2f609de367472b2696'
+# Locking NCCL version to 2.8.4-1
+NCCL_VERSION='v2.8.4-1'
 
 # Latest efa installaer location
 EFA_INSTALLER_LOCATION='https://efa-installer.amazonaws.com/aws-efa-installer-latest.tar.gz'
@@ -153,7 +153,7 @@ install_nccl() {
     sudo rm -rf nccl
     git clone https://github.com/NVIDIA/nccl.git
     cd nccl
-    git checkout ${NCCL_2_7_8}
+    git checkout ${NCCL_VERSION}
     make -j src.build CUDA_HOME=${latest_cuda}
 }
 
