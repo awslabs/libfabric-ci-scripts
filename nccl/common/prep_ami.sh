@@ -13,6 +13,10 @@ echo "==> PULL_REQUEST_ID: ${PULL_REQUEST_ID}"
 echo "==> TARGET_BRANCH: ${TARGET_BRANCH}"
 echo "==> TARGET_REPO: "${TARGET_REPO}""
 echo "==> PROVIDER: "${PROVIDER}""
+echo "==> LIBFABRIC_INSTALL_PREFIX: "${LIBFABRIC_INSTALL_PREFIX}""
+echo "==> AWS_OFI_NCCL_INSTALL_PREFIX: "${AWS_OFI_NCCL_INSTALL_PREFIX}""
+echo "==> NCCL_INSTALL_PREFIX: "${NCCL_INSTALL_PREFIX}""
+
 
 eval "PLATFORM_ID=`sed -n 's/^ID=//p' /etc/os-release`"
 eval "VERSION_ID=`sed -n 's/^VERSION_ID=//p' /etc/os-release`"
@@ -103,7 +107,7 @@ install_libfabric() {
 
     cd ${HOME}/libfabric
     ./autogen.sh
-    ./configure --prefix=${HOME}/libfabric/install/ \
+    ./configure --prefix=${LIBFABRIC_INSTALL_PREFIX} \
         --enable-debug  \
         --enable-mrail  \
         --enable-tcp    \
@@ -114,9 +118,7 @@ install_libfabric() {
     make -j 4
     make install
 
-    # Prepend LD_LIBRARY_PATH for non-interactive shell
-    sed -i "1s;^;export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:\$LD_LIBRARY_PATH\n;" ~/.bashrc
-    source ~/.bashrc
+    export LD_LIBRARY_PATH=${LIBFABRIC_INSTALL_PREFIX}/lib/:\$LD_LIBRARY_PATH
 }
 
 prepare_libfabric_without_pr() {
@@ -149,10 +151,9 @@ check_efa_installation_libfabric(){
 install_nccl() {
 
     echo "==> Install NCCL"
-    cd $HOME
-    sudo rm -rf nccl
-    git clone https://github.com/NVIDIA/nccl.git
-    cd nccl
+    sudo rm -rf ${NCCL_INSTALL_PREFIX}
+    git clone https://github.com/NVIDIA/nccl.git ${NCCL_INSTALL_PREFIX}
+    cd ${NCCL_INSTALL_PREFIX}
     git checkout ${NCCL_VERSION}
     make -j src.build CUDA_HOME=${latest_cuda}
 }
@@ -169,26 +170,15 @@ install_nccl_tests() {
 
 install_aws_ofi_nccl_plugin() {
 
-    # Prepend LD_LIBRARY_PATH for non-interactive shell
-    sed -i "1s;^;export LD_LIBRARY_PATH=$HOME/nccl/build/lib:\$LD_LIBRARY_PATH\n;" ~/.bashrc
-    sed -i "1s;^;export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib64:\$LD_LIBRARY_PATH\n;" ~/.bashrc
-    sed -i "1s;^;export LD_LIBRARY_PATH=/opt/amazon/openmpi/lib:\$LD_LIBRARY_PATH\n;" ~/.bashrc
-    sed -i "1s;^;export PATH=/opt/amazon/openmpi/bin:\$PATH\n;" ~/.bashrc
-
-    source ~/.bashrc
-
     cd $HOME/aws-ofi-nccl
     ./autogen.sh
-    ./configure --prefix=$HOME/aws-ofi-nccl/install \
+    ./configure --prefix=${AWS_OFI_NCCL_INSTALL_PREFIX} \
                 --with-mpi=/opt/amazon/openmpi \
-                --with-libfabric=$HOME/libfabric/install \
-                --with-nccl=$HOME/nccl/build \
+                --with-libfabric=${LIBFABRIC_INSTALL_PREFIX} \
+                --with-nccl="${NCCL_INSTALL_PREFIX}/build" \
                 --with-cuda=${latest_cuda}
     make
     make install
-
-    # Prepend LD_LIBRARY_PATH for non-interactive shell
-    sed -i "1s;^;export LD_LIBRARY_PATH=$HOME/aws-ofi-nccl/install/lib/:\$LD_LIBRARY_PATH\n;" ~/.bashrc
 }
 
 prepare_aws_ofi_nccl_plugin_without_pr() {

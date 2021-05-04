@@ -59,6 +59,11 @@ ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/d
 # Show full test results
 cat ${tmp_out}
 
+if [[ "${PROVIDER}" == 'efa' ]]; then
+    # check if EFA was used during all_perf_reduce test
+    check_allperf_efa_usage ${tmp_out}
+fi
+
 # Show only busbw
 echo "==> The test result busbw (GB/s): " `cat ${tmp_out} | grep ${test_b_size} | tail -n1 | awk -F " " '{print $11}' | sed 's/ //' | sed 's/  5e-07//' `
 
