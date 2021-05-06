@@ -272,6 +272,7 @@ create_instance()
                 fi
                 ;;
             tcp|udp|shm)
+                instance_type=c5.18xlarge
                 network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
                 ;;
             *)
