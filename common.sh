@@ -199,7 +199,9 @@ create_pg()
     if [ ${ENABLE_PLACEMENT_GROUP} -eq 0 ]; then
         return 0
     fi
-    PLACEMENT_GROUP="slave-pg-$RANDOM"
+    #Month - Day - Year - Hour - Minute - Second
+    date_time=$(date +'%m-%d-%Y-%H-%M-%S')
+    PLACEMENT_GROUP="slave-pg-${date_time}-${BUILD_NUMBER}-${RANDOM}"
     AWS_DEFAULT_REGION=us-west-2 aws ec2 create-placement-group \
         --group-name ${PLACEMENT_GROUP} \
         --strategy cluster
