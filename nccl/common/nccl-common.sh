@@ -20,7 +20,9 @@ declare -A PGS
 # List of aws regions where tests can be executed
 aws_regions=('us-east-1' 'us-west-2')
 
-nvidia_driver_path='http://us.download.nvidia.com/tesla/440.33.01/NVIDIA-Linux-x86_64-440.33.01.run'
+NVIDIA_DRIVER_VERSION=450.80.02
+NVIDIA_BASE_URL='https://us.download.nvidia.com/tesla'
+NVIDIA_DRIVER_PATH="$NVIDIA_BASE_URL/$NVIDIA_DRIVER_VERSION/NVIDIA-Linux-x86_64-$NVIDIA_DRIVER_VERSION.run"
 
 # Components installation prefixes
 LIBFABRIC_INSTALL_PREFIX='$HOME/libfabric/install'
@@ -508,7 +510,7 @@ install_nvidia_driver() {
     # Install nvidia driver if it is missing
     cat <<-EOF > ${tmp_script}
     #!/bin/bash
-    nvidia_driver_path="${nvidia_driver_path}"
+    NVIDIA_DRIVER_PATH="${NVIDIA_DRIVER_PATH}"
 EOF
     cat <<-"EOF" >> ${tmp_script}
     echo "==> Checking if nvidia module is loaded"
@@ -519,11 +521,13 @@ EOF
     fi
     echo "==> nvidia module is missing, installing..."
     cd $HOME
-    curl -L -o ./nvidia_driver.run "${nvidia_driver_path}"
+    curl -L -o ./nvidia_driver.run "${NVIDIA_DRIVER_PATH}"
     sudo sh ./nvidia_driver.run --no-drm --disable-nouveau --dkms --silent --no-cc-version-check --install-libglvnd
     echo "==> Verify that nvidia driver is functional after installation"
     set -e
     nvidia-smi -q | head
+    echo "==> Check nvidia driver version after installation"
+    cat /proc/driver/nvidia/version
 EOF
     ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes \
         -i "~/${slave_keypair}" ${ssh_user}@$1 "bash -s" < ${tmp_script}
