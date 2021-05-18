@@ -24,17 +24,20 @@ run_test_with_expected_ret()
     wait $server_pid
     server_ret=$?
 
+    ret=0
     if [ ${EXPECT_RESULT} = "FAIL" ]; then
         if [ $server_ret -ne 0 ] || [ $client_ret -ne 0 ]; then
             echo "Test ${PROGRAM_TO_RUN} Passed!"
         else
             echo "Test ${PROGRAM_TO_RUN} Failed!"
+            ret=1
         fi
     else
         if [ $server_ret -eq 0 ] && [ $client_ret -eq 0 ]; then
             echo "Test ${PROGRAM_TO_RUN} Passed!"
         else
             echo "Test ${PROGRAM_TO_RUN} Failed!"
+            ret=1
         fi
     fi
 
@@ -94,20 +97,34 @@ if [ ${PROVIDER} == "efa" ]; then
         set +e
     fi
 
+    exit_code=0
     echo "Run fi_dgram_pingpong with out-of-band synchronization"
     run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong" "PASS"
+    if [ "$?" -ne 0 ]; then
+        exit_code=1
+    fi
 
     # Run fi_rdm_tagged_bw with fork when different environment variables are set.
     echo "Run fi_rdm_tagged_bw with fork"
     run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -p efa -K -E" "FAIL"
+    if [ "$?" -ne 0 ]; then
+        exit_code=1
+    fi
 
     echo "Run fi_rdm_tagged_bw with fork and RDMAV_FORK_SAFE set"
     run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "RDMAV_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E" "PASS"
+    if [ "$?" -ne 0 ]; then
+        exit_code=1
+    fi
 
     echo "Run fi_rdm_tagged_bw with fork and FI_EFA_FORK_SAFE set"
     run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "FI_EFA_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E" "PASS"
+    if [ "$?" -ne 0 ]; then
+        exit_code=1
+    fi
 
     if [ $restore_e -eq 1 ]; then
         set -e
     fi
+    exit $exit_code
 fi
