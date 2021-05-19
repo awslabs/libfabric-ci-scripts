@@ -349,10 +349,38 @@ create_instance()
     done
 }
 
-# Holds testing every 15 seconds for 40 attempts until the instance status check is ok
+test_instance_status_once()
+{
+    status=$(aws ec2 describe-instance-status  --instance-ids $1 --query InstanceStatuses[*].InstanceStatus.Status --output text)
+    if [ -z "$status" ]; then
+        echo "not_ok"
+        return 0
+    fi
+
+    for s in $status; do
+        if [ $s != "ok" ]; then
+            echo "not_ok"
+            return 0
+        fi
+    done
+
+    echo "ok"
+    return 0
+}
+
+# Holds testing every 15 seconds for 100 attempts until the instance status check is ok
 test_instance_status()
 {
-    aws ec2 wait instance-status-ok --instance-ids $1 || exit 65
+    for i in `seq 1 100`; do
+        status=$(test_instance_status_once $1)
+        echo "Test $i status: $status"
+        if [ "$status" == "ok" ]; then
+            return 0
+        fi
+        sleep 15
+    done
+
+    exit 65
 }
 
 # Get IP address for instances
