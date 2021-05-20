@@ -22,9 +22,16 @@ if [ ! -z "${target_fabtest_tag}" ]; then
 fi
 cd ${HOME}/libfabric/fabtests
 ./autogen.sh
-./configure --with-libfabric=${LIBFABRIC_INSTALL_PATH} \
-    --prefix=${HOME}/libfabric/fabtests/install/ \
-    --enable-debug
+if [ $BUILD_GDR -eq 1 ]; then
+    ./configure --with-libfabric=${LIBFABRIC_INSTALL_PATH} \
+        --prefix=${HOME}/libfabric/fabtests/install/ \
+        --with-cuda=/usr/local/cuda \
+        --enable-debug
+else
+    ./configure --with-libfabric=${LIBFABRIC_INSTALL_PATH} \
+        --prefix=${HOME}/libfabric/fabtests/install/ \
+        --enable-debug
+fi
 make -j 4
 make install
 
