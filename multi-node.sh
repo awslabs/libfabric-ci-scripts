@@ -58,19 +58,20 @@ create_instance || { echo "==>Unable to create instance"; exit 65; }
 set -x
 INSTANCE_IDS=($INSTANCE_IDS)
 
+get_instance_ip
+INSTANCE_IPS=($INSTANCE_IPS)
+
 execution_seq=$((${execution_seq}+1))
 pids=""
-# Wait until all instances have passed status check
-for ID in ${INSTANCE_IDS[@]}; do
-    test_instance_status "$ID" &
+# Wait until all instances have passed SSH connection check
+for IP in ${INSTANCE_IPS[@]}; do
+    test_ssh "$IP" &
     pids="$pids $!"
 done
 for pid in $pids; do
-    wait $pid || { echo "==>Instance status check failed"; exit 65; }
+    wait $pid || { echo "==>Instance ssh check failed"; exit 65; }
 done
 
-get_instance_ip
-INSTANCE_IPS=($INSTANCE_IPS)
 
 # Prepare AMI specific libfabric installation script
 script_builder multi-node

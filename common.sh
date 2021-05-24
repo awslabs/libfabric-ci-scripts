@@ -349,40 +349,6 @@ create_instance()
     done
 }
 
-test_instance_status_once()
-{
-    status=$(aws ec2 describe-instance-status  --instance-ids $1 --query InstanceStatuses[*].InstanceStatus.Status --output text)
-    if [ -z "$status" ]; then
-        echo "not_ok"
-        return 0
-    fi
-
-    for s in $status; do
-        if [ $s != "ok" ]; then
-            echo "not_ok"
-            return 0
-        fi
-    done
-
-    echo "ok"
-    return 0
-}
-
-# Holds testing every 15 seconds for 100 attempts until the instance status check is ok
-test_instance_status()
-{
-    for i in `seq 1 100`; do
-        status=$(test_instance_status_once $1)
-        echo "Test $i status: $status"
-        if [ "$status" == "ok" ]; then
-            return 0
-        fi
-        sleep 15
-    done
-
-    exit 65
-}
-
 # Get IP address for instances
 get_instance_ip()
 {
@@ -600,24 +566,30 @@ set_var()
 EOF
 }
 
-# Poll for the SSH daemon to come up before proceeding. The SSH poll retries 40 times with a 5-second timeout each time,
-# which should be plenty after `instance-status-ok`. SSH into nodes and install libfabric
+# Poll for the SSH daemon to come up before proceeding.
+# The SSH poll retries with exponential backoff.
+# The initial backoff is 30s, and doubles for each retry, until 16 minutes.
 test_ssh()
 {
     slave_ready=1
-    slave_poll_count=0
+    ssh_backoff=30
     set +xe
-    while [ $slave_ready -ne 0 ] && [ $slave_poll_count -lt 40 ] ; do
-        echo "Waiting for slave instance to become ready"
-        sleep 5
+    echo "Testing SSH connection of instance $1"
+    while [ $ssh_backoff -le 960 ]; do
+        sleep ${ssh_backoff}s
         ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes -i ~/${slave_keypair} ${ami[1]}@$1  hostname
         if [ $? -eq 0 ]; then
             slave_ready=0
+            echo "SSH connection of instance $1 is ready"
+            set -xe
+            return 0
         fi
-        slave_poll_count=$((slave_poll_count+1))
+        ssh_backoff=$((ssh_backoff * 2))
+        echo "SSH connection of instance $1 NOT ready, sleeping ${ssh_backoff} seconds and retry"
     done
-    echo "Slave instance ssh exited with status ${slave_ready}"
+    echo "The instance $1 failed SSH connection test"
     set -xe
+    return 65
 }
 
 efa_software_components()
