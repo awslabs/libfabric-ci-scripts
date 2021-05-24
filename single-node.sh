@@ -15,10 +15,11 @@ set +x
 create_instance || { echo "==>Unable to create instance"; exit 65; }
 set -x
 
-execution_seq=$((${execution_seq}+1))
-test_instance_status ${INSTANCE_IDS}
-
 get_instance_ip
+
+execution_seq=$((${execution_seq}+1))
+test_ssh ${INSTANCE_IPS}
+
 
 scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
             $WORKSPACE/libfabric-ci-scripts/wget_check.sh \
