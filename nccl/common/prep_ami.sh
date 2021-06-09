@@ -126,7 +126,7 @@ prepare_libfabric_without_pr() {
     echo "==> Building libfabric"
     cd ${HOME}
     sudo rm -rf libfabric
-    git clone https://github.com/ofiwg/libfabric -b 'master'
+    git clone https://github.com/ofiwg/libfabric -b 'main'
 }
 
 prepare_libfabric_with_pr() {
