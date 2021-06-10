@@ -26,8 +26,6 @@ scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
             ${ami[1]}@${INSTANCE_IPS}:~/
 
 execution_seq=$((${execution_seq}+1))
-# Kernel upgrade only for Ubuntu and provider EFA
-check_provider_os ${INSTANCE_IPS}
 
 # Add AMI specific installation commands
 script_builder single-node
