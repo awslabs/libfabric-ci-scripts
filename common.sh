@@ -16,184 +16,6 @@ ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
 TEST_SKIP_KMOD=${TEST_SKIP_KMOD:-0}
 BUILD_GDR=${BUILD_GDR:-0}
 
-get_opensuse1502_ami_id() {
-    region=$1
-    # OpenSUSE does not suppport ARM AMI's
-    # openSUSE-Leap-15.2 Build7.1 cabelo@opensuse.org
-    aws ec2 describe-images --owners aws-marketplace \
-        --filters 'Name=product-code,Values=5080kaujzrzibjdwrkruspbj7' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_sles15sp2_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="x86_64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="arm64"
-    fi
-    aws ec2 describe-images --owners amazon \
-        --filters "Name=name,Values=suse-sles-15-sp2-?????????-hvm-ssd-${ami_arch_label}" 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_alinux_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn-ami-hvm-x86_64-gp2 \
-            --region $region | jq -r ".Parameters[0].Value"
-    fi
-    return $?
-}
-
-get_alinux2_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="x86_64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="arm64"
-    fi
-    aws ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-${ami_arch_label}-gp2 \
-        --region $region | jq -r ".Parameters[0].Value"
-    return $?
-}
-
-get_ubuntu1604_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="amd64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="arm64"
-    fi
-    aws ec2 describe-images --owners 099720109477 \
-        --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-${ami_arch_label}-server-????????" \
-        'Name=state,Values=available' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_ubuntu1804_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="amd64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="arm64"
-    fi
-    aws ec2 describe-images --owners 099720109477 \
-        --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-${ami_arch_label}-server-????????" \
-        'Name=state,Values=available' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_ubuntu2004_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="amd64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="arm64"
-    fi
-    aws ec2 describe-images --owners 099720109477 \
-        --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-focal-20.04-${ami_arch_label}-server-????????" \
-        'Name=state,Values=available' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_centos7_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="x86_64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="aarch64"
-    fi
-    aws ec2 describe-images --owners 125523088429 \
-        --filters "Name=name,Values=CentOS 7*${ami_arch_label}*" 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_centos8_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="x86_64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="aarch64"
-    fi
-    aws ec2 describe-images --owners 125523088429 \
-        --filters "Name=name,Values=CentOS 8*${ami_arch_label}*" 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_rhel76_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="x86_64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="arm64"
-    fi
-    aws ec2 describe-images --owners 309956199498 \
-        --filters "Name=name,Values=RHEL-7.6_HVM_GA*${ami_arch_label}*" \
-        'Name=state,Values=available' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_rhel77_ami_id() {
-    region=$1
-    # Currently rhel77 does not have arm version.
-    if [ "$ami_arch" = "x86_64" ]; then
-        aws ec2 describe-images --owners 309956199498 \
-            --filters 'Name=name,Values=RHEL-7.7_HVM_GA*x86_64*' \
-            'Name=state,Values=available' 'Name=ena-support,Values=true' \
-            --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    fi
-    return $?
-}
-
-get_rhel78_ami_id() {
-    region=$1
-    # Currently rhel78 does not have arm version.
-    if [ "$ami_arch" = "x86_64" ]; then
-        aws ec2 describe-images --owners 309956199498 \
-            --filters 'Name=name,Values=RHEL-7.8_HVM_GA*x86_64*' \
-            'Name=state,Values=available' 'Name=ena-support,Values=true' \
-            --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    fi
-    return $?
-}
-
-get_rhel82_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="x86_64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="arm64"
-    fi
-    aws ec2 describe-images --owners 309956199498 \
-        --filters "Name=name,Values=RHEL-8.2*${ami_arch_label}*" \
-        'Name=state,Values=available' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
-get_rhel83_ami_id() {
-    region=$1
-    if [ "$ami_arch" = "x86_64" ]; then
-        ami_arch_label="x86_64"
-    elif [ "$ami_arch" = "aarch64" ]; then
-        ami_arch_label="arm64"
-    fi
-    aws ec2 describe-images --owners 309956199498 \
-        --filters "Name=name,Values=RHEL-8.3*${ami_arch_label}*" \
-        'Name=state,Values=available' 'Name=ena-support,Values=true' \
-        --output json --region $region | jq -r '.Images | sort_by(.CreationDate) | last(.[]).ImageId'
-    return $?
-}
-
 create_pg()
 {
     if [ ${ENABLE_PLACEMENT_GROUP} -eq 0 ]; then
@@ -223,16 +45,18 @@ create_instance()
 {
     # TODO: the labels need to be fixed in LibfabricCI and the stack
     # redeployed for PR testing
+    # The ami-ids are stored in ssm paramater-store with names
+    # "/ec2-imagebuilder/${os}-${arch}/latest".
     if [[ $PULL_REQUEST_REF == *pr* ]]; then
         case "${label}" in
             rhel)
-                ami[0]=$(get_rhel76_ami_id $AWS_DEFAULT_REGION)
+                ami[0]=$(aws --region $AWS_DEFAULT_REGION ssm get-parameters --names "/ec2-imagebuilder/rhel7-x86_64/latest" | jq -r ".Parameters[0].Value")
                 ;;
             ubuntu)
-                ami[0]=$(get_ubuntu1804_ami_id $AWS_DEFAULT_REGION)
+                ami[0]=$(aws --region $AWS_DEFAULT_REGION ssm get-parameters --names "/ec2-imagebuilder/ubuntu1804-x86_64/latest" | jq -r ".Parameters[0].Value")
                 ;;
             alinux)
-                ami[0]=$(get_alinux2_ami_id $AWS_DEFAULT_REGION)
+                ami[0]=$(aws --region $AWS_DEFAULT_REGION ssm get-parameters --names "/ec2-imagebuilder/alinux2-x86_64/latest" | jq -r ".Parameters[0].Value")
                 ;;
             *)
                 exit 1
