@@ -358,40 +358,6 @@ get_instance_ip()
                         --output=text)
 }
 
-# disable nouveau open source driver on instances.
-disable_nouveau()
-{
-    test_ssh $1
-    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
-        "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/disable-nouveau.sh 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
-    if [ ${PIPESTATUS[0]} -ne 0 ]; then
-        echo "Disabling nouveau failed on $1"
-        exit 1
-    fi
-    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
-        "sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
-}
-
-# Check provider and OS type, If EFA and Ubuntu then call ubuntu_kernel_upgrade
-check_provider_os()
-{
-    if [ ${PROVIDER} == "efa" ] && [ ${label} == "ubuntu" ];then
-        ubuntu_kernel_upgrade "$1"
-    fi
-
-    # Ensure we are on the latest CentOS version.
-    if [ ${label} == "centos" ]; then
-        test_ssh $1
-        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
-            "sudo yum -y upgrade && sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
-        execution_seq=$((${execution_seq}+1))
-    fi
-    if [ ${label} == "suse" ]; then
-        test_ssh $1
-        ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
-            "sudo zypper --gpg-auto-import-keys refresh -f && sudo zypper update -y && sudo pip install lxml --upgrade && sudo reboot" 2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
-    fi
-}
 #Test SLES15SP2 with allow unsupported modules
 sles_allow_module()
 {
@@ -409,16 +375,6 @@ script_builder()
 {
     type=$1
     set_var
-    ${label}_update
-    # For rhel and centos we need to install wget, so we can download
-    # EFA Installer
-    if [ ${label} == "rhel" ] || [ ${label} == "centos" ]; then
-        echo "sudo yum -y install wget" >> ${tmp_script}
-    fi
-    if [ $BUILD_GDR -eq 1 ]; then
-        cat install-nvidia-driver.sh >> ${tmp_script}
-        cat install-nvidia-fabric-manager.sh >> ${tmp_script}
-    fi
     efa_software_components
 
     # The libfabric shm provider use CMA for communication. By default ubuntu
@@ -432,16 +388,6 @@ script_builder()
         fi
     fi
 
-    ${label}_install_deps
-    # install CUDA toolkit only for non-gdr test on x86_64 platform.
-    if [ "$ami_arch" = "x86_64" ] && [ "$BUILD_GDR" -eq 0 ]; then
-        cat <<-"EOF" >> ${tmp_script}
-        wget_check "https://developer.download.nvidia.com/compute/cuda/11.0.3/local_installers/cuda_11.0.3_450.51.06_linux.run" "cuda_11.0.3_450.51.06_linux.run"
-        chmod +x cuda_11.0.3_450.51.06_linux.run
-        sudo ./cuda_11.0.3_450.51.06_linux.run --silent --toolkit
-        sudo ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/libcuda.so
-EOF
-    fi
     if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
         echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${tmp_script}
     elif [ ${TARGET_BRANCH} == "v1.8.x" ]; then
@@ -450,106 +396,12 @@ EOF
         cat install-libfabric.sh >> ${tmp_script}
     fi
 
-    # Run the MPI test for EFA and multi-node tests.
-    # Open MPI will be installed by the EFA installer so use that, install
-    # Intel MPI using the AWS script for now.
-    if [ ${PROVIDER} == "efa" ] && [ ${type} == "multi-node" ] && [ ${RUN_IMPI_TESTS} -eq 1 ]; then
-            cat install-impi.sh >> ${tmp_script}
-    fi
-
     cat install-fabtests.sh >> ${tmp_script}
     if [ $BUILD_GDR -eq 1 ]; then
         cat install-nccl.sh >> ${tmp_script}
         cat install-aws-ofi-nccl.sh >> ${tmp_script}
         cat install-nccl-tests.sh >> ${tmp_script}
     fi
-}
-
-alinux_update()
-{
-    cat <<-"EOF" >> ${tmp_script}
-    sudo yum -y update
-EOF
-}
-
-alinux_install_deps() {
-    cat <<-"EOF" >> ${tmp_script}
-    sudo yum -y groupinstall 'Development Tools'
-EOF
-}
-
-rhel_update()
-{
-    cat <<-"EOF" >> ${tmp_script}
-    sudo yum -y update
-EOF
-}
-
-rhel_install_deps() {
-    cat <<-"EOF" >> ${tmp_script}
-    sudo yum -y groupinstall 'Development Tools'
-    sudo yum -y install gcc-gfortran
-    # python is needed for running fabtests,
-    # which is not available on base rhel8 ami.
-    if [ ! $(which python) ] && [ ! $(which python2) ] && [ ! $(which python3) ]; then
-        sudo yum install -y python3
-    fi
-EOF
-}
-
-centos_update()
-{
-    # Update and reboot already handled in check_provider_os()
-    return 0
-}
-
-centos_install_deps() {
-    cat <<-"EOF" >> ${tmp_script}
-    sudo yum -y groupinstall 'Development Tools'
-    sudo yum -y install gcc-gfortran
-    # python is needed for running fabtests,
-    # which is not available on base centos8 ami.
-    if [ ! $(which python) ] && [ ! $(which python2) ] && [ ! $(which python3) ]; then
-        sudo yum install -y python3
-    fi
-EOF
-}
-
-ubuntu_update()
-{
-    cat <<-"EOF" >> ${tmp_script}
-    sudo DEBIAN_FRONTEND=noninteractive apt-get update
-EOF
-}
-
-ubuntu_install_deps()
-{
-    cat <<-"EOF" >> ${tmp_script}
-    sudo DEBIAN_FRONTEND=noninteractive apt -y install python
-    sudo DEBIAN_FRONTEND=noninteractive apt -y install autoconf
-    sudo DEBIAN_FRONTEND=noninteractive apt -y install libltdl-dev
-    sudo DEBIAN_FRONTEND=noninteractive apt -y install make
-    sudo DEBIAN_FRONTEND=noninteractive apt -y install gcc
-    sudo DEBIAN_FRONTEND=noninteractive apt -y install g++
-    sudo DEBIAN_FRONTEND=noninteractive apt -y install gfortran
-EOF
-}
-suse_update()
-{
-    # Update and reboot already handled in check_provider_os()
-    return 0
-}
-
-suse_install_deps() {
-    cat <<-"EOF" >> ${tmp_script}
-    sudo zypper install -y autoconf
-    sudo zypper install -y libtool
-    sudo zypper install -y automake
-    sudo zypper install -y git-core
-    sudo zypper install -y wget
-    sudo zypper install -y gcc-c++
-    sudo zypper install -y gcc-fortran
-EOF
 }
 
 #Initialize variables
@@ -619,22 +471,6 @@ EOF
         echo "sudo ./efa_installer.sh -y" >> ${tmp_script}
     fi
     echo ". /etc/profile.d/efa.sh" >> ${tmp_script}
-}
-
-ubuntu_kernel_upgrade()
-{
-    test_ssh $1
-    cat <<-"EOF" > ubuntu_kernel_upgrade.sh
-    set -xe
-    echo "==>System will reboot after kernel upgrade"
-    sudo apt-get update
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
-    sudo reboot
-EOF
-    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@"$1" \
-        "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/ubuntu_kernel_upgrade.sh \
-        2>&1 | tr \\r \\n | sed 's/\(.*\)/'$1' \1/'
-    execution_seq=$((${execution_seq}+1))
 }
 
 # Download the fabtest parser file and modify it locally to show results for
