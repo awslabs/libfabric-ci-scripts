@@ -9,6 +9,8 @@ mpi=$1
 shift
 libfabric_job_type=$1
 shift
+provider=$1
+shift
 hosts=$@
 hostfile=$(mktemp)
 out=$(mktemp)
@@ -17,7 +19,7 @@ wget_check "http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchma
 osu_dir="osu-micro-benchmarks-5.6.2"
 one_rank_per_node=""
 if [ "${mpi}" == "ompi" ]; then
-    ompi_setup
+    ompi_setup "${provider}"
     one_rank_per_node="-N 1"
 elif [ "${mpi}" == "impi" ]; then
     impi_setup "${libfabric_job_type}"
@@ -49,9 +51,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ "${mpi}" == "ompi" ]; then
+if [ "${mpi}" == "ompi" ] && [ "$provider" == "efa" ]; then
     check_efa_ompi $out
-elif [ "${mpi}" == "impi" ]; then
+elif [ "${mpi}" == "impi" ] && [ "$provider" == "efa" ]; then
     check_efa_impi $out
 fi
 
@@ -61,9 +63,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ "${mpi}" == "ompi" ]; then
+if [ "${mpi}" == "ompi" ] && [ "$provider" == "efa" ]; then
     check_efa_ompi $out
-elif [ "${mpi}" == "impi" ]; then
+elif [ "${mpi}" == "impi" ] && [ "$provider" == "efa" ]; then
     check_efa_impi $out
 fi
 
@@ -73,9 +75,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ "${mpi}" == "ompi" ]; then
+if [ "${mpi}" == "ompi" ] && [ "$provider" == "efa" ]; then
     check_efa_ompi $out
-elif [ "${mpi}" == "impi" ]; then
+elif [ "${mpi}" == "impi" ] && [ "$provider" == "efa" ]; then
     check_efa_impi $out
 fi
 

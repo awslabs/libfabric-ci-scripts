@@ -10,6 +10,8 @@ mpi=$1
 shift
 libfabric_job_type=$1
 shift
+provider=$1
+shift
 hosts=$@
 hostfile=$(mktemp)
 out1=$(mktemp)
@@ -19,7 +21,7 @@ wget_check "https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring
 wget_check "https://raw.githubusercontent.com/open-mpi/ompi/master/examples/ring_usempi.f90" "ring_usempi.f90"
 
 if [ "${mpi}" == "ompi" ]; then
-    ompi_setup
+    ompi_setup "${provider}"
 elif [ "${mpi}" == "impi" ]; then
     impi_setup "${libfabric_job_type}"
 else
@@ -49,10 +51,10 @@ if [ $? -ne 0 ] || ! grep -q "Process  0 exiting" $out2; then
     exit 1
 fi
 
-if [ "${mpi}" == "ompi" ]; then
+if [ "${mpi}" == "ompi" ] && [ "$provider" == "efa" ]; then
     check_efa_ompi $out1
     check_efa_ompi $out2
-elif [ "${mpi}" == "impi" ]; then
+elif [ "${mpi}" == "impi" ] && [ "$provider" == "efa" ]; then
     check_efa_impi $out1
     check_efa_impi $out2
 fi

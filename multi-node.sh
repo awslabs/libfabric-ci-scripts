@@ -98,8 +98,7 @@ wait
 
 # Run the efa-check.sh script now that the installer has completed. We need to
 # use a login shell so that $PATH is setup correctly for Debian variants.
-# TODO: Remove the conditional of [ "$ami_arch" = "x86_64" ] when we start testing EFA in ARM AMIs
-if [ "${PROVIDER}" == "efa" ] && [ "$ami_arch" = "x86_64" ]; then
+if [ "${PROVIDER}" == "efa" ]; then
     for IP in ${INSTANCE_IPS[@]}; do
         echo "Running efa-check.sh on ${IP}"
         scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
@@ -126,9 +125,9 @@ for i in $(seq 1 $N); do
     exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
 done
 
-# TODO: this conditional needs to be modified when we start running MPI tests on EFA-enabled ARM instances.
-# Run MPI tests for EFA provider on x86_64 instances, and arm64 instances (tcp).
-if [[ ${ami_arch} == "x86_64" && ${PROVIDER} == "efa" ]] || [ ${ami_arch} == "aarch64" ]; then
+# Run MPI tests for EFA provider.
+# For tests running on instances with ARM AMIs, also run MPI test if it's testing tcp.
+if [[ ${PROVIDER} == "efa" ]] || [[ ${ami_arch} == "aarch64" && ${PROVIDER} == "tcp" ]]; then
     scp -o ConnectTimeout=30 -o StrictHostKeyChecking=no -i ~/${slave_keypair} \
         $WORKSPACE/libfabric-ci-scripts/mpi_ring_c_test.sh \
         $WORKSPACE/libfabric-ci-scripts/mpi_osu_test.sh \
@@ -142,7 +141,7 @@ if [[ ${ami_arch} == "x86_64" && ${PROVIDER} == "efa" ]] || [ ${ami_arch} == "aa
     for mpi in $test_list; do
         execution_seq=$((${execution_seq}+1))
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-            bash mpi_ring_c_test.sh ${mpi} ${libfabric_job_type} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_${mpi}.txt
+            bash mpi_ring_c_test.sh ${mpi} ${libfabric_job_type} ${PROVIDER} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_${mpi}.txt
 
         set +e
         grep -q "Test Passed" ${output_dir}/temp_execute_ring_c_${mpi}.txt
@@ -153,7 +152,7 @@ if [[ ${ami_arch} == "x86_64" && ${PROVIDER} == "efa" ]] || [ ${ami_arch} == "aa
         set -e
 
         ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-            bash mpi_osu_test.sh ${mpi} ${libfabric_job_type} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_osu_${mpi}.txt
+            bash mpi_osu_test.sh ${mpi} ${libfabric_job_type} ${PROVIDER} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_osu_${mpi}.txt
 
         set +e
         grep -q "Test Passed" ${output_dir}/temp_execute_osu_${mpi}.txt
