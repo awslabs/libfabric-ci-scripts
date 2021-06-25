@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
 
 # MPI helper shell functions
-# Detect architecture
-ARCH=$(uname -m)
-if [ ! "$ARCH" = "x86_64" ] && [ ! "$ARCH" = "aarch64" ]; then
-    echo "Unknown architecture, ARCH must be x86_64 or aarch64"
-    exit 1
-fi
 function check_efa_ompi {
     out=$1
-    # TODO: Remove the conditional of [ "$ARCH" = "x86_64" ] when we start testing openmpi with EFA on ARM instances.
-    if [ "$ARCH" = "x86_64" ] && ! grep -q "mtl:ofi:prov: efa" $out; then
+    if ! grep -q "mtl:ofi:prov: efa" $out; then
         echo "efa provider not used with Open MPI"
         exit 1
     fi
@@ -18,19 +11,16 @@ function check_efa_ompi {
 
 function check_efa_impi {
     out=$1
-    # TODO: Remove the conditional of [ "$ARCH" = "x86_64" ] when we start testing openmpi with EFA on ARM instances.
-    if [ "$ARCH" = "x86_64" ] && ! grep -q "libfabric provider: efa" $out; then
+    if ! grep -q "libfabric provider: efa" $out; then
         echo "efa provider not used with Intel MPI"
         exit 1
     fi
 }
 
 function ompi_setup {
+    provider=$1
     . /etc/profile.d/efa.sh
-    # TODO: Remove the conditionals for architectures when we start testing EFA on ARM instances.
-    # There is no EFA enabled ARM instance right now.
-    # Open MPI will pick btl/tcp itself.
-    if [ $ARCH = "x86_64" ]; then
+    if [ $provider = "efa" ]; then
         # Get the mtl:ofi:prov information in verbose output
         export OMPI_MCA_opal_common_ofi_verbose=1
     else
@@ -39,7 +29,7 @@ function ompi_setup {
     # Pass LD_LIBRARY_PATH arg so that we use the right libfabric. Ubuntu
     # doesn't load .bashrc/.bash_profile for non-interactive shells.
     export MPI_ARGS="-x LD_LIBRARY_PATH"
-    if [ $ARCH = "x86_64" ]; then
+    if [ $provider = "efa" ]; then
         # Only load the OFI component in MTL so MPI will fail if it cannot
         # be used.
         export MPI_ARGS="$MPI_ARGS --mca pml cm --mca mtl ofi"

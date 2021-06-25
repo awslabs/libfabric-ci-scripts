@@ -107,9 +107,19 @@ create_instance()
     elif [ $BUILD_GDR -eq 1 ]; then
         instance_type=p4d.24xlarge
         network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
-    else
-        instance_type=a1.4xlarge
-        network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
+    elif [ $ami_arch = "aarch64" ]; then
+        case "${PROVIDER}" in
+            efa)
+                instance_type=c6gn.16xlarge
+                network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
+                ;;
+            tcp)
+                instance_type=a1.4xlarge
+                network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
+                ;;
+            *)
+                exit 1
+        esac
     fi
     addl_args=""
     if [ ${ENABLE_PLACEMENT_GROUP} -eq 1 ]; then

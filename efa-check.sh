@@ -5,7 +5,14 @@
 
 source ~/wget_check.sh
 VENDOR_ID="0x1d0f"
-DEV_ID="0xefa0"
+ami_arch="$(uname -m)"
+if [ "${ami_arch}" == "x86_64" ]; then
+    DEV_ID="0xefa0"
+elif [ "${ami_arch}" == "aarch64" ]; then
+    DEV_ID="0xefa1"
+else
+    echo "Unknown architecture, exiting."
+fi
 usage() {
 cat << EOF
 usage: $(basename "$0") [options]
