@@ -69,11 +69,18 @@ elif [ "${mpi}" == "impi" ] && [ "$provider" == "efa" ]; then
     check_efa_impi $out
 fi
 
+# osu_mbw_mr test takes more than 30 min when running with tcp provider.
+# Increase its timeout limit to 3600 secs.
+MPIEXEC_TIMEOUT_ORIG=${MPIEXEC_TIMEOUT}
+if [ "$provider" = "tcp" ]; then
+    MPIEXEC_TIMEOUT=3600
+fi
 $mpirun_cmd -n $(( $ranks * $# )) -hostfile $hostfile /tmp/${osu_dir}/mpi/pt2pt/osu_mbw_mr 2>&1 | tee $out
 if [ $? -ne 0 ]; then
     echo "osu_mbw_mr failed"
     exit 1
 fi
+MPIEXEC_TIMEOUT=${MPIEXEC_TIMEOUT_ORIG}
 
 if [ "${mpi}" == "ompi" ] && [ "$provider" == "efa" ]; then
     check_efa_ompi $out
