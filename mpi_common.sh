@@ -31,7 +31,8 @@ function ompi_setup {
     # There is no EFA enabled ARM instance right now.
     # Open MPI will pick btl/tcp itself.
     if [ $ARCH = "x86_64" ]; then
-        export OMPI_MCA_mtl_base_verbose=100
+        # Get the mtl:ofi:prov information in verbose output
+        export OMPI_MCA_opal_common_ofi_verbose=1
     else
         export OMPI_MCA_btl_base_verbose=100
     fi
