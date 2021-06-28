@@ -9,9 +9,8 @@ if [ ! "$ARCH" = "x86_64" ] && [ ! "$ARCH" = "aarch64" ]; then
 fi
 function check_efa_ompi {
     out=$1
-    grep -q "mtl:ofi:prov: efa" $out
     # TODO: Remove the conditional of [ "$ARCH" = "x86_64" ] when we start testing openmpi with EFA on ARM instances.
-    if [ "$ARCH" = "x86_64" ] && [ $? -ne 0 ]; then
+    if [ "$ARCH" = "x86_64" ] && ! grep -q "mtl:ofi:prov: efa" $out; then
         echo "efa provider not used with Open MPI"
         exit 1
     fi
@@ -19,9 +18,8 @@ function check_efa_ompi {
 
 function check_efa_impi {
     out=$1
-    grep -q "libfabric provider: efa" $out
     # TODO: Remove the conditional of [ "$ARCH" = "x86_64" ] when we start testing openmpi with EFA on ARM instances.
-    if [ "$ARCH" = "x86_64" ] && [ $? -ne 0 ]; then
+    if [ "$ARCH" = "x86_64" ] && ! grep -q "libfabric provider: efa" $out; then
         echo "efa provider not used with Intel MPI"
         exit 1
     fi
