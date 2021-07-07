@@ -187,9 +187,40 @@ create_instance()
 get_instance_ip()
 {
     execution_seq=$((${execution_seq}+1))
-    INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} \
-                        --query "Reservations[*].Instances[*].PrivateIpAddress" \
-                        --output=text)
+    local retry=20
+    local sleep_time=10
+    local ret=0
+    local bash_option=$-
+    local restore_e=0
+    local get_instance_ip_succeed=0
+    local instance_ips_array=()
+    if [[ $bash_option =~ e ]]; then
+        restore_e=1
+        set +e
+    fi
+    while [ $retry -ge 0 ]; do
+        INSTANCE_IPS=$(aws ec2 describe-instances --instance-ids ${INSTANCE_IDS[@]} \
+                            --query "Reservations[*].Instances[*].PrivateIpAddress" \
+                            --output=text)
+        ret=$?
+        instance_ips_array=($INSTANCE_IPS)
+        if [[ $ret -eq 0 && -n $INSTANCE_IPS && ${#instance_ips_array[@]} -eq ${#INSTANCE_IDS[@]} ]]; then
+            get_instance_ip_succeed=1
+            break
+        else
+            sleep $sleep_time
+        fi
+        retry=$((retry-1))
+    done
+    if [[ $get_instance_ip_succeed -eq 1 ]]; then
+        echo "Successfully get instance ips: ${INSTANCE_IPS}."
+    else
+        echo "Failed to get instance ips, exiting ..."
+        exit 1
+    fi
+    if [[ $restore_e -eq 1 ]]; then
+        set -e
+    fi
 }
 
 #Test SLES15SP2 with allow unsupported modules
