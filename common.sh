@@ -32,12 +32,42 @@ create_pg()
 
 delete_pg()
 {
-    if [ ${ENABLE_PLACEMENT_GROUP} -eq 0 ] || [ -z $PLACEMENT_GROUP ]; then
+    if [[ ${ENABLE_PLACEMENT_GROUP} -eq 0 || -z $PLACEMENT_GROUP ]]; then
         return 0
     fi
-    AWS_DEFAULT_REGION=us-west-2 aws ec2 delete-placement-group \
-        --group-name ${PLACEMENT_GROUP}
-    return $?
+    local ret=0
+    # The placement group may be in use due to the attached
+    # ec2 instances are not terminated completely. Keep
+    # waiting and retrying within 20*30=600 seconds (10 minutes).
+    local retry=20
+    local sleep_time=30
+    local bash_option=$-
+    local restore_e=0
+    if [[ $bash_option =~ e ]]; then
+        restore_e=1
+        set +e
+    fi
+    echo "Start deleting placement group ${PLACEMENT_GROUP}."
+    while [[ $retry -ge 0 ]]; do
+        delete_pg_response=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 delete-placement-group \
+            --group-name ${PLACEMENT_GROUP} 2>&1)
+        ret=$?
+        if [[ $ret -ne 0 && "$delete_pg_response" == *"InvalidPlacementGroup.InUse"* ]]; then
+            sleep $sleep_time
+        else
+            break
+        fi
+        retry=$((retry-1))
+    done
+    if [[ $ret -eq 0 ]]; then
+        echo "Successfully delete placement group ${PLACEMENT_GROUP}."
+    else
+        echo "Fail to delete placement group ${PLACEMENT_GROUP}."
+    fi
+    if [[ $restore_e -eq 1 ]]; then
+        set -e
+    fi
+    return $ret
 }
 
 # Launches EC2 instances.
@@ -536,10 +566,6 @@ on_exit()
     split_files
     parse_txt_junit_xml
     terminate_instances
-    # Not sure why 'wait instance-terminated' isn't good enough here as I am
-    # sometimes seeing an in-use error when attempting to delete the placement
-    # group. Add a small delay as a workaround.
-    sleep 1
     delete_pg
     return $return_code
 }
