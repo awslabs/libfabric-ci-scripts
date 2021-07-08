@@ -144,7 +144,7 @@ create_instance()
                 network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"InterfaceType\":\"efa\",\"Groups\":[\"${slave_security_group}\"]"
                 ;;
             tcp)
-                instance_type=a1.4xlarge
+                instance_type=${instance_type:-"a1.4xlarge"}
                 network_interface="[{\"DeviceIndex\":0,\"DeleteOnTermination\":true,\"Groups\":[\"${slave_security_group}\"]"
                 ;;
             *)
