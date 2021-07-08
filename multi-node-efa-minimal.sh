@@ -153,7 +153,7 @@ test_list="impi"
 for mpi in $test_list; do
     execution_seq=$((${execution_seq}+1))
     ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-        bash mpi_ring_c_test.sh ${mpi} ${libfabric_job_type} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_efa_minimal_${mpi}.txt
+        bash mpi_ring_c_test.sh ${mpi} ${libfabric_job_type} ${PROVIDER} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_ring_c_efa_minimal_${mpi}.txt
 
     set +e
     grep -q "Test Passed" ${output_dir}/temp_execute_ring_c_efa_minimal_${mpi}.txt
@@ -164,7 +164,7 @@ for mpi in $test_list; do
     set -e
 
     ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
-        bash mpi_osu_test.sh ${mpi} ${libfabric_job_type} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_osu_efa_minimal_${mpi}.txt
+        bash mpi_osu_test.sh ${mpi} ${libfabric_job_type} ${PROVIDER} ${INSTANCE_IPS[@]} | tee ${output_dir}/temp_execute_osu_efa_minimal_${mpi}.txt
 
     set +e
     grep -q "Test Passed" ${output_dir}/temp_execute_osu_efa_minimal_${mpi}.txt
