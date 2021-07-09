@@ -18,7 +18,7 @@ declare -A AMIS
 declare -A PGS
 
 # List of aws regions where tests can be executed
-aws_regions=('us-east-1' 'us-west-2')
+aws_regions=('us-west-2' 'us-east-1')
 
 NVIDIA_DRIVER_VERSION=450.80.02
 NVIDIA_BASE_URL='https://us.download.nvidia.com/tesla'
@@ -81,8 +81,11 @@ define_parameters() {
 
     # Instance type for AMI preparation
     instance_ami_type='c5n.18xlarge'
+
     # Instance type for running NCCL tests
-    instance_test_type='p3dn.24xlarge'
+    # p3dn.24xlarge instance type was previously used
+    # Changed to p4d.24xlarge due to capacity issue
+    instance_test_type='p4d.24xlarge'
     create_instance_retries=10
     instance_check_retries=10
     ami_check_retries=20
