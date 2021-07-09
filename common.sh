@@ -550,11 +550,39 @@ EOF
 
 terminate_instances()
 {
-    # Terminates slave node
+    # Terminates compute node
+    local ret=0
     if [[ ! -z ${INSTANCE_IDS[@]} ]]; then
+        echo "Start terminating instances ${INSTANCE_IDS[@]}."
         AWS_DEFAULT_REGION=us-west-2 aws ec2 terminate-instances --instance-ids ${INSTANCE_IDS[@]}
-        AWS_DEFAULT_REGION=us-west-2 aws ec2 wait instance-terminated --instance-ids ${INSTANCE_IDS[@]}
+        # aws wait instance-terminated will poll every 15 seconds until a successful state has been reached.
+        # It will exit with a return code of 255 after 40 failed checks, i.e. 10 minutes. Retry this API call
+        # within $retry times in case some instances are not terminated within 10 minutes.
+        local retry=5
+        local bash_option=$-
+        local restore_e=0
+        if [[ $bash_option =~ e ]]; then
+            restore_e=1
+            set +e
+        fi
+        while [[ $retry -ge 0 ]]; do
+            AWS_DEFAULT_REGION=us-west-2 aws ec2 wait instance-terminated --instance-ids ${INSTANCE_IDS[@]}
+            ret=$?
+            if [[ $ret -eq 0 ]]; then
+                break
+            fi
+            retry=$((retry-1))
+        done
+        if [[ $ret -eq 0 ]]; then
+            echo "Successfully terminate instances ${INSTANCE_IDS[@]}."
+        else
+            echo "Fail to terminate instances ${INSTANCE_IDS[@]}."
+        fi
+        if [[ $restore_e -eq 1 ]]; then
+            set -e
+        fi
     fi
+    return $ret
 }
 
 on_exit()
