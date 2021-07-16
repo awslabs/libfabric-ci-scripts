@@ -75,15 +75,22 @@ b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b' || true)"
 FABTESTS_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
 if [ ${PROVIDER} == "efa" ]; then
     if [ -n "$b_option_available" ]; then
-        FABTESTS_OPTS+=" -b -t all"
+        FABTESTS_OPTS+=" -b"
     else
         gid_c=$4
         gid_s=$(ibv_devinfo -v | grep GID | awk '{print $3}')
-        FABTESTS_OPTS+=" -C \"-P 0\" -s $gid_s -c $gid_c -t all"
+        FABTESTS_OPTS+=" -C \"-P 0\" -s $gid_s -c $gid_c"
     fi
 fi
 
-bash -c "$runfabtests_script ${FABTESTS_OPTS} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}"
+bash -c "$runfabtests_script -t unit ${FABTESTS_OPTS} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}"
+bash -c "$runfabtests_script -t functional ${FABTESTS_OPTS} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}"
+# sleep 20 between functional test and standard tests to workaround an issue.
+# This change will be reverted once the issue is fixed.
+echo "Sleep 20 seconds to workaround a firmware issue"
+sleep 20
+echo "Sleep 20 seconds done"
+bash -c "$runfabtests_script -t standard ${FABTESTS_OPTS} ${PROVIDER} ${SERVER_IP} ${CLIENT_IP}"
 
 if [ ${PROVIDER} == "efa" ]; then
     # dgram_pingpong test has been excluded during installation
