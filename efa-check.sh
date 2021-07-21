@@ -151,7 +151,14 @@ efa_number_of_huge_pages=$(($efa_total_huge_pages_memory / $huge_pages_size + 1)
 # which is backed by huge page memory. The two packet pools will use 110 MB of
 # memory. We need to reserve at least cores * 110 MB worth of memory in huge
 # pages.
-if [ "$hugepages" -lt $efa_number_of_huge_pages ]; then
+# RHEL 8 on ARM has a different huge page configuration than other
+# OSes and defaulted to 512 MB huge page size. This might
+# 1. massively over-reserve huge pages, thus run the machine effectively OOM
+# 2. not reserve sufficient pages for a process per core worth of huge pages
+# To deal with this issue, EFA-Config package sets a huge page size threshold as 16 MB (16384 KB).
+# If the default huge page size is larger than the threshold, the huge page is not used.
+huge_page_size_threshold=16384
+if [[ $huge_pages_size -le $huge_page_size_threshold && $hugepages -lt $efa_number_of_huge_pages ]]; then
     cat >&2 << EOF
 Warning: Configuring huge pages is recommended for the best performance with
 EFA.
