@@ -73,8 +73,8 @@ set_aws_defaults() {
     echo "==> Latest Deep Learning AMI (Ubuntu 16.04): ${ami_ubuntu_16_04}"
 
     # The latest Deep Learning AMI Ubuntu 18.04 Image
-    ami_ubuntu_18_04=$(find_latest_ami "Deep Learning AMI (Ubuntu 18.04)")
-    echo "==> Latest Deep Learning AMI (Ubuntu 18.04): ${ami_ubuntu_18_04}"
+    ami_ubuntu_18_04=$(find_latest_ami "Deep Learning Base AMI (Ubuntu 18.04)")
+    echo "==> Latest Deep Learning Base AMI (Ubuntu 18.04): ${ami_ubuntu_18_04}"
 }
 
 define_parameters() {
