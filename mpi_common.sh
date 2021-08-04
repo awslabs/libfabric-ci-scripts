@@ -53,10 +53,11 @@ function ompi_setup {
 function impi_setup {
     LIBFABRIC_JOB_TYPE=$1
     if [ "$LIBFABRIC_JOB_TYPE" = "master" ]; then
-        source /opt/intel/compilers_and_libraries/linux/mpi/intel64/bin/mpivars.sh -ofi_internal=0
+        source /opt/intel/oneapi/mpi/latest/env/vars.sh -i_mpi_ofi_internal=0
         export LD_LIBRARY_PATH=${HOME}/libfabric/install/lib/:$LD_LIBRARY_PATH
     else
-        source /opt/intel/compilers_and_libraries/linux/mpi/intel64/bin/mpivars.sh
+        # Use Intel MPI's internal libfabric (-i_mpi_ofi_internal=1 by default)
+        source /opt/intel/oneapi/mpi/latest/env/vars.sh
     fi
     export I_MPI_DEBUG=1
     export MPI_ARGS=""
