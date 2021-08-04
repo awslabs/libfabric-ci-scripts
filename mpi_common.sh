@@ -24,7 +24,8 @@ function ompi_setup {
         # Get the mtl:ofi:prov information in verbose output
         export OMPI_MCA_opal_common_ofi_verbose=1
     else
-        export OMPI_MCA_btl_base_verbose=100
+        # Get btl base verbose output for component
+        export OMPI_MCA_btl_base_verbose=10
     fi
     # Pass LD_LIBRARY_PATH arg so that we use the right libfabric. Ubuntu
     # doesn't load .bashrc/.bash_profile for non-interactive shells.
