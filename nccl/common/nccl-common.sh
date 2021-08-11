@@ -65,8 +65,8 @@ set_aws_defaults() {
 
 
     # The latest Deep Learning AMI (Amazon Linux 2) Image
-    ami_amzn=$(find_latest_ami "Deep Learning AMI (Amazon Linux 2)")
-    echo "==> Latest Deep Learning AMI (Amazon Linux): ${ami_amzn}"
+    ami_amzn=$(find_latest_ami "Deep Learning Base AMI (Amazon Linux 2)")
+    echo "==> Latest Deep Learning Base AMI (Amazon Linux): ${ami_amzn}"
 
     # The latest Deep Learning AMI Ubuntu 16.04 Image
     ami_ubuntu_16_04=$(find_latest_ami "Deep Learning AMI (Ubuntu 16.04)")
