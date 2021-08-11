@@ -27,8 +27,6 @@ ami_instance_preparation
 # Create Nodes
 echo "==> Creating Nodes"
 
-ENABLE_PLACEMENT_GROUP=1
-
 prepare_instance 'test_instance' ${NUM_NODES}
 
 nodes_ips=()
