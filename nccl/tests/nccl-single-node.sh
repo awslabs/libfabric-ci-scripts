@@ -24,8 +24,6 @@ ENABLE_PLACEMENT_GROUP=0
 
 ami_instance_preparation
 
-ENABLE_PLACEMENT_GROUP=1
-
 prepare_instance 'test_instance' ${NUM_NODES}
 
 PublicDNSLeader=$(get_public_dns ${INSTANCE_IDS})
