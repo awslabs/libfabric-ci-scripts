@@ -20,6 +20,9 @@ declare -A PGS
 # List of aws regions where tests can be executed
 aws_regions=('us-west-2' 'us-east-1')
 
+# Number of GPUs on each test node
+TEST_NODE_GPUS=8
+
 NVIDIA_DRIVER_VERSION=450.80.02
 NVIDIA_BASE_URL='https://us.download.nvidia.com/tesla'
 NVIDIA_DRIVER_PATH="$NVIDIA_BASE_URL/$NVIDIA_DRIVER_VERSION/NVIDIA-Linux-x86_64-$NVIDIA_DRIVER_VERSION.run"
@@ -537,8 +540,19 @@ EOF
 }
 
 run_nvidia_checks() {
-    cat <<-"EOF" > ${tmp_script}
+
+    cat <<-EOF > ${tmp_script}
     #!/bin/bash
+    TEST_NODE_GPUS="${TEST_NODE_GPUS}"
+EOF
+    cat <<-"EOF" >> ${tmp_script}
+    #!/bin/bash
+    echo "==> Running nvidia GPUs count check"
+    gpus_count=$(sudo lspci | grep "3D controller: NVIDIA Corporation Device" | wc -l)
+    if [[ "${gpus_count}" != "${TEST_NODE_GPUS}" ]]; then
+        echo "==> Nvidia GPUs is missing, on board: ${gpus_count}, should be ${TEST_NODE_GPUS}"
+        exit 1
+    fi
     echo "==> Running basic nvidia devices check"
     nvidia-smi
     echo "==> Running bandwidthTest for each NVIDIA device"
