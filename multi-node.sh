@@ -182,4 +182,18 @@ if [ ${BUILD_GDR} -eq 1 ]; then
     fi
     set -e
 fi
+
+# Run cdi_test
+if [ ${RUN_CDI_TESTS} -eq 1 ]; then
+    set +e
+    export RUN_MINIMAL=1
+    bash $WORKSPACE/libfabric-ci-scripts/cdi_test/tests/run-cdi.sh | tee ${output_dir}/temp_execute_cdi_test.txt
+    grep -q "Test Passed" ${output_dir}/temp_execute_cdi_test.txt
+    if [ $? -ne 0 ]; then
+        BUILD_CODE=1
+        echo "cdi_test tests failed."
+    fi
+    set -e
+fi
+
 exit ${BUILD_CODE}

@@ -12,6 +12,7 @@ if [ ! "$ami_arch" = "x86_64" ] && [ ! "$ami_arch" = "aarch64" ]; then
     exit 1
 fi
 RUN_IMPI_TESTS=${RUN_IMPI_TESTS:-1}
+RUN_CDI_TESTS=${RUN_CDI_TESTS:-0}
 ENABLE_PLACEMENT_GROUP=${ENABLE_PLACEMENT_GROUP:-0}
 TEST_SKIP_KMOD=${TEST_SKIP_KMOD:-0}
 BUILD_GDR=${BUILD_GDR:-0}
