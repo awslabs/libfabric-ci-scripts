@@ -1,0 +1,48 @@
+# change logs directory and prefix to whatever desired
+--logs <LOG_DIR>/rxtx
+--log_component "PROBE ENDPOINT_MANAGER PERFORMANCE_METRICS"
+
+# change local_ip to be for the efa being tested
+--local_ip <LOCAL_IP>
+--adapter EFA
+--stderr
+--num_loops <NUM_LOOPS>
+
+# change cloudwatch settings to whatever desired. The first is the metrics
+# name, the second is the AZ being published to, and the last is the user name.
+--stats_cloudwatch <METRIC NAME> <REGION> <CDI_TEST_IAM_USER>
+
+#---------------------------------------
+# rx connection 0
+-X
+# connection name is user specified
+--rx RAW
+--connection_name rx_fr_<LOCAL_IP>_<RX_DEST_PORT>
+--dest_port <RX_DEST_PORT>
+--core 5
+--rate 60
+--stats_period 10
+-S
+--pattern SHL
+--pat_start 1C014D6DA44CE61A
+--payload_size <PAYLOAD_SIZE>
+--num_transactions 0
+
+#---------------------------------------
+# tx connection 0
+-X
+--tx RAW
+--connection_name tx_to_<REMOTE_IP>_<TX_DEST_PORT>
+# change remote ip to efa on other instance
+--remote_ip <REMOTE_IP>
+--dest_port <TX_DEST_PORT>
+--tx_timeout 16666
+--keep_alive
+--core 6
+--rate 60
+--stats_period 10
+-S
+--pattern SHL
+--pat_start 1C014D6DA44CE61A
+--payload_size <PAYLOAD_SIZE>
+--num_transactions 0
