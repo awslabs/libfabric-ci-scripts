@@ -12,6 +12,8 @@ libfabric_job_type=${libfabric_job_type:-"master"}
 # enable this after it is fixed.
 # export ENABLE_PLACEMENT_GROUP=1
 export USER_DATA_FILE=${USER_DATA_FILE:-${JENKINS_HOME}/user_data_script.sh}
+# The tests running on GPUDirect instances will set this variable, other test stages will not.
+export BUILD_GDR=${BUILD_GDR:-0}
 
 # Test whether the instance is ready for SSH or not. Once the instance is ready,
 # copy SSH keys from Jenkins and install libfabric
@@ -42,7 +44,7 @@ execute_runfabtests()
     execution_seq=$((${execution_seq}+1))
     (ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS[0]} \
         "bash -s" -- < $WORKSPACE/libfabric-ci-scripts/multinode_runfabtests.sh \
-        "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" 2>&1; \
+        "${PROVIDER}" "${INSTANCE_IPS[0]}" "${INSTANCE_IPS[$1]}" "${gid_c}" "${BUILD_GDR}" 2>&1; \
         echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IPS[$1]}_execute_runfabtests.sh) | \
         tr \\r \\n | sed 's/\(.*\)/'${INSTANCE_IPS[0]}' \1/' | tee ${output_dir}/temp_execute_runfabtests.txt
     set -x

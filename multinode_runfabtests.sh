@@ -55,6 +55,7 @@ set -xe
 PROVIDER=$1
 SERVER_IP=$2
 CLIENT_IP=$3
+BUILD_GDR=$5
 # Runs all the tests in the fabtests suite while only expanding failed cases
 EXCLUDE=${HOME}/libfabric/fabtests/install/share/fabtests/test_configs/${PROVIDER}/${PROVIDER}.exclude
 if [ -f ${EXCLUDE} ]; then
@@ -137,6 +138,16 @@ if [ ${PROVIDER} == "efa" ]; then
     run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
     if [ "$?" -ne 0 ]; then
         exit_code=1
+    fi
+
+    if [[ ${BUILD_GDR} -eq 1 ]]; then
+        echo "Run fi_rdm_tagged_bw with server using device (GPU) memory and client using host memory"
+        CLIENT_CMD="FI_EFA_USE_DEVICE_RDMA=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -p efa -E"
+        SERVER_CMD="${CLIENT_CMD} -D cuda"
+        run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
+        if [ "$?" -ne 0 ]; then
+            exit_code=1
+        fi
     fi
 
     if [ $restore_e -eq 1 ]; then
