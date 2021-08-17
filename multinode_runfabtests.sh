@@ -4,14 +4,15 @@ run_test_with_expected_ret()
 {
     SERVER_IP=$1
     CLIENT_IP=$2
-    PROGRAM_TO_RUN=$3
-    EXPECT_RESULT=$4
+    SERVER_CMD=$3
+    CLIENT_CMD=$4
+    EXPECT_RESULT=$5
 
-    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no ${SERVER_IP} ${PROGRAM_TO_RUN} >& server.out &
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no ${SERVER_IP} ${SERVER_CMD} >& server.out &
     server_pid=$!
     sleep 1
 
-    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no ${CLIENT_IP} ${PROGRAM_TO_RUN} ${SERVER_IP} >& client.out &
+    ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no ${CLIENT_IP} ${CLIENT_CMD} ${SERVER_IP} >& client.out &
     client_pid=$!
 
     wait $client_pid
@@ -106,26 +107,34 @@ if [ ${PROVIDER} == "efa" ]; then
 
     exit_code=0
     echo "Run fi_dgram_pingpong with out-of-band synchronization"
-    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong" "PASS"
+    SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong"
+    CLIENT_CMD="${SERVER_CMD}"
+    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
     if [ "$?" -ne 0 ]; then
         exit_code=1
     fi
 
     # Run fi_rdm_tagged_bw with fork when different environment variables are set.
     echo "Run fi_rdm_tagged_bw with fork"
-    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -p efa -K -E" "FAIL"
+    SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -p efa -K -E"
+    CLIENT_CMD="${SERVER_CMD}"
+    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "FAIL"
     if [ "$?" -ne 0 ]; then
         exit_code=1
     fi
 
     echo "Run fi_rdm_tagged_bw with fork and RDMAV_FORK_SAFE set"
-    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "RDMAV_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E" "PASS"
+    SERVER_CMD="RDMAV_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E"
+    CLIENT_CMD="${SERVER_CMD}"
+    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
     if [ "$?" -ne 0 ]; then
         exit_code=1
     fi
 
     echo "Run fi_rdm_tagged_bw with fork and FI_EFA_FORK_SAFE set"
-    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "FI_EFA_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E" "PASS"
+    SERVER_CMD="FI_EFA_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E"
+    CLIENT_CMD="${SERVER_CMD}"
+    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
     if [ "$?" -ne 0 ]; then
         exit_code=1
     fi
