@@ -22,9 +22,17 @@ if [ ! -z "${target_fabtest_tag}" ]; then
 fi
 cd ${HOME}/libfabric/fabtests
 ./autogen.sh
-./configure --with-libfabric=${LIBFABRIC_INSTALL_PATH} \
+configure_flags=(
+    --with-libfabric=${LIBFABRIC_INSTALL_PATH} \
     --prefix=${HOME}/libfabric/fabtests/install/ \
     --enable-debug
+    )
+# Build fabtests with cuda on x86_64 platform only.
+if [ "$(uname -m)" == "x86_64" ]; then
+    configure_flags+=(--with-cuda=/usr/local/cuda)
+fi
+
+./configure "${configure_flags[@]}"
 make -j 4
 make install
 
