@@ -73,6 +73,8 @@ delete_pg()
 # Launches EC2 instances.
 create_instance()
 {
+    local retry=10
+    local sleep_time=60
     # TODO: the labels need to be fixed in LibfabricCI and the stack
     # redeployed for PR testing
     # The ami-ids are stored in ssm paramater-store with names
@@ -167,7 +169,7 @@ create_instance()
     fi
 
     echo "==> Creating instances"
-    while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt 30 ]; do
+    while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt ${retry} ]; do
         for subnet in ${subnet_ids[@]}; do
             error=1
             set +e
@@ -208,7 +210,7 @@ create_instance()
                 exit 65
             fi
         done
-        sleep 2m
+        sleep ${sleep_time}
         create_instance_count=$((create_instance_count+1))
     done
 }
