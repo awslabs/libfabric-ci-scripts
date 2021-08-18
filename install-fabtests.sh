@@ -45,6 +45,13 @@ if [ "${PROVIDER}" == "efa" ]; then
     echo "# skip dgram_pingpong test" >> ${EXCLUDE}
     echo "dgram_pingpong" >> ${EXCLUDE}
     echo "" >> ${EXCLUDE}
+
+    if [ "${AMI_ARCH}" == "aarch64" ] && [ ${LIBFABRIC_JOB_TYPE} == "master" ]; then
+        # temporarily exclude fi_rdm_multi_client test
+        echo "# skip rdm_multi_client test" >> ${EXCLUDE}
+        echo "rdm_multi_client" >> ${EXCLUDE}
+        echo "" >> ${EXCLUDE}
+    fi
 fi
 # .bashrc and .bash_profile are loaded differently depending on distro and
 # whether the shell is interactive or not, just do both to be safe.

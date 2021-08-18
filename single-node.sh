@@ -84,7 +84,7 @@ execution_seq=$((${execution_seq}+1))
 set +x
 ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@${INSTANCE_IPS} \
     "bash -s" -- <${tmp_script} \
-    "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1 | tr \\r \\n | \
+    "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" "$ami_arch" "$libfabric_job_type" 2>&1 | tr \\r \\n | \
     sed 's/\(.*\)/'${INSTANCE_IPS}' \1/' | tee ${output_dir}/temp_execute_runfabtests.txt
 EXIT_CODE=${PIPESTATUS[0]}
 set -x

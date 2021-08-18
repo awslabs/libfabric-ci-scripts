@@ -309,6 +309,8 @@ set_var()
     PULL_REQUEST_ID=$1
     PULL_REQUEST_REF=$2
     PROVIDER=$3
+    AMI_ARCH=$4
+    LIBFABRIC_JOB_TYPE=$5
     echo "==>Installing OS specific packages"
 EOF
 }
