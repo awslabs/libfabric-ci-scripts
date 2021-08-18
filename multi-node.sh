@@ -24,7 +24,7 @@ install_libfabric()
     execution_seq=$((${execution_seq}+1))
     (ssh -o ConnectTimeout=30 -o StrictHostKeyChecking=no -T -i ~/${slave_keypair} ${ami[1]}@$1 \
         "bash -s" -- < ${tmp_script} \
-        "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" 2>&1; \
+        "$PULL_REQUEST_ID" "$PULL_REQUEST_REF" "$PROVIDER" "$ami_arch" "$libfabric_job_type" 2>&1; \
         echo "EXIT_CODE=$?" > $WORKSPACE/libfabric-ci-scripts/$1_install_libfabric.sh) \
         | tr \\r \\n | sed 's/\(.*\)/'$1' \1/' | tee ${output_dir}/${execution_seq}_$1_install_libfabric.txt
     set -x
