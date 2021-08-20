@@ -317,28 +317,9 @@ set_var()
 EOF
 }
 
-# Wait up to 10 minutes for cloud-init to finish
-boot_finished_check()
-{
-    retry=20
-    until [ -f /var/lib/cloud/instance/boot-finished ]; do
-        echo "Cloud-init ongoing. Waiting..."
-        retry=$((retry - 1))
-        sleep 30
-    done
-    if [ -f /var/lib/cloud/instance/boot-finished ]; then
-        echo "Cloud-init completed successfully."
-    else
-        echo "Cloud-init failed to finish."
-        exit 1
-    fi
-}
-
 # Poll for the SSH daemon to come up before proceeding.
 # The SSH poll retries with exponential backoff.
 # The initial backoff is 30s, and doubles for each retry, until 16 minutes.
-# It also verifies that the instance has finished its cloud-init phase
-# and waits up to 10 minutes for this verification.
 test_ssh()
 {
     slave_ready=1
@@ -350,10 +331,8 @@ test_ssh()
         ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes -i ~/${slave_keypair} ${ami[1]}@$1  hostname
         if [ $? -eq 0 ]; then
             slave_ready=0
-            set -xe
-            # Checks to see if cloud-init has finished
-            ssh -T -o ConnectTimeout=30 -o StrictHostKeyChecking=no -o BatchMode=yes -i ~/${slave_keypair} ${ami[1]}@$1 "$(typeset -f); boot_finished_check"
             echo "SSH connection of instance $1 is ready"
+            set -xe
             return 0
         fi
         ssh_backoff=$((ssh_backoff * 2))
