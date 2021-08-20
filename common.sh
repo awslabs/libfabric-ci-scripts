@@ -321,13 +321,10 @@ EOF
 boot_finished_check()
 {
     retry=20
-    while [[ $retry -ge 0 ]]; do
-        if [ -f /var/lib/cloud/instance/boot-finished ]; then
-            break
-        else
-            retry=$((retry - 1))
-            sleep 30
-        fi
+    until [ -f /var/lib/cloud/instance/boot-finished ]; do
+        echo "Cloud-init ongoing. Waiting..."
+        retry=$((retry - 1))
+        sleep 30
     done
     if [ -f /var/lib/cloud/instance/boot-finished ]; then
         echo "Cloud-init completed successfully."
