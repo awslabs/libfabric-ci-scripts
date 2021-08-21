@@ -168,6 +168,10 @@ create_instance()
         dev_name=$(aws ec2 describe-images --image-id ${ami[0]} --query 'Images[*].RootDeviceName' --output text)
         addl_args="${addl_args} --block-device-mapping=[{\"DeviceName\":\"${dev_name}\",\"Ebs\":{\"VolumeSize\":64}}]"
     fi
+    # Use capacity reservation if exists
+    if [ -n "$CapacityReservationId" ]; then
+        addl_args="${addl_args} --capacity-reservation-specification CapacityReservationTarget={CapacityReservationId=${CapacityReservationId}}"
+    fi
 
     echo "==> Creating instances"
     while [ ${error} -ne 0 ] && [ ${create_instance_count} -lt ${retry} ]; do
