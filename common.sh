@@ -170,7 +170,7 @@ create_instance()
     fi
     # Use capacity reservation if exists
     if [ -n "$CapacityReservationId" ]; then
-        addl_args="${addl_args} --capacity-reservation-specification CapacityReservationTarget={CapacityReservationId=${CapacityReservationId}}"
+        addl_args="${addl_args} --capacity-reservation-specification CapacityReservationPreference=open --capacity-reservation-specification CapacityReservationTarget={CapacityReservationId=${CapacityReservationId}}"
     fi
 
     echo "==> Creating instances"
