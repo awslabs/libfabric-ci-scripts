@@ -178,6 +178,7 @@ create_instance()
         for subnet in ${subnet_ids[@]}; do
             error=1
             set +e
+            set -x
             INSTANCE_IDS=$(AWS_DEFAULT_REGION=us-west-2 aws ec2 run-instances \
                     --tag-specification "ResourceType=instance,Tags=[{Key=Workspace,Value="${WORKSPACE}"},{Key=Name,Value=Slave},{Key=Build_Number,Value="${BUILD_NUMBER}"}]" \
                     --image-id ${ami[0]} \
@@ -188,6 +189,7 @@ create_instance()
                     --count ${NODES}:${NODES} \
                     --query "Instances[*].InstanceId" \
                     --output=text ${addl_args} 2>&1)
+            set +x
             create_instance_exit_code=$?
             set -e
             echo "${INSTANCE_IDS}"
