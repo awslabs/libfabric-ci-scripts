@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -xe
+exit_code=0
 REGION=${AWS_DEFAULT_REGION}
 
 RUN_MINIMAL=${RUN_MINIMAL:-0}
@@ -33,14 +34,20 @@ cdi_execute_cmd() {
         -i ~/${slave_keypair} ${SSH_USER}@${ip} ${cmd} --
 }
 
+# Generate universally unique identifier
+get_uniq_num() {
+    echo $(uuidgen)
+}
+
 trap 'cdi_on_exit'  EXIT
 
+BUILD_TAG=${BUILD_NUMBER}-$(get_uniq_num)
 echo "'INFO' ==> creating cdi_user ${BUILD_NUMBER} in iam"
-ROLE_NAME="cdi_role_${BUILD_NUMBER}"
-GROUP_NAME="cdi_group_${BUILD_NUMBER}"
-USER_NAME="cdi_user_${BUILD_NUMBER}"
-PROFILE_NAME="cdi_profile_${BUILD_NUMBER}"
-POLICY_NAME="cdi_policy_${BUILD_NUMBER}"
+ROLE_NAME="cdi_role_${BUILD_TAG}"
+GROUP_NAME="cdi_group_${BUILD_TAG}"
+USER_NAME="cdi_user_${BUILD_TAG}"
+PROFILE_NAME="cdi_profile_${BUILD_TAG}"
+POLICY_NAME="cdi_policy_${BUILD_TAG}"
 create_cdi_test_user
 
 echo "'INFO' ==> creating access key for ${USER_NAME}"
@@ -51,6 +58,9 @@ AWS_SECRET_ACCESS_KEY=$(echo ${ACCESS_KEY_STRUCT} | jq -r '.AccessKey.SecretAcce
 # Launch instances
 echo "==> Creating Nodes"
 
+ami=()
+ami[0]=$(aws --region $AWS_DEFAULT_REGION ssm get-parameters --names "/ec2-imagebuilder/alinux2-x86_64/latest" | jq -r ".Parameters[0].Value")
+ami[1]=${SSH_USER}
 create_instance || { echo "==>Unable to create instance"; exit 65; }
 set -x
 INSTANCE_IDS=($INSTANCE_IDS)
@@ -132,9 +142,12 @@ if [[ ${RUN_MINIMAL} -eq 1 ]]; then
 
     wait ${server_pid}
     wait ${client_pid}
-    if [[ $? -ne 0 ]]; then
+    error=$?
+    if [[ $error -ne 0 ]]; then
         echo "Minimal cdi_test failed."
+        exit_code=$error
     fi
+    cat server_minimal.out
     set -e
 fi
 
@@ -153,16 +166,25 @@ if [[ ${RUN_FULL} -eq 1 ]]; then
     cdi_execute_cmd ${INSTANCE_IPS[1]}
               "${cdi_test_script} -c run_cdi_test -t tx -f /home/${SSH_USER}/rxtx_cmd.txt \
               -r ${INSTANCE_IPS[0]} -u ${USER_NAME} -y ${REGION}" \
-              > server_full.out 2>&1 &
+              > client_full.out 2>&1 &
 
     client_pid=$!
 
     wait ${server_pid}
     wait ${client_pid}
-    if [[ $? -ne 0 ]]; then
+    error=$?
+    if [[ $error -ne 0 ]]; then
         echo "Full cdi_test failed."
+        exit_code=$error
     fi
+    cat server_full.out
     set -e
 fi
 
-echo "==> Test Passed"
+if [[ $exit_code -eq 0 ]]; then
+    echo "==> cdi_test Tests Passed"
+    exit 0
+else
+    echo "==> cdi_test Tests Failed"
+    exit $exit_code
+fi
