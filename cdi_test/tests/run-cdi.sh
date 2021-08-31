@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -xe
+exit_code=0
 REGION=${AWS_DEFAULT_REGION}
 
 RUN_MINIMAL=${RUN_MINIMAL:-0}
@@ -132,9 +133,12 @@ if [[ ${RUN_MINIMAL} -eq 1 ]]; then
 
     wait ${server_pid}
     wait ${client_pid}
-    if [[ $? -ne 0 ]]; then
+    error=$?
+    if [[ $error -ne 0 ]]; then
         echo "Minimal cdi_test failed."
+        exit_code=$error
     fi
+    cat server_minimal.out
     set -e
 fi
 
@@ -153,16 +157,25 @@ if [[ ${RUN_FULL} -eq 1 ]]; then
     cdi_execute_cmd ${INSTANCE_IPS[1]}
               "${cdi_test_script} -c run_cdi_test -t tx -f /home/${SSH_USER}/rxtx_cmd.txt \
               -r ${INSTANCE_IPS[0]} -u ${USER_NAME} -y ${REGION}" \
-              > server_full.out 2>&1 &
+              > client_full.out 2>&1 &
 
     client_pid=$!
 
     wait ${server_pid}
     wait ${client_pid}
-    if [[ $? -ne 0 ]]; then
+    error=$?
+    if [[ $error -ne 0 ]]; then
         echo "Full cdi_test failed."
+        exit_code=$error
     fi
+    cat server_full.out
     set -e
 fi
 
-echo "==> Test Passed"
+if [[ $exit_code -eq 0 ]]; then
+    echo "==> cdi_test Tests Passed"
+    exit 0
+else
+    echo "==> cdi_test Tests Failed"
+    exit $exit_code
+fi
