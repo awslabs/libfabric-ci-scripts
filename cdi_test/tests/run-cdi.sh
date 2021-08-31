@@ -52,6 +52,9 @@ AWS_SECRET_ACCESS_KEY=$(echo ${ACCESS_KEY_STRUCT} | jq -r '.AccessKey.SecretAcce
 # Launch instances
 echo "==> Creating Nodes"
 
+ami=()
+ami[0]=$(aws --region $AWS_DEFAULT_REGION ssm get-parameters --names "/ec2-imagebuilder/alinux2-x86_64/latest" | jq -r ".Parameters[0].Value")
+ami[1]=${SSH_USER}
 create_instance || { echo "==>Unable to create instance"; exit 65; }
 set -x
 INSTANCE_IDS=($INSTANCE_IDS)
