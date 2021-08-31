@@ -153,6 +153,12 @@ setup_cdi_test_directory() {
     cd ${CDI_TEST_DIR}
 
     git clone ${AWS_CDI_SDK_URL}
+    # cdi_test is asserting libfabric version 1.9.x.
+    # this prevents us from testing main branch.
+    # remove the assert statement:
+    sed -i 's/CDI_STATIC_ASSERT(FI_MAJOR_VERSION==[1-9]* && FI_MINOR_VERSION==[1-9]*.*//g' \
+        ${CDI_TEST_DIR}aws-cdi-sdk/src/cdi/adapter_efa.c
+    #TODO: remove when the libfabric version restriction is lifted
     git clone ${LIBFABRIC_URL}
     pushd libfabric
     if [ ! "$PULL_REQUEST_ID" = "None" ]; then
