@@ -17,12 +17,17 @@ CDI_SCRIPT="${CDI_COMMON}/cdi-scripts.sh"
 CDI_CMD_FILE="${CDI_COMMON}/rxtx_cmd.txt"
 CDI_POLICY_DOCUMENT="${CDI_COMMON}/cdi-policy.json"
 
+ami_arch="x86_64"
+label="alinux"
+SSH_USER="ec2-user"
+NODES=2
+PROVIDER="efa"
+ENABLE_PLACEMENT_GROUP=1
+
 echo "'INFO' ==> Starting perparation for cdi_test"
-source "${CDI_COMMON}/cdi-common.sh"
 source "${WORKSPACE}/libfabric-ci-scripts/common.sh"
 
 cdi_on_exit() {
-    delete_cdi_test_user
     on_exit
 }
 
@@ -34,20 +39,8 @@ cdi_execute_cmd() {
         -i ~/${slave_keypair} ${SSH_USER}@${ip} ${cmd} --
 }
 
+
 trap 'cdi_on_exit'  EXIT
-
-echo "'INFO' ==> creating cdi_user ${BUILD_NUMBER} in iam"
-ROLE_NAME="cdi_role_${BUILD_NUMBER}"
-GROUP_NAME="cdi_group_${BUILD_NUMBER}"
-USER_NAME="cdi_user_${BUILD_NUMBER}"
-PROFILE_NAME="cdi_profile_${BUILD_NUMBER}"
-POLICY_NAME="cdi_policy_${BUILD_NUMBER}"
-create_cdi_test_user
-
-echo "'INFO' ==> creating access key for ${USER_NAME}"
-ACCESS_KEY_STRUCT=$(aws iam create-access-key --user-name ${USER_NAME})
-AWS_ACCESS_KEY_ID=$(echo ${ACCESS_KEY_STRUCT} | jq -r '.AccessKey.AccessKeyId')
-AWS_SECRET_ACCESS_KEY=$(echo ${ACCESS_KEY_STRUCT} | jq -r '.AccessKey.SecretAccessKey')
 
 # Launch instances
 echo "==> Creating Nodes"
@@ -83,7 +76,7 @@ for IP in ${INSTANCE_IPS[@]}; do
         ${CDI_CMD_FILE} ${SSH_USER}@${IP}:/home/${SSH_USER}/
 
     cdi_execute_cmd ${IP} \
-    "${cdi_test_script} -c configure_aws_iam_user -a ${AWS_ACCESS_KEY_ID} -s ${AWS_SECRET_ACCESS_KEY}"
+    "${cdi_test_script} -c configure_aws_iam_user -a ${CDI_ACCESS_KEY} -s ${CDI_SECRET_KEY}"
 done
 
 # Install cdi_test
