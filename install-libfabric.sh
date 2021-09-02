@@ -20,7 +20,11 @@ configure_flags=(--prefix=${HOME}/libfabric/install/ \
     --enable-efa )
 # Build libfabric with cuda on x86_64 platform only.
 if [ "$(uname -m)" == "x86_64" ]; then
-    configure_flags+=(--with-cuda=/usr/local/cuda --enable-cuda-dlopen)
+    with_cuda_option_available="$(./configure -h 2>&1 | grep '\-\-with\-cuda' || true)"
+    enable_cuda_dlopen_option_available="$(./configure -h 2>&1 | grep '\-\-enable\-cuda\-dlopen' || true)"
+    if [[ -n "$with_cuda_option_available" && -n "$enable_cuda_dlopen_option_available" ]]; then
+        configure_flags+=(--with-cuda=/usr/local/cuda --enable-cuda-dlopen)
+    fi
 fi
 ./configure "${configure_flags[@]}"
 make -j 4
