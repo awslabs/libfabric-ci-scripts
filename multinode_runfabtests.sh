@@ -116,28 +116,31 @@ if [ ${PROVIDER} == "efa" ]; then
     fi
 
     # Run fi_rdm_tagged_bw with fork when different environment variables are set.
-    echo "Run fi_rdm_tagged_bw with fork"
-    SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -p efa -K -E"
-    CLIENT_CMD="${SERVER_CMD}"
-    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "FAIL"
-    if [ "$?" -ne 0 ]; then
-        exit_code=1
-    fi
+    fork_option_available=$(${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -h 2>&1 | grep '\-K' || true)
+    if [ -n "$fork_option_available" ]; then
+        echo "Run fi_rdm_tagged_bw with fork"
+        SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -p efa -K -E"
+        CLIENT_CMD="${SERVER_CMD}"
+        run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "FAIL"
+        if [ "$?" -ne 0 ]; then
+            exit_code=1
+        fi
 
-    echo "Run fi_rdm_tagged_bw with fork and RDMAV_FORK_SAFE set"
-    SERVER_CMD="RDMAV_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E"
-    CLIENT_CMD="${SERVER_CMD}"
-    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
-    if [ "$?" -ne 0 ]; then
-        exit_code=1
-    fi
+        echo "Run fi_rdm_tagged_bw with fork and RDMAV_FORK_SAFE set"
+        SERVER_CMD="RDMAV_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E"
+        CLIENT_CMD="${SERVER_CMD}"
+        run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
+        if [ "$?" -ne 0 ]; then
+            exit_code=1
+        fi
 
-    echo "Run fi_rdm_tagged_bw with fork and FI_EFA_FORK_SAFE set"
-    SERVER_CMD="FI_EFA_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E"
-    CLIENT_CMD="${SERVER_CMD}"
-    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
-    if [ "$?" -ne 0 ]; then
-        exit_code=1
+        echo "Run fi_rdm_tagged_bw with fork and FI_EFA_FORK_SAFE set"
+        SERVER_CMD="FI_EFA_FORK_SAFE=1 ${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -v -p efa -K -E"
+        CLIENT_CMD="${SERVER_CMD}"
+        run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
+        if [ "$?" -ne 0 ]; then
+            exit_code=1
+        fi
     fi
 
     if [[ ${BUILD_GDR} -eq 1 ]]; then
