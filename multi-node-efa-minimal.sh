@@ -21,11 +21,6 @@ export RUN_IMPI_TESTS=1
 # Use Intel MPI's internal libfabric library.
 export LIBFABRIC_INSTALL_PATH=/opt/intel/oneapi/mpi/latest/libfabric/lib/
 
-
-# Current LibfabricCI IAM permissions do not allow placement group creation,
-# enable this after it is fixed.
-export ENABLE_PLACEMENT_GROUP=1
-
 efa_software_components_minimal()
 {
     if [ -z "$EFA_INSTALLER_URL" ]; then
