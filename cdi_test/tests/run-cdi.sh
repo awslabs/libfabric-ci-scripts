@@ -24,6 +24,8 @@ NODES=2
 PROVIDER="efa"
 ENABLE_PLACEMENT_GROUP=1
 
+cdi_test_timeout=30m
+
 echo "'INFO' ==> Starting perparation for cdi_test"
 source "${WORKSPACE}/libfabric-ci-scripts/common.sh"
 
@@ -34,7 +36,7 @@ cdi_on_exit() {
 cdi_execute_cmd() {
     ip=$1
     cmd=$2
-    ssh -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+    timeout ${cdi_test_timeout} ssh -T -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
         -o BatchMode=yes -o TCPKeepAlive=yes \
         -i ~/${slave_keypair} ${SSH_USER}@${ip} ${cmd} --
 }
