@@ -108,7 +108,7 @@ if [ ${PROVIDER} == "efa" ]; then
 
     exit_code=0
     echo "Run fi_dgram_pingpong with out-of-band synchronization"
-    SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong"
+    SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong -k -p efa -b"
     CLIENT_CMD="${SERVER_CMD}"
     run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
     if [ "$?" -ne 0 ]; then
