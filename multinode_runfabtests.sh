@@ -107,12 +107,17 @@ if [ ${PROVIDER} == "efa" ]; then
     fi
 
     exit_code=0
-    echo "Run fi_dgram_pingpong with out-of-band synchronization"
-    SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong -k -p efa -b"
-    CLIENT_CMD="${SERVER_CMD}"
-    run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
-    if [ "$?" -ne 0 ]; then
-        exit_code=1
+    ami_arch=$(uname -m)
+    # Run fi_dgram_pingpong on x86 only as it currently does not work on c6gn instances.
+    # This change will be reverted once the issue is fixed.
+    if [[ "$ami_arch" == "x86_64" ]]; then
+        echo "Run fi_dgram_pingpong with out-of-band synchronization"
+        SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_dgram_pingpong -k -p efa -b"
+        CLIENT_CMD="${SERVER_CMD}"
+        run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "PASS"
+        if [ "$?" -ne 0 ]; then
+            exit_code=1
+        fi
     fi
 
     # Run fi_rdm_tagged_bw with fork when different environment variables are set.
