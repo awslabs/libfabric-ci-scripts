@@ -118,13 +118,18 @@ if command -v ibv_devices >/dev/null 2>&1; then
     ibv_devices
 fi
 
+# check if GPUDirect RDMA is supported by
+# reading from sysfs file "/sys/class/infiniband/<device_name>/gdr"
 efa_gdr_enabled=0
-if sudo modinfo efa | grep gdr | grep -o Y; then
-    echo "EFA kmod has gdr enabled."
-    efa_gdr_enabled=1
-else
-    echo "EFA kmod does not have gdr enabled."
-fi
+for dev in /sys/class/infiniband/*/device; do
+    if [ "$(cat "${dev}"/gdr)" == "1" ]; then
+        echo "EFA GPUDirect RDMA support is enabled"
+        efa_gdr_enabled=1
+    else
+        echo "EFA GPUDirect RDMA support is not enabled"
+    fi
+done
+
 echo ""
 echo "======== Configuration check ========"
 # Check for memory lock limit and warn if less than 16GiB. 16GiB is enough for
