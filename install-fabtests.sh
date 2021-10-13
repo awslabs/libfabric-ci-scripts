@@ -54,11 +54,17 @@ if [ "${PROVIDER}" == "efa" ]; then
     echo "dgram_pingpong" >> ${EXCLUDE}
     echo "" >> ${EXCLUDE}
 
-    if [ "${AMI_ARCH}" == "aarch64" ] && [ ${LIBFABRIC_JOB_TYPE} == "master" ]; then
-        # temporarily exclude fi_rdm_multi_client test
-        echo "# skip rdm_multi_client test" >> ${EXCLUDE}
-        echo "rdm_multi_client" >> ${EXCLUDE}
-        echo "" >> ${EXCLUDE}
+    if [ "${AMI_ARCH}" == "aarch64" ]; then
+        # Temporarily exclude fi_rdm test on c6gn to workaround a firmware issue.
+        # We cannot simply add rdm into the exclude file because that will exclude
+        # all fi_rdm* tests.
+        sed -i '/\"fi_rdm\"/d' ${HOME}/libfabric/fabtests/install/bin/runfabtests.sh
+        if [ ${LIBFABRIC_JOB_TYPE} == "master" ]; then
+            # temporarily exclude fi_rdm_multi_client test
+            echo "# skip rdm_multi_client test" >> ${EXCLUDE}
+            echo "rdm_multi_client" >> ${EXCLUDE}
+            echo "" >> ${EXCLUDE}
+        fi
     fi
 fi
 # .bashrc and .bash_profile are loaded differently depending on distro and
