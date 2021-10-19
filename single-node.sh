@@ -55,7 +55,12 @@ case "${PROVIDER}" in
     # versions of fabtests, newer versions can use the -b option to exchange
     # out of band.
     b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b' || true)"
+    # Check if '-P' option (Run provider specific fabtests) is available
+    P_option_available="$($runfabtests_script -h 2>&1 | grep '\-P' || true)"
     FABTESTS_OPTS+=" -t all"
+    if [ -n "$P_option_available" ]; then
+        FABTESTS_OPTS+=" -P"
+    fi
     if [ -n "$b_option_available" ]; then
         FABTESTS_OPTS+=" -b"
     else
