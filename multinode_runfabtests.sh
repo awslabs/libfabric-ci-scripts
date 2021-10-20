@@ -77,6 +77,7 @@ b_option_available="$($runfabtests_script -h 2>&1 | grep '\-b' || true)"
 # Check if '-P' option (Run provider specific fabtests) is available
 P_option_available="$($runfabtests_script -h 2>&1 | grep '\-P' || true)"
 FABTESTS_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
+FABTESTS_OPTS+=" -p ${HOME}/libfabric/fabtests/install/bin/"
 if [ ${PROVIDER} == "efa" ]; then
     if [ -n "$P_option_available" ]; then
         FABTESTS_OPTS+=" -P"
