@@ -47,6 +47,7 @@ fi
 
 # Provider-specific handling of the options passed to runfabtests.sh
 FABTESTS_OPTS="-E LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH\" -vvv ${EXCLUDE}"
+FABTESTS_OPTS+=" -p ${HOME}/libfabric/fabtests/install/bin/"
 case "${PROVIDER}" in
 "efa")
     # EFA provider supports a custom address format based on the GID of the
