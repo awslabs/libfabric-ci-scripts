@@ -15,8 +15,14 @@ hosts=$@
 hostfile=$(mktemp)
 out=$(mktemp)
 
-wget_check "http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz" "osu-micro-benchmarks-5.6.2.tar.gz"
-osu_dir="osu-micro-benchmarks-5.6.2"
+if [ -f /softwares/osu-micro-benchmarks-5.6.tar.gz ]; then
+    cp /softwares/osu-micro-benchmarks-5.6.tar.gz .
+    osu_dir="osu-micro-benchmarks-5.6"
+else
+    wget_check "http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-5.6.2.tar.gz" "osu-micro-benchmarks-5.6.2.tar.gz"
+    osu_dir="osu-micro-benchmarks-5.6.2"
+fi
+
 one_rank_per_node=""
 if [ "${mpi}" == "ompi" ]; then
     ompi_setup "${provider}"
