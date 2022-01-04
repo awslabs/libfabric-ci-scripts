@@ -279,26 +279,32 @@ script_builder()
     set_var
     efa_software_components
 
-    # The libfabric shm provider use CMA for communication. By default ubuntu
-    # disallows non-child process ptrace by, which disable CMA.
-    # Since libfabric 1.10, shm provider has a fallback solution, which will
-    # be used when CMA is not available. Therefore, we turn off ptrace protection
-    # for v1.9.x and v1.8.x
-    if [ ${label} == "ubuntu" ]; then
-        if [ ${TARGET_BRANCH} == "v1.9.x" ] || [ ${TARGET_BRANCH} == "v1.8.x" ];then
-            echo "sudo sysctl -w kernel.yama.ptrace_scope=0" >> ${tmp_script}
+    # Do not construct script to install libfabric and fabtests for
+    # centos7-arm and rhel7-arm in EFAInstallerProdCanary and LibfabricMainCanary,
+    # where provider=tcp and TEST_SKIP_KMOD=1
+    if ! [ "$PROVIDER" = "tcp" -a "${TEST_SKIP_KMOD}" -eq 1 ]; then
+        # The libfabric shm provider use CMA for communication. By default ubuntu
+        # disallows non-child process ptrace by, which disable CMA.
+        # Since libfabric 1.10, shm provider has a fallback solution, which will
+        # be used when CMA is not available. Therefore, we turn off ptrace protection
+        # for v1.9.x and v1.8.x
+        if [ ${label} == "ubuntu" ]; then
+            if [ ${TARGET_BRANCH} == "v1.9.x" ] || [ ${TARGET_BRANCH} == "v1.8.x" ];then
+                echo "sudo sysctl -w kernel.yama.ptrace_scope=0" >> ${tmp_script}
+            fi
         fi
+
+        if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
+            echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${tmp_script}
+        elif [ ${TARGET_BRANCH} == "v1.8.x" ]; then
+            cat install-libfabric-1.8.sh >> ${tmp_script}
+        else
+            cat install-libfabric.sh >> ${tmp_script}
+        fi
+
+        cat install-fabtests.sh >> ${tmp_script}
     fi
 
-    if [ -n "$LIBFABRIC_INSTALL_PATH" ]; then
-        echo "LIBFABRIC_INSTALL_PATH=$LIBFABRIC_INSTALL_PATH" >> ${tmp_script}
-    elif [ ${TARGET_BRANCH} == "v1.8.x" ]; then
-        cat install-libfabric-1.8.sh >> ${tmp_script}
-    else
-        cat install-libfabric.sh >> ${tmp_script}
-    fi
-
-    cat install-fabtests.sh >> ${tmp_script}
     if [ $BUILD_GDR -eq 1 ]; then
         cat install-nccl.sh >> ${tmp_script}
         cat install-aws-ofi-nccl.sh >> ${tmp_script}
