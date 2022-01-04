@@ -112,20 +112,20 @@ if [ "${PROVIDER}" == "efa" ]; then
             exit 1
         fi
     done
+
+    execution_seq=$((${execution_seq}+1))
+    # SSH into SERVER node and run fabtests
+    N=$((${#INSTANCE_IPS[@]}-1))
+    for i in $(seq 1 $N); do
+        execute_runfabtests "$i"
+    done
+
+    # Get build status
+    for i in $(seq 1 $N); do
+        source $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IPS[$i]}_execute_runfabtests.sh
+        exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
+    done
 fi
-
-execution_seq=$((${execution_seq}+1))
-# SSH into SERVER node and run fabtests
-N=$((${#INSTANCE_IPS[@]}-1))
-for i in $(seq 1 $N); do
-    execute_runfabtests "$i"
-done
-
-# Get build status
-for i in $(seq 1 $N); do
-    source $WORKSPACE/libfabric-ci-scripts/${INSTANCE_IPS[$i]}_execute_runfabtests.sh
-    exit_status "$EXIT_CODE" "${INSTANCE_IPS[$i]}"
-done
 
 # Run MPI tests for EFA provider.
 # For tests running on instances with ARM AMIs, also run MPI test if it's testing tcp.
