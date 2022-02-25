@@ -112,7 +112,10 @@ if [ "${PROVIDER}" == "efa" ]; then
             exit 1
         fi
     done
+fi
 
+# Only disable running fabtests with tcp provider on ARM instance
+if ! [[ "${PROVIDER}" == "tcp" && "$ami_arch" == "aarch64" ]]; then
     execution_seq=$((${execution_seq}+1))
     # SSH into SERVER node and run fabtests
     N=$((${#INSTANCE_IPS[@]}-1))
