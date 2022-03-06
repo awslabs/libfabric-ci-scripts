@@ -1,5 +1,17 @@
 . ~/.bash_profile
 
+host_kernel_5_13_or_newer()
+{
+        host=$1
+        kernel_version=$(ssh $host uname -r)
+        older=$(printf "$kernel_version\n5.13.0" | sort -V | head -n 1)
+        if [ $older = "5.13.0" ]; then
+                return 1
+        else
+                return 0
+        fi
+}
+
 run_test_with_expected_ret()
 {
     SERVER_IP=$1
@@ -125,7 +137,24 @@ if [ ${PROVIDER} == "efa" ]; then
         echo "Run fi_rdm_tagged_bw with fork"
         SERVER_CMD="${HOME}/libfabric/fabtests/install/bin/fi_rdm_tagged_bw -p efa -K -E"
         CLIENT_CMD="${SERVER_CMD}"
-        run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "FAIL"
+        # If an application used fork, it needs to enable rdma-core's user space fork support to avoid kernel's
+        # copy-on-write mechanism being is applied to pinned memory, otherwise there will be data corrutpion.
+        # To make sure fork support is enabled properly, libfabric registered a fork handler, which will abort
+        # the application if fork support is not enabled.
+        #
+        # Kernel 5.13 and newer will not apply CoW on pinned memory, hence the user space kernel support
+        # is unneeded. Libfabric will detect that support via rdma-core's ibv_is_fork_initialized() API, and
+        # will not register that fork handler on kernel 5.13.
+        #
+        # In all, the "fi_rdm_tagged_bw with fork" test is expected to pass on 5.13 and newer, but fail on
+        # older kernels.
+        host_kernel_5_13_or_newer ${SERVER_IP}
+        if [ $? -eq 1 ] ; then
+                expected_result="PASS"
+        else
+                expected_result="FAIL"
+        fi
+        run_test_with_expected_ret ${SERVER_IP} ${CLIENT_IP} "${SERVER_CMD}" "${CLIENT_CMD}" "$expected_result"
         if [ "$?" -ne 0 ]; then
             exit_code=1
         fi
