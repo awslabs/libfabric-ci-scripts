@@ -1,15 +1,27 @@
 . ~/.bash_profile
 
-host_kernel_5_13_or_newer()
+check_kernel_has_fork_support()
 {
-        host=$1
-        kernel_version=$(ssh $host uname -r)
-        older=$(printf "$kernel_version\n5.13.0" | sort -V | head -n 1)
-        if [ $older = "5.13.0" ]; then
+    host=$1
+    kernel_version=$(ssh $host uname -r)
+    older=$(printf "$kernel_version\n5.13.0" | sort -V | head -n 1)
+    if [ $older = "5.13.0" ]; then
+        return 1
+    else
+        # Rhel 8 now has fork support
+        release_name=$(ssh $host "cat /etc/os-release | grep '^NAME'")
+        os_name=$(echo $release_name | awk -F'=' ' gsub(/"/,"") {print $2}')
+        if [[ "$os_name" = "Red Hat Enterprise Linux" ]]; then
+            release_ver=$(ssh $host "cat /etc/os-release | grep '^VERSION_ID'")
+            rhel_ver=$(echo $release_ver | awk -F'=' ' gsub(/"/,"") {print $2}')
+            older=$(printf "$rhel_ver\n8.0" | sort -V | head -n 1)
+            if [ $older = "8.0" ]; then
+                # This version of rhel supports fork
                 return 1
-        else
-                return 0
+            fi
         fi
+        return 0
+    fi
 }
 
 run_test_with_expected_ret()
@@ -148,7 +160,7 @@ if [ ${PROVIDER} == "efa" ]; then
         #
         # In all, the "fi_rdm_tagged_bw with fork" test is expected to pass on 5.13 and newer, but fail on
         # older kernels.
-        host_kernel_5_13_or_newer ${SERVER_IP}
+        check_kernel_has_fork_support ${SERVER_IP}
         if [ $? -eq 1 ] ; then
                 expected_result="PASS"
         else
