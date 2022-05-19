@@ -12,9 +12,11 @@ if [ ! -d libfabric ]; then
     # installed version of libfabric.
     git clone https://github.com/ofiwg/libfabric
     ofi_ver=$(${fi_info_bin} --version | grep 'libfabric api' | awk '{print $3}')
-    pushd libfabric
-    git checkout "v${ofi_ver}.x"
-    popd
+    if [ "${ofi_ver}" != "1.16" ]; then
+        pushd libfabric
+        git checkout "v${ofi_ver}.x"
+        popd
+    fi
 fi
 if [ ! -z "${target_fabtest_tag}" ]; then
     cd ${HOME}/libfabric
