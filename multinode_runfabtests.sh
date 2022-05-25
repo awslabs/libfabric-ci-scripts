@@ -2,26 +2,14 @@
 
 check_kernel_has_fork_support()
 {
-    host=$1
-    kernel_version=$(ssh $host uname -r)
-    older=$(printf "$kernel_version\n5.13.0" | sort -V | head -n 1)
-    if [ $older = "5.13.0" ]; then
+    gcc -I/usr/include -o ~/fork_checker ~/fork_checker.c -lefa -libverbs
+    ~/fork_checker
+
+    if [ 0 -eq $? ]; then
         return 1
-    else
-        # Rhel 8 now has fork support
-        release_name=$(ssh $host "cat /etc/os-release | grep '^NAME'")
-        os_name=$(echo $release_name | awk -F'=' ' gsub(/"/,"") {print $2}')
-        if [[ "$os_name" = "Red Hat Enterprise Linux" ]]; then
-            release_ver=$(ssh $host "cat /etc/os-release | grep '^VERSION_ID'")
-            rhel_ver=$(echo $release_ver | awk -F'=' ' gsub(/"/,"") {print $2}')
-            older=$(printf "$rhel_ver\n8.0" | sort -V | head -n 1)
-            if [ $older = "8.0" ]; then
-                # This version of rhel supports fork
-                return 1
-            fi
-        fi
-        return 0
     fi
+
+    return 0
 }
 
 run_test_with_expected_ret()
