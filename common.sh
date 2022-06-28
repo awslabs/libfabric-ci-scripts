@@ -260,11 +260,12 @@ get_instance_ip()
     fi
 }
 
-#Test SLES15SP2 with allow unsupported modules
+#Test SLES15 with allow unsupported modules
 sles_allow_module()
 {
     cat <<-"EOF" >> ${tmp_script}
     if [[ $(grep -Po '(?<=^NAME=).*' /etc/os-release) =~  .*SLES.* ]]; then
+        sudo cp /lib/modprobe.d/10-unsupported-modules.conf /etc/modprobe.d/
         sudo sed -i 's/allow_unsupported_modules .*/allow_unsupported_modules 1/' /etc/modprobe.d/10-unsupported-modules.conf
         line_number=$(grep -n "exit_sles15_efa_unsupported_module" efa_installer.sh | cut -d":" -f1 | tail -n1)
         sed -i "${line_number}s/.*/echo \"Allow unsupported modules for testing\"/" efa_installer.sh
