@@ -22,7 +22,7 @@ mpirun  --prefix /opt/amazon/openmpi \
         -x MPIEXEC_TIMEOUT=1800 \
         -x FI_EFA_USE_DEVICE_RDMA=1 \
         -x RDMAV_FORK_SAFE=1 \
-        -x NCCL_DEBUG=INFO -x NCCL_ALGO=ring \
+        -x NCCL_DEBUG=INFO -x NCCL_ALGO=ring -x NCCL_PROTO=simple \
         -n 16 -N 8 \
         --mca btl tcp,self --mca btl_tcp_if_exclude lo,docker0 --mca pml ^cm \
         --bind-to none $HOME/nccl-tests/build/all_reduce_perf -b 8 -e 1G -f 2 -g 1 -c 1 -n 100 2>&1 | tee $out
