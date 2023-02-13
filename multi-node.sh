@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "[!] Multi node"
 set -xe
 source $WORKSPACE/libfabric-ci-scripts/common.sh
 trap 'on_exit'  EXIT

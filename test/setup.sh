@@ -13,3 +13,4 @@ export slave_alinux=ami-0cb72367e98845d43\ ec2-user
 export slave_ubuntu=ami-005bdb005fb00e791\ ubuntu
 export slave_security_group=sg-xxxxxxxx
 export slave_keypair=keypair
+echo "[!] Done"

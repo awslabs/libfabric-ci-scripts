@@ -1,5 +1,5 @@
-#include <infiniband/verbs.h>
 #include <stdio.h>
+#include <infiniband/verbs.h>
 
 /*
  * Check whether fork support is enabled on the instance by querying the rdma-core interface.
