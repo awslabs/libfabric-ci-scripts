@@ -1,3 +1,5 @@
+# DEPRECATED - This Project is no longer supported, and should not be used.
+
 ## Libfabric CI
 
 A place for all the various scripts utilized in the libfabric ci project such as pipelines and packer files.
